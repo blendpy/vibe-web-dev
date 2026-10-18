@@ -1,0 +1,1955 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>US Federal Income Tax Calculator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- FontAwesome Icons CDN -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#eff6ff',
+                            100: '#dbeafe',
+                            200: '#bfdbfe',
+                            500: '#3b82f6',
+                            600: '#2563eb',
+                            700: '#1d4ed8',
+                            800: '#1e40af',
+                            900: '#1e3a8a'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-slate-900 text-slate-100 min-h-screen font-sans antialiased p-4 md:p-8">
+    <div class="max-w-7xl mx-auto space-y-6">
+        
+        <!-- Header & Year Selector -->
+        <header class="flex flex-col md:flex-row md:items-center justify-between gap-1 bg-slate-800/60 py-1.5 px-5 rounded-xl border border-slate-700/60 backdrop-blur-sm">
+            <div>
+                <div class="flex items-center gap-3">
+                    <h1 class="text-lg font-bold tracking-tight">Estimated US Federal Tax</h1>
+                    <p class="text-xs text-red-400 font-medium">(AI Generated - Use with caution)</p>
+                </div>
+                <p class="text-slate-400 text-sm mt-1">Estimate your federal tax liability with live updates.
+                    <span id="activeYearBadge" class="bg-brand-500/20 text-brand-300 text-xs font-semibold px-2.5 py-0.5 rounded-full border border-brand-500/30">2026</span></p>
+            </div>
+            
+            <div class="flex flex-wrap items-center gap-3 bg-slate-900/80 p-1.5 rounded-xl border border-slate-700">
+                <span class="text-xs font-medium text-slate-400 px-2">Tax Year:</span>
+                <button id="yearBtn2024" onclick="setTaxYear(2024)" class="year-select-btn py-2 px-3 rounded-lg text-xs font-bold transition-all text-slate-300 hover:text-white hover:bg-slate-800">2024</button>
+                <button id="yearBtn2025" onclick="setTaxYear(2025)" class="year-select-btn py-2 px-3 rounded-lg text-xs font-bold transition-all text-slate-300 hover:text-white hover:bg-slate-800">2025</button>
+                <button id="yearBtn2026" onclick="setTaxYear(2026)" class="year-select-btn py-2 px-3 rounded-lg border border-brand-500 bg-brand-600 text-white text-xs font-bold shadow-sm transition-all">2026</button>
+                <a href="US_Historical.html" class="text-xs font-medium bg-slate-800 hover:bg-slate-700 text-brand-300 border border-brand-500/40 px-3 py-2 rounded-lg transition-all flex items-center gap-1">
+                    Historical
+                </a>
+                <a href="US_Social_Security.html" class="text-xs font-medium bg-slate-800 hover:bg-slate-700 text-brand-300 border border-brand-500/40 px-3 py-2 rounded-lg transition-all flex items-center gap-1">
+                    Social Sec.
+                </a>
+                <button onclick="resetCalculator()" class="ml-1 text-xs font-medium text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 px-2.5 py-2 rounded-lg transition-all" title="Reset all inputs">Reset</button>
+            </div>
+        </header>
+
+        <!-- Main Content Area -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            
+            <!-- Input Panel (Left Column) -->
+            <main class="lg:col-span-7 space-y-6">
+                
+
+        <!-- Navigation Tabs -->
+        <div class="flex bg-slate-800/40 p-1.5 rounded-xl border border-slate-700/50 overflow-x-auto">
+            <button id="tab-btn-income" onclick="switchTab('income')" class="tab-btn flex-1 py-2.5 px-4 rounded-lg text-xs font-semibold transition-all text-brand-400 bg-brand-500/10 border border-brand-500/30 flex items-center justify-center gap-2 min-w-[120px]">
+                Income & Deductions
+            </button>
+            <button id="tab-btn-gains" onclick="switchTab('gains')" class="tab-btn flex-1 py-2.5 px-4 rounded-lg text-xs font-semibold transition-all text-slate-400 hover:text-white hover:bg-slate-800 flex items-center justify-center gap-2 min-w-[120px]">
+                Capital Gains
+            </button>
+            <button id="tab-btn-credits" onclick="switchTab('credits')" class="tab-btn flex-1 py-2.5 px-4 rounded-lg text-xs font-semibold transition-all text-slate-400 hover:text-white hover:bg-slate-800 flex items-center justify-center gap-2 min-w-[120px]">
+                Tax Credits
+            </button>
+            <button id="tab-btn-deductions" onclick="switchTab('deductions')" class="tab-btn flex-1 py-2.5 px-4 rounded-lg text-xs font-semibold transition-all text-slate-400 hover:text-white hover:bg-slate-800 flex items-center justify-center gap-2 min-w-[120px]">
+                Worksheets
+            </button>
+        </div>
+
+
+
+                <!-- TAB 1: Income & Deductions -->
+                <div id="tab-income" class="tab-content space-y-6">
+                    
+                    <!-- Filing Status Selection -->
+                    <section class="bg-slate-800/40 p-5 rounded-2xl border border-slate-700/50 space-y-4">
+                        <h2 class="text-sm font-semibold uppercase tracking-wider text-slate-400">1. Filing Status</h2>
+                        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                            <label class="cursor-pointer">
+                                <input type="radio" name="filingStatus" value="single" checked onchange="calculateTax()" class="peer sr-only">
+                                <div class="p-3 text-center bg-slate-900/60 border border-slate-700 rounded-xl peer-checked:border-brand-500 peer-checked:bg-brand-500/10 peer-checked:text-brand-300 transition-all">
+                                    <div class="font-semibold text-sm">Single</div>
+                                    <div id="fsSingleSub" class="text-[10px] text-slate-400 mt-0.5">Std: $15,700</div>
+                                </div>
+                            </label>
+                            <label class="cursor-pointer">
+                                <input type="radio" name="filingStatus" value="mfj" onchange="calculateTax()" class="peer sr-only">
+                                <div class="p-3 text-center bg-slate-900/60 border border-slate-700 rounded-xl peer-checked:border-brand-500 peer-checked:bg-brand-500/10 peer-checked:text-brand-300 transition-all">
+                                    <div class="font-semibold text-sm">Married Jointly</div>
+                                    <div id="fsMfjSub" class="text-[10px] text-slate-400 mt-0.5">Std: $31,400</div>
+                                </div>
+                            </label>
+                            <label class="cursor-pointer">
+                                <input type="radio" name="filingStatus" value="mfs" onchange="calculateTax()" class="peer sr-only">
+                                <div class="p-3 text-center bg-slate-900/60 border border-slate-700 rounded-xl peer-checked:border-brand-500 peer-checked:bg-brand-500/10 peer-checked:text-brand-300 transition-all">
+                                    <div class="font-semibold text-sm">Married Separate</div>
+                                    <div id="fsMfsSub" class="text-[10px] text-slate-400 mt-0.5">Std: $15,700</div>
+                                </div>
+                            </label>
+                            <label class="cursor-pointer">
+                                <input type="radio" name="filingStatus" value="hoh" onchange="calculateTax()" class="peer sr-only">
+                                <div class="p-3 text-center bg-slate-900/60 border border-slate-700 rounded-xl peer-checked:border-brand-500 peer-checked:bg-brand-500/10 peer-checked:text-brand-300 transition-all">
+                                    <div class="font-semibold text-sm">Head of House</div>
+                                    <div id="fsHohSub" class="text-[10px] text-slate-400 mt-0.5">Std: $23,550</div>
+                                </div>
+                            </label>
+                        </div>
+                    </section>
+
+                    <!-- Gross Income Input -->
+                    <section class="bg-slate-800/40 p-5 rounded-2xl border border-slate-700/50 space-y-4">
+                        <div class="flex items-center justify-between">
+                            <h2 class="text-sm font-semibold uppercase tracking-wider text-slate-400">2. Gross W-2 / Ordinary Income</h2>
+                            <span class="text-xs text-slate-400">Quick Presets</span>
+                        </div>
+                        
+                        <div class="space-y-3">
+                            <div class="relative">
+                                <span class="absolute left-3.5 top-2.5 text-slate-400 text-lg font-bold">$</span>
+                                <input type="number" id="grossIncomeInput" value="100000" step="1000" oninput="syncIncomeFromNumber(this.value)" class="w-full bg-slate-900 border border-slate-700 rounded-xl py-2.5 pl-8 pr-4 text-white text-lg font-bold focus:outline-none focus:border-brand-500 transition-colors">
+                            </div>
+                            
+                            <input type="range" id="grossIncomeSlider" min="0" max="500000" step="2500" value="100000" oninput="syncIncomeFromSlider(this.value)" class="w-full accent-brand-500 bg-slate-700 h-2 rounded-lg cursor-pointer">
+                            
+                            <div class="flex flex-wrap gap-2 pt-1">
+                                <button onclick="setIncomePreset(50000)" class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-1 rounded-md border border-slate-700 transition-colors">$50k</button>
+                                <button onclick="setIncomePreset(100000)" class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-1 rounded-md border border-slate-700 transition-colors">$100k</button>
+                                <button onclick="setIncomePreset(150000)" class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-1 rounded-md border border-slate-700 transition-colors">$150k</button>
+                                <button onclick="setIncomePreset(250000)" class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-1 rounded-md border border-slate-700 transition-colors">$250k</button>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- Above-The-Line Deductions -->
+                    <section class="bg-slate-800/40 p-5 rounded-2xl border border-slate-700/50 space-y-4">
+                        <div class="flex items-center justify-between">
+                            <h2 class="text-sm font-semibold uppercase tracking-wider text-slate-400">3. Above-the-line Deductions (Pre-AGI)</h2>
+                            <span id="totalAboveLineDisplay" class="text-xs font-bold text-emerald-400">-$0</span>
+                        </div>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div>
+                                <label class="text-xs text-slate-400 block mb-1">Traditional 401(k) / 403(b)</label>
+                                <input type="number" id="k401Input" value="0" step="500" oninput="calculateTax()" class="w-full bg-slate-900 border border-slate-700 rounded-xl py-2 px-3 text-sm text-white focus:outline-none focus:border-brand-500">
+                            </div>
+                            <div>
+                                <label class="text-xs text-slate-400 block mb-1">Traditional IRA</label>
+                                <input type="number" id="iraInput" value="0" step="500" oninput="calculateTax()" class="w-full bg-slate-900 border border-slate-700 rounded-xl py-2 px-3 text-sm text-white focus:outline-none focus:border-brand-500">
+                            </div>
+                            <div>
+                                <label class="text-xs text-slate-400 block mb-1">HSA Contributions</label>
+                                <input type="number" id="hsaInput" value="0" step="250" oninput="calculateTax()" class="w-full bg-slate-900 border border-slate-700 rounded-xl py-2 px-3 text-sm text-white focus:outline-none focus:border-brand-500">
+                            </div>
+                            <div>
+                                <label class="text-xs text-slate-400 block mb-1">Student Loan Interest</label>
+                                <input type="number" id="studentLoanInput" value="0" step="100" oninput="calculateTax()" class="w-full bg-slate-900 border border-slate-700 rounded-xl py-2 px-3 text-sm text-white focus:outline-none focus:border-brand-500">
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- Below-The-Line Deductions -->
+                    <section class="bg-slate-800/40 p-5 rounded-2xl border border-slate-700/50 space-y-4">
+                        <div class="flex items-center justify-between">
+                            <h2 class="text-sm font-semibold uppercase tracking-wider text-slate-400">4. Itemized vs Standard Deduction</h2>
+                            <select id="deductionChoice" onchange="calculateTax()" class="bg-slate-900 border border-slate-700 rounded-lg text-xs text-slate-200 py-1 px-2 focus:outline-none">
+                                <option value="auto">Auto-Select Higher</option>
+                                <option value="standard">Force Standard Deduction</option>
+                                <option value="itemized">Force Itemized Deduction</option>
+                            </select>
+                        </div>
+
+                        <!-- Comparison Bar -->
+                        <div class="space-y-2 bg-slate-900/60 p-3 rounded-xl border border-slate-800">
+                            <div class="flex justify-between text-xs font-medium">
+                                <span class="text-slate-400">Standard: <strong id="stdDeductionVal" class="text-slate-200">$15,700</strong></span>
+                                <span class="text-slate-400">Itemized: <strong id="itemizedDeductionVal" class="text-slate-200">$0</strong></span>
+                            </div>
+                            <div class="w-full bg-slate-800 rounded-full h-2 flex overflow-hidden">
+                                <div id="stdBar" class="bg-brand-500 h-full transition-all duration-300" style="width: 50%"></div>
+                                <div id="itemBar" class="bg-amber-500 h-full transition-all duration-300" style="width: 50%"></div>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
+                            <div>
+                                <label class="text-xs text-slate-400 block mb-1">Mortgage Interest</label>
+                                <input type="number" id="mortgageInput" value="0" step="500" oninput="calculateTax()" class="w-full bg-slate-900 border border-slate-700 rounded-xl py-2 px-3 text-sm text-white focus:outline-none focus:border-brand-500">
+                            </div>
+                            <div>
+                                <label class="text-xs text-slate-400 block mb-1">Car Interest ($10,000 maximum)</label>
+                                <input type="number" id="carInterestInput" value="0" step="500" oninput="calculateTax()" class="w-full bg-slate-900 border border-slate-700 rounded-xl py-2 px-3 text-sm text-white focus:outline-none focus:border-brand-500">
+                            </div>
+                            <div>
+                                <label class="text-xs text-slate-400 block mb-1">Charitable Contributions</label>
+                                <input type="number" id="charityInput" value="0" step="250" oninput="calculateTax()" class="w-full bg-slate-900 border border-slate-700 rounded-xl py-2 px-3 text-sm text-white focus:outline-none focus:border-brand-500">
+                            </div>
+                            <div>
+                                <label class="text-xs text-slate-400 block mb-1">Medical Expenses (>7.5% AGI)</label>
+                                <input type="number" id="medicalInput" value="0" step="500" oninput="calculateTax()" class="w-full bg-slate-900 border border-slate-700 rounded-xl py-2 px-3 text-sm text-white focus:outline-none focus:border-brand-500">
+                            </div>
+                            <div>
+                                <label class="text-xs text-slate-400 block mb-1">SALT (State & Local Tax - Max $10k)</label>
+                                <input type="number" id="saltInput" value="0" step="500" oninput="calculateTax()" class="w-full bg-slate-900 border border-slate-700 rounded-xl py-2 px-3 text-sm text-white focus:outline-none focus:border-brand-500">
+                            </div>
+                            <div>
+                                <label class="text-xs text-slate-400 block mb-1">Vacation Home Expenses</label>
+                                <input type="number" id="vacationInput" value="0" step="500" oninput="calculateTax()" class="w-full bg-slate-900 border border-slate-700 rounded-xl py-2 px-3 text-sm text-white focus:outline-none focus:border-brand-500 border-dashed border-brand-500/50">
+                            </div>
+                        </div>
+                    </section>
+                </div>
+
+                <!-- TAB 2: Capital Gains -->
+                <div id="tab-gains" class="tab-content hidden space-y-6">
+                    
+                    <!-- Stocks & Assets -->
+                    <section class="bg-slate-800/40 p-5 rounded-2xl border border-slate-700/50 space-y-4">
+                        <div class="flex items-center justify-between">
+                            <label class="flex items-center gap-2 cursor-pointer">
+                                <input type="checkbox" id="enableStockSale" onchange="toggleStockFields(); calculateTax()" class="w-4 h-4 rounded text-brand-600 bg-slate-900 border-slate-700 focus:ring-0">
+                                <span class="text-sm font-semibold uppercase tracking-wider text-slate-300">Stock & Asset Sales</span>
+                            </label>
+                            <span id="stockGainDisplay" class="text-xs font-bold text-amber-400">$0 Net Gain</span>
+                        </div>
+
+                        <div id="stockFields" class="overflow-x-auto rounded-xl border border-slate-800 opacity-50 pointer-events-none transition-all">
+                            <table class="w-full text-left text-xs text-slate-300">
+                                <thead class="bg-slate-900/80 text-slate-400 uppercase text-[10px] tracking-wider border-b border-slate-700">
+                                    <tr>
+                                        <th class="p-3">Sale</th>
+                                        <th class="p-3">Gross Proceeds</th>
+                                        <th class="p-3">Cost Basis</th>
+                                        <th class="p-3">Holding Period</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-slate-800 bg-slate-900/60">
+                                    <tr>
+                                        <td class="p-3 font-semibold text-slate-200">
+                                            Sale (Short-Term)
+                                            <p class="text-[10px] text-slate-400 font-normal mt-0.5 max-w-[180px] leading-tight">Depending on your total taxable income and filing status, your federal rate ranges from 10% to 37%.</p>
+                                        </td>
+                                        <td class="p-3">
+                                            <input type="number" id="stockProceeds2" value="0" oninput="calculateTax()" class="w-full bg-slate-900 border border-slate-700 rounded-lg py-2 px-3 text-sm text-white focus:outline-none focus:border-brand-500">
+                                        </td>
+                                        <td class="p-3">
+                                            <input type="number" id="stockBasis2" value="0" oninput="calculateTax()" class="w-full bg-slate-900 border border-slate-700 rounded-lg py-2 px-3 text-sm text-white focus:outline-none focus:border-brand-500">
+                                        </td>
+                                        <td class="p-3 font-medium text-amber-400">Short-Term<br>(&le; 1 Year)</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="p-3 font-semibold text-slate-200">
+                                            Sale (Long-Term)
+                                            <p class="text-[10px] text-slate-400 font-normal mt-0.5 max-w-[180px] leading-tight">The federal rate is 0%, 15%, or 20%, depending on your filing status and taxable income.</p>
+                                        </td>
+                                        <td class="p-3">
+                                            <input type="number" id="stockProceeds1" value="30000" oninput="calculateTax()" class="w-full bg-slate-900 border border-slate-700 rounded-lg py-2 px-3 text-sm text-white focus:outline-none focus:border-brand-500">
+                                        </td>
+                                        <td class="p-3">
+                                            <input type="number" id="stockBasis1" value="12000" oninput="calculateTax()" class="w-full bg-slate-900 border border-slate-700 rounded-lg py-2 px-3 text-sm text-white focus:outline-none focus:border-brand-500">
+                                        </td>
+                                        <td class="p-3 font-medium text-emerald-400">Long-Term<br>(&gt; 1 Year)</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </section>
+
+                    <!-- Primary Residence Home Sale -->
+                    <section class="bg-slate-800/40 p-5 rounded-2xl border border-slate-700/50 space-y-4">
+                        <div class="flex items-center justify-between">
+                            <label class="flex items-center gap-2 cursor-pointer">
+                                <input type="checkbox" id="enableHomeSale" onchange="toggleHomeFields(); calculateTax()" class="w-4 h-4 rounded text-brand-600 bg-slate-900 border-slate-700 focus:ring-0">
+                                <span class="text-sm font-semibold uppercase tracking-wider text-slate-300">Primary Home Sale (Sec 121)</span>
+                            </label>
+                        </div>
+
+                        <div id="homeFields" class="space-y-4 opacity-50 pointer-events-none transition-all">
+                            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                                <div>
+                                    <label class="text-xs text-slate-400 block mb-1">Sale Price</label>
+                                    <input type="number" id="homeSalePrice" value="650000" oninput="calculateTax()" class="w-full bg-slate-900 border border-slate-700 rounded-lg py-2 px-3 text-sm text-white">
+                                </div>
+                                <div>
+                                    <label class="text-xs text-slate-400 block mb-1">Purchase Price</label>
+                                    <input type="number" id="homePurchasePrice" value="300000" oninput="calculateTax()" class="w-full bg-slate-900 border border-slate-700 rounded-lg py-2 px-3 text-sm text-white">
+                                </div>
+                                <div>
+                                    <label class="text-xs text-slate-400 block mb-1">Capital Improvements</label>
+                                    <input type="number" id="homeImprovements" value="50000" oninput="calculateTax()" class="w-full bg-slate-900 border border-slate-700 rounded-lg py-2 px-3 text-sm text-white">
+                                </div>
+                            </div>
+
+                            <div class="p-3 bg-slate-900/60 rounded-xl border border-slate-800 flex items-center justify-between">
+                                <div>
+                                    <label class="flex items-center gap-2 cursor-pointer">
+                                        <input type="checkbox" id="home2of5Rule" checked onchange="calculateTax()" class="w-4 h-4 rounded text-brand-600 bg-slate-900 border-slate-700">
+                                        <span class="text-xs text-slate-200 font-medium">Met 2-out-of-5 Year Residency Requirement</span>
+                                    </label>
+                                    <p class="text-[10px] text-slate-500 mt-0.5">Allows up to $250k (Single) or $500k (MFJ) tax-free capital gain exclusion.</p>
+                                </div>
+                            </div>
+
+                            <div class="flex justify-between text-xs p-3 bg-slate-800/80 rounded-lg border border-slate-700">
+                                <span class="text-slate-400">Total Gain: <strong id="homeRawGain" class="text-slate-200">$300,000</strong></span>
+                                <span class="text-slate-400">Exclusion: <strong id="homeExclusionVal" class="text-emerald-400">-$250,000</strong></span>
+                                <span class="text-slate-400">Taxable Gain: <strong id="homeTaxableGain" class="text-amber-400">$50,000</strong></span>
+                            </div>
+                        </div>
+                    </section>
+                </div>
+
+                <!-- TAB 3: Credits -->
+                <div id="tab-credits" class="tab-content hidden space-y-6">
+                    <section class="bg-slate-800/40 p-5 rounded-2xl border border-slate-700/50 space-y-4">
+                        <h2 class="text-sm font-semibold uppercase tracking-wider text-slate-400">Federal Tax Credits</h2>
+                        
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div class="p-3 bg-slate-900/60 rounded-xl border border-slate-800 space-y-2">
+                                <div class="flex justify-between items-center">
+                                    <label class="text-xs text-slate-300 font-medium">Qualifying Children (CTC)</label>
+                                    <span id="childCreditTotal" class="text-xs font-bold text-emerald-400">Credit: $0</span>
+                                </div>
+                                <input type="number" id="childCount" value="0" min="0" max="10" oninput="calculateTax()" class="w-full bg-slate-900 border border-slate-700 rounded-lg py-2 px-3 text-sm text-white">
+                                <p class="text-[10px] text-slate-500">$2,000 credit per eligible child under 17.</p>
+                            </div>
+
+                            <div class="p-3 bg-slate-900/60 rounded-xl border border-slate-800 space-y-2">
+                                <div class="flex justify-between items-center">
+                                    <label class="text-xs text-slate-300 font-medium">Dependent Care</label>
+                                    <span id="depCareCreditTotal" class="text-xs font-bold text-emerald-400">Credit: $0</span>
+                                </div>
+                                <input type="number" id="depCareCount" value="0" min="0" max="5" oninput="calculateTax()" class="w-full bg-slate-900 border border-slate-700 rounded-lg py-2 px-3 text-sm text-white">
+                                <p class="text-[10px] text-slate-500">Child and Dependent Care Tax Credit allocation.</p>
+                            </div>
+
+                            <div id="evCreditCard" class="p-3 bg-slate-900/60 rounded-xl border border-slate-800 space-y-2 transition-all">
+                                <label class="text-xs text-slate-300 font-medium block">Clean Vehicle EV Credit</label>
+                                <select id="evCreditSelect" onchange="calculateTax()" class="w-full bg-slate-900 border border-slate-700 rounded-lg py-2 px-3 text-sm text-white focus:outline-none">
+                                    <option value="0">None / Ineligible ($0)</option>
+                                    <option value="4000">Used EV Credit ($4,000)</option>
+                                    <option value="7500">New Clean EV Credit ($7,500)</option>
+                                </select>
+                                <p id="evCreditNote" class="text-[10px] text-slate-500">Subject to income caps and vehicle eligibility.</p>
+                            </div>
+
+                            <div id="energyCreditCard" class="p-3 bg-slate-900/60 rounded-xl border border-slate-800 space-y-2 transition-all">
+                                <div class="flex justify-between items-center">
+                                    <label class="text-xs text-slate-300 font-medium">Residential Energy Credit</label>
+                                    <span id="homeEnergyCreditTotal" class="text-xs font-bold text-emerald-400">Credit: $0</span>
+                                </div>
+                                <input type="number" id="homeEnergyCredit" value="0" step="100" oninput="calculateTax()" class="w-full bg-slate-900 border border-slate-700 rounded-lg py-2 px-3 text-sm text-white">
+                                <p id="energyCreditNote" class="text-[10px] text-slate-500">Solar, heat pumps, energy efficient upgrades.</p>
+                            </div>
+                        </div>
+                    </section>
+                </div>
+
+                <!-- TAB 4: Budget and Information -->
+                <div id="tab-deductions" class="tab-content hidden space-y-6">
+                    <header class="text-center py-2">
+                        <h2 class="text-xl font-extrabold tracking-tight text-white">Budget and Deduction Reference</h2>
+                        <p class="text-xs text-slate-400 mt-1">Manage your planned budget and explore tax write-offs</p>
+                    </header>
+
+                    <!-- Sub-Tab Navigation -->
+                    <div class="flex bg-slate-800/80 p-1.5 rounded-xl border border-slate-700/50 overflow-x-auto mb-4">
+                        <button id="subtab-btn-budget" onclick="switchSubTab('budget')" class="subtab-btn flex-1 py-2 px-4 rounded-lg text-xs font-semibold transition-all text-brand-400 bg-brand-500/10 border border-brand-500/30 flex justify-center min-w-[120px]">Budget</button>
+                        <button id="subtab-btn-personal" onclick="switchSubTab('personal')" class="subtab-btn flex-1 py-2 px-4 rounded-lg text-xs font-semibold transition-all text-slate-400 hover:text-white hover:bg-slate-800 flex justify-center min-w-[120px]">INFO: Personal Deductions</button>
+                        <button id="subtab-btn-business" onclick="switchSubTab('business')" class="subtab-btn flex-1 py-2 px-4 rounded-lg text-xs font-semibold transition-all text-slate-400 hover:text-white hover:bg-slate-800 flex justify-center min-w-[120px]">INFO: Business Deductions</button>
+                    </div>
+
+                    <!-- Sub-Tab 1: Budget -->
+                    <div id="subtab-budget" class="subtab-content space-y-6">
+                        <!-- Budget tables injected via JS -->
+                    </div>
+
+                    <!-- Sub-Tab 2: Personal Deductions -->
+                    <div id="subtab-personal" class="subtab-content hidden">
+                        <div id="personalSectionContainer"></div>
+                    </div>
+
+                    <!-- Sub-Tab 3: Business Deductions -->
+                    <div id="subtab-business" class="subtab-content hidden">
+                        <div id="businessSectionContainer"></div>
+                    </div>
+                </div>
+
+            </main>
+
+            <!-- Results Summary Panel (Right Column) -->
+            <aside class="lg:col-span-5 space-y-6">
+                
+                <!-- Main Summary Card -->
+                <div class="bg-slate-800/80 p-2 rounded-2xl border border-slate-700 shadow-xl space-y-6 sticky top-6">
+                    <div class="flex items-center justify-between border-b border-slate-700/80 pb-1">
+                        <h2 class="text-base font-bold text-white">Tax Summary (<span id="statYearLabel">2026</span>)</h2>
+                        <span id="stat-effective-rate" class="text-xs font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-1 rounded-full">0.0% Effective Rate</span>
+                    </div>
+
+                    <!-- Doughnut Chart & Stacked Legend Section -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 items-center gap-4">
+                        <div class="relative h-44 flex items-center justify-center">
+                            <canvas id="incomePieChart"></canvas>
+                        </div>
+
+                        <!-- Dynamic Stacked Legend Panels -->
+                        <div id="legendContainer" class="flex flex-col gap-2 text-center text-xs">
+                            <div class="p-2 bg-slate-900/60 rounded-lg border border-slate-800">
+                                <span id="pieLegendLabel1" class="block text-[10px] text-slate-400">Deductions</span>
+                                <span id="pieLegendDeduct" class="font-bold text-blue-400">$0</span>
+                            </div>
+                            <div class="p-2 bg-slate-900/60 rounded-lg border border-slate-800">
+                                <span id="pieLegendLabel2" class="block text-[10px] text-slate-400">Estimated Federal Tax</span>
+                                <span id="pieLegendTax" class="font-bold text-amber-400">$0</span>
+                            </div>
+                            <!-- Estimated Take-Home Pay panel -->
+                            <div class="p-2 bg-emerald-500/10 border border-emerald-500/20 rounded-lg flex items-center justify-between text-left">
+                                <div>
+                                    <span id="takeHomeLegendTitle" class="text-[9px] uppercase font-bold tracking-wider text-emerald-400 block">Est. Take-Home Pay</span>
+                                    <span id="stat-take-home" class="text-sm font-black text-emerald-300">$0</span>
+                                </div>
+                                <div class="text-right ml-2">
+                                    <span id="takeHomeSubLabel" class="text-[9px] text-slate-400 block">Monthly</span>
+                                    <span id="stat-monthly-takehome" class="text-xs font-bold text-slate-200">$0</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Detailed Line Items -->
+                    <div class="space-y-2.5 text-xs pt-2 border-t border-slate-700/80">
+                        <div class="flex justify-between">
+                            <span class="text-slate-400">Gross Income:</span>
+                            <span id="stat-gross" class="font-semibold text-slate-200">$0</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-slate-400">Total Deductions (<span id="stat-deduction-type">Standard</span>):</span>
+                            <span id="stat-deductions" class="font-semibold text-blue-400">-$0</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-slate-400">Taxable Capital Gains:</span>
+                            <span id="stat-taxable-gains" class="font-semibold text-amber-300">$0</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-slate-400">Taxable Ordinary Income:</span>
+                            <span id="stat-taxable-ord" class="font-semibold text-slate-200">$0</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-slate-300">Total Taxable Income:</span>
+                            <span id="stat-taxable" class="font-semibold text-slate-200">$0</span>
+                        </div>
+                        <div id="stat-tax-before-credit-row" class="flex justify-between hidden">
+                            <span class="text-slate-300">Estimated Federal Tax (Before Credit):</span>
+                            <span id="stat-tax-before-credit" class="font-semibold text-amber-400">$0</span>
+                        </div>
+                        <div id="stat-credits-row" class="flex justify-between hidden">
+                            <span class="text-slate-300">Total Credit Amount:</span>
+                            <span id="stat-credits" class="font-semibold text-blue-400">-$0</span>
+                        </div>
+                        <div class="flex justify-between pt-2 border-t border-slate-800 text-sm">
+                            <span class="font-bold text-slate-300">Estimated Federal Tax:</span>
+                            <span id="stat-tax-owed" class="font-bold text-amber-400">$0</span>
+                        </div>
+                    </div>
+
+                    <!-- Progressive Bracket Breakdown -->
+                    <div class="space-y-3 pt-2">
+                        <h3 class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Progressive Bracket Breakdown</h3>
+                        <div id="bracketsContainer" class="space-y-2 max-h-96 overflow-y-auto pr-1">
+                            <!-- Dynamically generated bracket bars -->
+                        </div>
+                    </div>
+
+                </div>
+            </aside>
+
+        </div>
+    </div>
+
+    <!-- JavaScript Logic & Persistence Engine -->
+    <script>
+        // Track current active navigation tab and sub-tab
+        let currentTab = 'income';
+        let currentSubTab = 'budget';
+
+        // ==========================================
+        // TAX DEDUCTION REFERENCE DATA
+        // ==========================================
+        const taxData = [
+          {
+            sectionId: "personalSection",
+            containerId: "personalSectionContainer",
+            title: "Personal & Itemized Deductions",
+            subtitle: "Standard and itemized tax reductions for individual taxpayers",
+            theme: "indigo",
+            headerIcon: "fa-user-shield",
+            items: [
+              {
+                title: "Standard Deduction",
+                badge: "Flat Rate",
+                badgeStyle: "bg-slate-700 text-slate-300",
+                icon: "fa-scale-balanced",
+                description: "A flat reduction in taxable income determined automatically by your tax filing status."
+              },
+              {
+                title: "SALT Deduction",
+                badge: "Cap Limits",
+                badgeStyle: "bg-slate-700 text-slate-300",
+                icon: "fa-landmark",
+                description: "Deductible state income, sales, and local property taxes up to statutory limits."
+              },
+              {
+                title: "Mortgage Interest",
+                badge: "Primary/Sec",
+                badgeStyle: "bg-slate-700 text-slate-300",
+                icon: "fa-house-chimney",
+                description: "Interest paid on debt up to legal thresholds for primary and qualifying secondary homes."
+              },
+              {
+                title: "Vacation Home Expenses",
+                badge: "Rental >14d",
+                badgeStyle: "bg-slate-700 text-slate-300",
+                icon: "fa-umbrella-beach",
+                description: "Pro-rated property taxes, mortgage interest, plus rental management and depreciation if rented out."
+              },
+              {
+                title: "Charitable Contributions",
+                badge: "501(c)(3)",
+                badgeStyle: "bg-slate-700 text-slate-300",
+                icon: "fa-hand-holding-heart",
+                description: "Cash and non-cash donations made directly to qualified non-profit public charities."
+              },
+              {
+                title: "Medical & Dental",
+                badge: ">7.5% AGI",
+                badgeStyle: "bg-slate-700 text-slate-300",
+                icon: "fa-user-doctor",
+                description: "Unreimbursed medical, vision, and dental expenses exceeding 7.5% of Adjusted Gross Income."
+              },
+              {
+                title: "HSA Contributions",
+                badge: "Above line",
+                badgeStyle: "bg-indigo-950 text-indigo-300",
+                icon: "fa-heart-pulse",
+                description: "Above-the-line deduction for contributions made to an HSA when enrolled in an HDHP."
+              },
+              {
+                title: "Student Loan Interest",
+                badge: "Max $2,500",
+                badgeStyle: "bg-slate-700 text-slate-300",
+                icon: "fa-graduation-cap",
+                description: "Above-the-line deduction of up to $2,500 for interest paid on qualified higher education loans."
+              },
+              {
+                title: "Educator Expenses",
+                badge: "Max $300",
+                badgeStyle: "bg-slate-700 text-slate-300",
+                icon: "fa-chalkboard-user",
+                description: "Out-of-pocket expenses up to $300 for teachers purchasing classroom supplies."
+              }
+            ]
+          },
+          {
+            sectionId: "businessSection",
+            containerId: "businessSectionContainer",
+            title: "Business & Self-Employment Deductions",
+            subtitle: "Operational tax write-offs for sole proprietors, LLCs, and corporations",
+            theme: "emerald",
+            headerIcon: "fa-briefcase",
+            items: [
+              {
+                title: "Business Travel",
+                badge: "Out-of-town",
+                badgeStyle: "bg-emerald-950 text-emerald-300",
+                icon: "fa-plane-departure",
+                description: "Airfare, train tickets, lodging, rental cars, and rideshares for out-of-town business operations."
+              },
+              {
+                title: "Car & Vehicle Travel",
+                badge: "Standard / Actual",
+                badgeStyle: "bg-slate-700 text-slate-300",
+                icon: "fa-car",
+                description: "Driving costs calculated via IRS Standard Mileage Rate or actual costs (gas, insurance, lease, depreciation)."
+              },
+              {
+                title: "Private Jet & Aviation",
+                badge: "Sec 179 / Bonus",
+                badgeStyle: "bg-slate-700 text-slate-300",
+                icon: "fa-plane",
+                description: "Flight operations, fuel, pilot pay, hangar fees, and depreciation proportional to verified business use."
+              },
+              {
+                title: "Home Office",
+                badge: "Exclusive Use",
+                badgeStyle: "bg-slate-700 text-slate-300",
+                icon: "fa-house-laptop",
+                description: "Expenses for a dedicated home space used regularly and exclusively as your principal place of business."
+              },
+              {
+                title: "Business Meals",
+                badge: "50% Limit",
+                badgeStyle: "bg-slate-700 text-slate-300",
+                icon: "fa-utensils",
+                description: "50% deduction for meals and beverages incurred during client meetings or business travel."
+              },
+              {
+                title: "Self-Employed Health Ins.",
+                badge: "100% Write-off",
+                badgeStyle: "bg-emerald-950 text-emerald-300",
+                icon: "fa-shield-halved",
+                description: "100% deduction of health, dental, and qualified long-term care premiums for business owners."
+              },
+              {
+                title: "Retirement Plans",
+                badge: "SEP / Solo 401k",
+                badgeStyle: "bg-slate-700 text-slate-300",
+                icon: "fa-piggy-bank",
+                description: "Contributions to self-employed accounts like SEP-IRAs, SIMPLE IRAs, or Solo 401(k) plans."
+              },
+              {
+                title: "QBI Deduction",
+                badge: "Up to 20%",
+                badgeStyle: "bg-slate-700 text-slate-300",
+                icon: "fa-chart-pie",
+                description: "Up to a 20% deduction on qualified business income for eligible pass-through entities."
+              },
+              {
+                title: "Depreciation & Sec 179",
+                badge: "Immediate Write-off",
+                badgeStyle: "bg-slate-700 text-slate-300",
+                icon: "fa-boxes-stacked",
+                description: "Accelerated depreciation and Section 179 expensing for equipment, software, and machinery."
+              }
+            ]
+          }
+        ];
+
+        function renderTaxSections() {
+          taxData.forEach(section => {
+            const container = document.getElementById(section.containerId);
+            if (!container) return;
+
+            const isIndigo = section.theme === 'indigo';
+            const themeClasses = {
+              bgIcon: isIndigo ? 'bg-indigo-950/50 border-indigo-800/50 text-indigo-400' : 'bg-emerald-950/50 border-emerald-800/50 text-emerald-400',
+              badge: isIndigo ? 'bg-indigo-950/80 text-indigo-400 border-indigo-900' : 'bg-emerald-950/80 text-emerald-400 border-emerald-900',
+              cardIcon: isIndigo ? 'bg-indigo-900/30 text-indigo-400' : 'bg-emerald-900/30 text-emerald-400',
+              hoverText: isIndigo ? 'group-hover:text-indigo-400' : 'group-hover:text-emerald-400'
+            };
+
+            let html = `
+              <section id="${section.sectionId}" class="section-container bg-slate-800/40 rounded-2xl p-5 sm:p-6 border border-slate-700/50 shadow-sm transition-all">
+                  <div class="flex items-center justify-between border-b border-slate-700/80 pb-4 mb-5">
+                      <div class="flex items-center gap-3">
+                          <div class="w-9 h-9 rounded-xl ${themeClasses.bgIcon} border flex items-center justify-center shadow-2xs">
+                              <i class="fa-solid ${section.headerIcon} text-sm"></i>
+                          </div>
+                          <div>
+                              <h2 class="text-base sm:text-lg font-bold text-white">${section.title}</h2>
+                              <p class="text-[11px] text-slate-400">${section.subtitle}</p>
+                          </div>
+                      </div>
+                      <span class="text-xs px-2.5 py-0.5 rounded-full ${themeClasses.badge} font-semibold border">${section.items.length} Items</span>
+                  </div>
+
+                  <div class="deduction-grid grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5">
+            `;
+
+            section.items.forEach(item => {
+              html += `
+                      <div class="deduction-card group p-3.5 rounded-xl border border-slate-700/50 bg-slate-900/60 hover:bg-slate-900 hover:border-slate-600 hover:shadow-sm transition-all duration-200">
+                          <div class="flex items-start gap-3">
+                              <div class="w-7 h-7 rounded-lg ${themeClasses.cardIcon} flex items-center justify-center shrink-0 text-xs mt-0.5">
+                                  <i class="fa-solid ${item.icon}"></i>
+                              </div>
+                              <div class="space-y-1">
+                                  <div class="flex items-center justify-between gap-2">
+                                      <h3 class="text-xs font-semibold text-slate-100 ${themeClasses.hoverText} transition-colors">${item.title}</h3>
+                                      <span class="text-[10px] px-1.5 py-0.2 ${item.badgeStyle} rounded font-medium">${item.badge}</span>
+                                  </div>
+                                  <p class="text-[11px] leading-relaxed text-slate-400">${item.description}</p>
+                              </div>
+                          </div>
+                      </div>
+              `;
+            });
+
+            html += `
+                  </div>
+              </section>
+            `;
+
+            container.innerHTML = html;
+          });
+        }
+
+        // ==========================================
+        // TAX DATA CONFIGURATION (2024, 2025, 2026)
+        // ==========================================
+        const YEARLY_TAX_DATA = {
+            2024: {
+                standardDeduction: { single: 14600, mfj: 29200, mfs: 14600, hoh: 21900 },
+                homeExclusion: { single: 250000, mfj: 500000, mfs: 250000, hoh: 250000 },
+                ltcgBrackets: {
+                    single: { cap0: 47025, cap15: 518900 },
+                    mfj: { cap0: 94050, cap15: 583750 },
+                    mfs: { cap0: 47025, cap15: 291850 },
+                    hoh: { cap0: 63000, cap15: 551350 }
+                },
+                brackets: {
+                    single: [
+                        { min: 0, max: 11600, rate: 0.10 },
+                        { min: 11600, max: 47150, rate: 0.12 },
+                        { min: 47150, max: 100525, rate: 0.22 },
+                        { min: 100525, max: 191950, rate: 0.24 },
+                        { min: 191950, max: 243725, rate: 0.32 },
+                        { min: 243725, max: 609350, rate: 0.35 },
+                        { min: 609350, max: Infinity, rate: 0.37 }
+                    ],
+                    mfj: [
+                        { min: 0, max: 23200, rate: 0.10 },
+                        { min: 23200, max: 94300, rate: 0.12 },
+                        { min: 94300, max: 201050, rate: 0.22 },
+                        { min: 201050, max: 383900, rate: 0.24 },
+                        { min: 383900, max: 487450, rate: 0.32 },
+                        { min: 487450, max: 731200, rate: 0.35 },
+                        { min: 731200, max: Infinity, rate: 0.37 }
+                    ],
+                    mfs: [
+                        { min: 0, max: 11600, rate: 0.10 },
+                        { min: 11600, max: 47150, rate: 0.12 },
+                        { min: 47150, max: 100525, rate: 0.22 },
+                        { min: 100525, max: 191950, rate: 0.24 },
+                        { min: 191950, max: 243725, rate: 0.32 },
+                        { min: 243725, max: 365600, rate: 0.35 },
+                        { min: 365600, max: Infinity, rate: 0.37 }
+                    ],
+                    hoh: [
+                        { min: 0, max: 16550, rate: 0.10 },
+                        { min: 16550, max: 63100, rate: 0.12 },
+                        { min: 63100, max: 100500, rate: 0.22 },
+                        { min: 100500, max: 191950, rate: 0.24 },
+                        { min: 191950, max: 243700, rate: 0.32 },
+                        { min: 243700, max: 609350, rate: 0.35 },
+                        { min: 609350, max: Infinity, rate: 0.37 }
+                    ]
+                }
+            },
+            2025: {
+                standardDeduction: { single: 15000, mfj: 30000, mfs: 15000, hoh: 22500 },
+                homeExclusion: { single: 250000, mfj: 500000, mfs: 250000, hoh: 250000 },
+                ltcgBrackets: {
+                    single: { cap0: 48350, cap15: 533400 },
+                    mfj: { cap0: 96700, cap15: 600050 },
+                    mfs: { cap0: 48350, cap15: 300025 },
+                    hoh: { cap0: 64750, cap15: 566700 }
+                },
+                brackets: {
+                    single: [
+                        { min: 0, max: 11925, rate: 0.10 },
+                        { min: 11925, max: 48475, rate: 0.12 },
+                        { min: 48475, max: 103350, rate: 0.22 },
+                        { min: 103350, max: 197300, rate: 0.24 },
+                        { min: 197300, max: 250525, rate: 0.32 },
+                        { min: 250525, max: 626350, rate: 0.35 },
+                        { min: 626350, max: Infinity, rate: 0.37 }
+                    ],
+                    mfj: [
+                        { min: 0, max: 23850, rate: 0.10 },
+                        { min: 23850, max: 96950, rate: 0.12 },
+                        { min: 96950, max: 206700, rate: 0.22 },
+                        { min: 206700, max: 394600, rate: 0.24 },
+                        { min: 394600, max: 501050, rate: 0.32 },
+                        { min: 501050, max: 751600, rate: 0.35 },
+                        { min: 751600, max: Infinity, rate: 0.37 }
+                    ],
+                    mfs: [
+                        { min: 0, max: 11925, rate: 0.10 },
+                        { min: 11925, max: 48475, rate: 0.12 },
+                        { min: 48475, max: 103350, rate: 0.22 },
+                        { min: 103350, max: 197300, rate: 0.24 },
+                        { min: 197300, max: 250525, rate: 0.32 },
+                        { min: 250525, max: 375800, rate: 0.35 },
+                        { min: 375800, max: Infinity, rate: 0.37 }
+                    ],
+                    hoh: [
+                        { min: 0, max: 17000, rate: 0.10 },
+                        { min: 17000, max: 64850, rate: 0.12 },
+                        { min: 64850, max: 103350, rate: 0.22 },
+                        { min: 103350, max: 197300, rate: 0.24 },
+                        { min: 197300, max: 250500, rate: 0.32 },
+                        { min: 250500, max: 626350, rate: 0.35 },
+                        { min: 626350, max: Infinity, rate: 0.37 }
+                    ]
+                }
+            },
+            2026: {
+                standardDeduction: { single: 15700, mfj: 31400, mfs: 15700, hoh: 23550 },
+                homeExclusion: { single: 250000, mfj: 500000, mfs: 250000, hoh: 250000 },
+                ltcgBrackets: {
+                    single: { cap0: 50000, cap15: 550000 },
+                    mfj: { cap0: 100000, cap15: 620000 },
+                    mfs: { cap0: 50000, cap15: 310000 },
+                    hoh: { cap0: 67000, cap15: 585000 }
+                },
+                brackets: {
+                    single: [
+                        { min: 0, max: 12400, rate: 0.10 },
+                        { min: 12400, max: 50400, rate: 0.12 },
+                        { min: 50400, max: 107500, rate: 0.22 },
+                        { min: 107500, max: 205000, rate: 0.24 },
+                        { min: 205000, max: 260000, rate: 0.32 },
+                        { min: 260000, max: 650000, rate: 0.35 },
+                        { min: 650000, max: Infinity, rate: 0.37 }
+                    ],
+                    mfj: [
+                        { min: 0, max: 24800, rate: 0.10 },
+                        { min: 24800, max: 100800, rate: 0.12 },
+                        { min: 100800, max: 215000, rate: 0.22 },
+                        { min: 215000, max: 410000, rate: 0.24 },
+                        { min: 410000, max: 520000, rate: 0.32 },
+                        { min: 520000, max: 780000, rate: 0.35 },
+                        { min: 780000, max: Infinity, rate: 0.37 }
+                    ],
+                    mfs: [
+                        { min: 0, max: 12400, rate: 0.10 },
+                        { min: 12400, max: 50400, rate: 0.12 },
+                        { min: 50400, max: 107500, rate: 0.22 },
+                        { min: 107500, max: 205000, rate: 0.24 },
+                        { min: 205000, max: 260000, rate: 0.32 },
+                        { min: 260000, max: 390000, rate: 0.35 },
+                        { min: 390000, max: Infinity, rate: 0.37 }
+                    ],
+                    hoh: [
+                        { min: 0, max: 17700, rate: 0.10 },
+                        { min: 17700, max: 67450, rate: 0.12 },
+                        { min: 67450, max: 107500, rate: 0.22 },
+                        { min: 107500, max: 205000, rate: 0.24 },
+                        { min: 205000, max: 260000, rate: 0.32 },
+                        { min: 260000, max: 650000, rate: 0.35 },
+                        { min: 650000, max: Infinity, rate: 0.37 }
+                    ]
+                }
+            }
+        };
+
+        let currentYear = 2026;
+
+        // ==========================================
+        // LOCAL STORAGE PERSISTENCE ENGINE
+        // ==========================================
+        const STORAGE_KEY = 'us_tax_calculator_state';
+
+        function saveState() {
+            const state = {
+                currentYear: currentYear,
+                filingStatus: document.querySelector('input[name="filingStatus"]:checked')?.value || 'single',
+                grossIncome: document.getElementById('grossIncomeInput')?.value || '100000',
+                k401: document.getElementById('k401Input')?.value || '0',
+                ira: document.getElementById('iraInput')?.value || '0',
+                hsa: document.getElementById('hsaInput')?.value || '0',
+                studentLoan: document.getElementById('studentLoanInput')?.value || '0',
+                deductionChoice: document.getElementById('deductionChoice')?.value || 'auto',
+                salt: document.getElementById('saltInput')?.value || '0',
+                mortgage: document.getElementById('mortgageInput')?.value || '0',
+                carInterest: document.getElementById('carInterestInput')?.value || '0',
+                charity: document.getElementById('charityInput')?.value || '0',
+                medical: document.getElementById('medicalInput')?.value || '0',
+                vacationInput: document.getElementById('vacationInput')?.value || '0',
+                enableStockSale: document.getElementById('enableStockSale')?.checked || false,
+                stockProceeds1: document.getElementById('stockProceeds1')?.value || '30000',
+                stockProceeds2: document.getElementById('stockProceeds2')?.value || '0',
+                stockBasis1: document.getElementById('stockBasis1')?.value || '12000',
+                stockBasis2: document.getElementById('stockBasis2')?.value || '0',
+                enableHomeSale: document.getElementById('enableHomeSale')?.checked || false,
+                homeSalePrice: document.getElementById('homeSalePrice')?.value || '650000',
+                homePurchasePrice: document.getElementById('homePurchasePrice')?.value || '300000',
+                homeImprovements: document.getElementById('homeImprovements')?.value || '50000',
+                home2of5Rule: document.getElementById('home2of5Rule')?.checked || false,
+                childCount: document.getElementById('childCount')?.value || '0',
+                depCareCount: document.getElementById('depCareCount')?.value || '0',
+                evCreditSelect: document.getElementById('evCreditSelect')?.value || '0',
+                homeEnergyCredit: document.getElementById('homeEnergyCredit')?.value || '0'
+            };
+            try {
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+            } catch (e) {
+                console.error('Failed to save state to localStorage:', e);
+            }
+        }
+
+        function loadState() {
+            try {
+                const saved = localStorage.getItem(STORAGE_KEY);
+                if (!saved) return false;
+                const state = JSON.parse(saved);
+
+                if (state.currentYear) currentYear = Number(state.currentYear);
+
+                if (state.filingStatus) {
+                    const radio = document.querySelector(`input[name="filingStatus"][value="${state.filingStatus}"]`);
+                    if (radio) radio.checked = true;
+                }
+
+                const setVal = (id, val) => {
+                    const el = document.getElementById(id);
+                    if (el && val !== undefined) el.value = val;
+                };
+
+                const setCheck = (id, val) => {
+                    const el = document.getElementById(id);
+                    if (el && val !== undefined) el.checked = Boolean(val);
+                };
+
+                setVal('grossIncomeInput', state.grossIncome);
+                setVal('grossIncomeSlider', state.grossIncome);
+                setVal('k401Input', state.k401);
+                setVal('iraInput', state.ira);
+                setVal('hsaInput', state.hsa);
+                setVal('studentLoanInput', state.studentLoan);
+                setVal('deductionChoice', state.deductionChoice);
+                setVal('saltInput', state.salt);
+                setVal('mortgageInput', state.mortgage);
+                setVal('charityInput', state.charity);
+                setVal('medicalInput', state.medical);
+                setVal('vacationInput', state.vacationInput);
+
+                setCheck('enableStockSale', state.enableStockSale);
+                setVal('stockProceeds1', state.stockProceeds1);
+                setVal('stockProceeds2', state.stockProceeds2);
+                setVal('stockBasis1', state.stockBasis1);
+                setVal('stockBasis2', state.stockBasis2);
+
+                setCheck('enableHomeSale', state.enableHomeSale);
+                setVal('homeSalePrice', state.homeSalePrice);
+                setVal('homePurchasePrice', state.homePurchasePrice);
+                setVal('homeImprovements', state.homeImprovements);
+                setCheck('home2of5Rule', state.home2of5Rule);
+
+                setVal('childCount', state.childCount);
+                setVal('depCareCount', state.depCareCount);
+                setVal('evCreditSelect', state.evCreditSelect);
+                setVal('homeEnergyCredit', state.homeEnergyCredit);
+
+                return true;
+            } catch (e) {
+                console.error('Failed to load state from localStorage:', e);
+                return false;
+            }
+        }
+
+        // ==========================================
+        // UI INTERACTION HANDLERS
+        // ==========================================
+        function setTaxYear(year) {
+            currentYear = year;
+            document.querySelectorAll('.year-select-btn').forEach(btn => {
+                btn.className = "year-select-btn py-2 px-3 rounded-lg text-xs font-bold transition-all text-slate-300 hover:text-white hover:bg-slate-800";
+            });
+            const activeBtn = document.getElementById(`yearBtn${year}`);
+            if (activeBtn) {
+                activeBtn.className = "year-select-btn py-2 px-3 rounded-lg border border-brand-500 bg-brand-600 text-white text-xs font-bold shadow-sm transition-all";
+            }
+
+            const data = YEARLY_TAX_DATA[year];
+            if (data) {
+                document.getElementById('fsSingleSub').textContent = `Std: $${data.standardDeduction.single.toLocaleString()}`;
+                document.getElementById('fsMfjSub').textContent = `Std: $${data.standardDeduction.mfj.toLocaleString()}`;
+                document.getElementById('fsMfsSub').textContent = `Std: $${data.standardDeduction.mfs.toLocaleString()}`;
+                document.getElementById('fsHohSub').textContent = `Std: $${data.standardDeduction.hoh.toLocaleString()}`;
+            }
+
+            calculateTax();
+        }
+
+        function switchTab(tabName) {
+            currentTab = tabName;
+            document.querySelectorAll('.tab-content').forEach(tab => tab.classList.add('hidden'));
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.className = "tab-btn flex-1 py-2.5 px-4 rounded-lg text-xs font-semibold transition-all text-slate-400 hover:text-white hover:bg-slate-800 flex items-center justify-center gap-2 min-w-[120px]";
+            });
+
+            document.getElementById(`tab-${tabName}`)?.classList.remove('hidden');
+            const activeTabBtn = document.getElementById(`tab-btn-${tabName}`);
+            if (activeTabBtn) {
+                activeTabBtn.className = "tab-btn flex-1 py-2.5 px-4 rounded-lg text-xs font-semibold transition-all text-brand-400 bg-brand-500/10 border border-brand-500/30 flex items-center justify-center gap-2 min-w-[120px]";
+            }
+            calculateTax();
+        }
+
+        function switchSubTab(subTabName) {
+            currentSubTab = subTabName;
+            document.querySelectorAll('.subtab-content').forEach(tab => tab.classList.add('hidden'));
+            document.querySelectorAll('.subtab-btn').forEach(btn => {
+                btn.className = "subtab-btn flex-1 py-2 px-4 rounded-lg text-xs font-semibold transition-all text-slate-400 hover:text-white hover:bg-slate-800 flex justify-center min-w-[120px]";
+            });
+
+            document.getElementById(`subtab-${subTabName}`)?.classList.remove('hidden');
+            const activeBtn = document.getElementById(`subtab-btn-${subTabName}`);
+            if (activeBtn) {
+                activeBtn.className = "subtab-btn flex-1 py-2 px-4 rounded-lg text-xs font-semibold transition-all text-brand-400 bg-brand-500/10 border border-brand-500/30 flex justify-center min-w-[120px]";
+            }
+            calculateTax();
+        }
+
+        function syncIncomeFromNumber(val) {
+            document.getElementById('grossIncomeSlider').value = val;
+            calculateTax();
+        }
+
+        function syncIncomeFromSlider(val) {
+            document.getElementById('grossIncomeInput').value = val;
+            calculateTax();
+        }
+
+        function setIncomePreset(val) {
+            document.getElementById('grossIncomeInput').value = val;
+            document.getElementById('grossIncomeSlider').value = val;
+            calculateTax();
+        }
+
+        function toggleStockFields() {
+            const enabled = document.getElementById('enableStockSale').checked;
+            const container = document.getElementById('stockFields');
+            if (enabled) {
+                container.classList.remove('opacity-50', 'pointer-events-none');
+            } else {
+                container.classList.add('opacity-50', 'pointer-events-none');
+            }
+        }
+
+        function toggleHomeFields() {
+            const enabled = document.getElementById('enableHomeSale').checked;
+            const container = document.getElementById('homeFields');
+            if (enabled) {
+                container.classList.remove('opacity-50', 'pointer-events-none');
+            } else {
+                container.classList.add('opacity-50', 'pointer-events-none');
+            }
+        }
+
+        // Helper function to calculate tax on long-term capital gains
+        function calculateLTCGTaxForGain(gain, startIncome, ltcgCaps) {
+            if (gain <= 0) return 0;
+            let tax = 0;
+            let remaining = gain;
+            let currentBase = startIncome;
+
+            // 0% Tier
+            if (currentBase < ltcgCaps.cap0) {
+                const spaceIn0 = ltcgCaps.cap0 - currentBase;
+                const taxedAt0 = Math.min(remaining, spaceIn0);
+                remaining -= taxedAt0;
+                currentBase += taxedAt0;
+            }
+
+            // 15% Tier
+            if (remaining > 0 && currentBase < ltcgCaps.cap15) {
+                const spaceIn15 = ltcgCaps.cap15 - currentBase;
+                const taxedAt15 = Math.min(remaining, spaceIn15);
+                tax += taxedAt15 * 0.15;
+                remaining -= taxedAt15;
+                currentBase += taxedAt15;
+            }
+
+            // 20% Tier
+            if (remaining > 0) {
+                tax += remaining * 0.20;
+            }
+
+            return tax;
+        }
+
+        // Helper function to sum yearly totals from budget tables
+        function getBudgetTotals() {
+            let grandTotalYr = 0;
+            mainBudgetCategories.forEach(cat => {
+                cat.items.forEach(item => {
+                    const yrVal = parseFloat(document.getElementById(`${item.id}-yr`)?.value) || 0;
+                    grandTotalYr += yrVal;
+                });
+            });
+
+            let interestTotalYr = 0;
+            interestBudgetCategories.forEach(cat => {
+                cat.items.forEach(item => {
+                    const yrVal = parseFloat(document.getElementById(`${item.id}-yr`)?.value) || 0;
+                    interestTotalYr += yrVal;
+                });
+            });
+
+            return { grandTotalYr, interestTotalYr };
+        }
+
+        // ==========================================
+        // TAX CALCULATION ENGINE
+        // ==========================================
+        function calculateTax() {
+            const data = YEARLY_TAX_DATA[currentYear];
+            if (!data) return;
+
+            const evSelect = document.getElementById('evCreditSelect');
+            const evCard = document.getElementById('evCreditCard');
+            const evNote = document.getElementById('evCreditNote');
+            const energyInput = document.getElementById('homeEnergyCredit');
+            const energyCard = document.getElementById('energyCreditCard');
+            const energyNote = document.getElementById('energyCreditNote');
+
+            if (currentYear >= 2026) {
+                evSelect.disabled = true;
+                evSelect.value = "0";
+                evCard.classList.add('opacity-50');
+                evNote.textContent = "Credit expired for tax year 2026+.";
+
+                energyInput.disabled = true;
+                energyInput.value = "0";
+                energyCard.classList.add('opacity-50');
+                energyNote.textContent = "Credit expired for tax year 2026+.";
+            } else {
+                evSelect.disabled = false;
+                evCard.classList.remove('opacity-50');
+                evNote.textContent = "Subject to income caps and vehicle eligibility.";
+
+                energyInput.disabled = false;
+                energyCard.classList.remove('opacity-50');
+                energyNote.textContent = "Solar, heat pumps, energy efficient upgrades.";
+            }
+
+            const filingStatus = document.querySelector('input[name="filingStatus"]:checked')?.value || 'single';
+            const gross = parseFloat(document.getElementById('grossIncomeInput').value) || 0;
+
+            const k401 = parseFloat(document.getElementById('k401Input').value) || 0;
+            const ira = parseFloat(document.getElementById('iraInput').value) || 0;
+            const hsa = parseFloat(document.getElementById('hsaInput').value) || 0;
+            const studentLoan = parseFloat(document.getElementById('studentLoanInput').value) || 0;
+            const aboveLineDeductions = k401 + ira + hsa + studentLoan;
+
+            document.getElementById('totalAboveLineDisplay').textContent = `-$${aboveLineDeductions.toLocaleString()}`;
+
+            const agi = Math.max(0, gross - aboveLineDeductions);
+
+            // Deductions Logic
+            const stdDeduct = data.standardDeduction[filingStatus];
+            const salt = Math.min(10000, parseFloat(document.getElementById('saltInput')?.value) || 0);
+            const mortgage = parseFloat(document.getElementById('mortgageInput')?.value) || 0;
+            const carInterest = parseFloat(document.getElementById('carInterestInput')?.value) || 0;
+            const charity = parseFloat(document.getElementById('charityInput')?.value) || 0;
+            const medicalRaw = parseFloat(document.getElementById('medicalInput')?.value) || 0;
+            const medicalDeductible = Math.max(0, medicalRaw - (agi * 0.075));
+            const vacationHome = parseFloat(document.getElementById('vacationInput')?.value) || 0;
+
+            const totalItemized = salt + mortgage + carInterest + charity + medicalDeductible + vacationHome;
+            const choice = document.getElementById('deductionChoice').value;
+
+            let finalDeduction = stdDeduct;
+            let deductionType = 'Standard';
+
+            if (choice === 'itemized' || (choice === 'auto' && totalItemized > stdDeduct)) {
+                finalDeduction = totalItemized;
+                deductionType = 'Itemized';
+            }
+
+            document.getElementById('stdDeductionVal').textContent = `$${stdDeduct.toLocaleString()}`;
+            document.getElementById('itemizedDeductionVal').textContent = `$${totalItemized.toLocaleString()}`;
+
+            const totalBar = stdDeduct + totalItemized || 1;
+            document.getElementById('stdBar').style.width = `${(stdDeduct / totalBar) * 100}%`;
+            document.getElementById('itemBar').style.width = `${(totalItemized / totalBar) * 100}%`;
+
+            // Stock Capital Gains
+            let ltcg = 0; // Long term
+            let stcg = 0; // Short term
+
+            if (document.getElementById('enableStockSale').checked) {
+                const proceeds1 = parseFloat(document.getElementById('stockProceeds1').value) || 0;
+                const basis1 = parseFloat(document.getElementById('stockBasis1').value) || 0;
+                const proceeds2 = parseFloat(document.getElementById('stockProceeds2').value) || 0;
+                const basis2 = parseFloat(document.getElementById('stockBasis2').value) || 0;
+
+                ltcg = Math.max(0, proceeds1 - basis1);
+                stcg = Math.max(0, proceeds2 - basis2);
+            }
+
+            const totalStockGain = ltcg + stcg;
+            document.getElementById('stockGainDisplay').textContent = `$${totalStockGain.toLocaleString()} Net Gain`;
+
+            // Home Capital Gain Exclusion
+            let homeTaxableGain = 0;
+            if (document.getElementById('enableHomeSale').checked) {
+                const sale = parseFloat(document.getElementById('homeSalePrice').value) || 0;
+                const purchase = parseFloat(document.getElementById('homePurchasePrice').value) || 0;
+                const improve = parseFloat(document.getElementById('homeImprovements').value) || 0;
+                const rawGain = Math.max(0, sale - (purchase + improve));
+                const exclusionCap = data.homeExclusion[filingStatus];
+                const meetsRule = document.getElementById('home2of5Rule').checked;
+                const exclusion = meetsRule ? Math.min(rawGain, exclusionCap) : 0;
+
+                homeTaxableGain = Math.max(0, rawGain - exclusion);
+
+                document.getElementById('homeRawGain').textContent = `$${rawGain.toLocaleString()}`;
+                document.getElementById('homeExclusionVal').textContent = `-$${exclusion.toLocaleString()}`;
+                document.getElementById('homeTaxableGain').textContent = `$${homeTaxableGain.toLocaleString()}`;
+            }
+
+            const baseTaxableOrdinaryIncome = Math.max(0, agi - finalDeduction);
+            const taxableOrdinaryIncome = baseTaxableOrdinaryIncome + stcg;
+            const totalTaxableLtcg = ltcg + homeTaxableGain;
+            const totalCapitalGains = stcg + totalTaxableLtcg;
+            const totalTaxableIncome = baseTaxableOrdinaryIncome + totalCapitalGains;
+
+            // Progressive Ordinary Tax Brackets
+            let ordinaryTaxOwed = 0;
+            let baseOrdinaryTaxOwed = 0;
+            let marginalRate = 0;
+            const brackets = data.brackets[filingStatus];
+            const container = document.getElementById('bracketsContainer');
+            container.innerHTML = '';
+
+            brackets.forEach(b => {
+                if (taxableOrdinaryIncome > b.min) {
+                    const taxableInBracket = Math.min(taxableOrdinaryIncome, b.max) - b.min;
+                    const bracketTax = taxableInBracket * b.rate;
+                    ordinaryTaxOwed += bracketTax;
+                    marginalRate = b.rate;
+
+                    const percentFilled = b.max === Infinity 
+                        ? 100 
+                        : Math.min(100, Math.max(0, ((taxableOrdinaryIncome - b.min) / (b.max - b.min)) * 100));
+
+                    container.innerHTML += `
+                        <div class="space-y-1">
+                            <div class="flex justify-between text-[11px] font-medium text-slate-300">
+                                <span>${(b.rate * 100).toFixed(0)}% Bracket ($${b.min.toLocaleString()} - ${b.max === Infinity ? '∞' : '$' + b.max.toLocaleString()})</span>
+                                <span class="font-bold text-amber-400">$${bracketTax.toLocaleString(undefined, {maximumFractionDigits: 0})}</span>
+                            </div>
+                            <div class="w-full bg-slate-900 rounded-full h-1.5 overflow-hidden">
+                                <div class="bg-amber-500 h-full transition-all duration-300" style="width: ${percentFilled}%"></div>
+                            </div>
+                        </div>
+                    `;
+                }
+
+                if (baseTaxableOrdinaryIncome > b.min) {
+                    const baseTaxableInBracket = Math.min(baseTaxableOrdinaryIncome, b.max) - b.min;
+                    baseOrdinaryTaxOwed += baseTaxableInBracket * b.rate;
+                }
+            });
+
+            const stcgTaxOwed = Math.max(0, ordinaryTaxOwed - baseOrdinaryTaxOwed);
+
+            if (stcg > 0) {
+                container.innerHTML += `
+                    <div class="space-y-1 pt-1 border-t border-slate-800">
+                        <div class="flex justify-between text-[11px] font-medium text-amber-300">
+                            <span class="text-red-400">Short-Term Capital Gains Tax (&le;1 Yr)</span>
+                            <span class="font-bold text-red-400">$${stcgTaxOwed.toLocaleString(undefined, {maximumFractionDigits: 0})}</span>
+                        </div>
+                    </div>
+                `;
+            }
+
+            const ltcgCaps = data.ltcgBrackets[filingStatus];
+            const stockLtcgTaxOwed = calculateLTCGTaxForGain(ltcg, taxableOrdinaryIncome, ltcgCaps);
+            const homeTaxOwed = calculateLTCGTaxForGain(homeTaxableGain, taxableOrdinaryIncome + ltcg, ltcgCaps);
+            const ltcgTaxOwed = stockLtcgTaxOwed + homeTaxOwed;
+
+            if (stockLtcgTaxOwed > 0 || ltcg > 0) {
+                container.innerHTML += `
+                    <div class="space-y-1 pt-1 border-t border-slate-800">
+                        <div class="flex justify-between text-[11px] font-medium text-emerald-300">
+                            <span class="text-red-400">Long-Term Capital Gains Tax (>1 Yr)</span>
+                            <span class="font-bold text-red-400">$${stockLtcgTaxOwed.toLocaleString(undefined, {maximumFractionDigits: 0})}</span>
+                        </div>
+                    </div>
+                `;
+            }
+
+            if (homeTaxableGain > 0) {
+                container.innerHTML += `
+                    <div class="space-y-1 pt-1 border-t border-slate-800">
+                        <div class="flex justify-between text-[11px] font-medium text-emerald-400">
+                            <span class="text-red-400">Primary Home Sale Capital Gain Tax</span>
+                            <span class="font-bold text-red-400">$${homeTaxOwed.toLocaleString(undefined, {maximumFractionDigits: 0})}</span>
+                        </div>
+                    </div>
+                `;
+            }
+
+            const totalTaxOwedBeforeCredits = ordinaryTaxOwed + ltcgTaxOwed;
+
+            // Credits Calculation
+            const childCount = parseInt(document.getElementById('childCount').value) || 0;
+            const depCareCount = parseInt(document.getElementById('depCareCount').value) || 0;
+            const childCredit = childCount * 2000;
+            const depCareCredit = depCareCount * 1000;
+            const evCredit = parseFloat(document.getElementById('evCreditSelect').value) || 0;
+            const energyCredit = parseFloat(document.getElementById('homeEnergyCredit').value) || 0;
+
+            document.getElementById('childCreditTotal').textContent = `Credit: $${childCredit.toLocaleString()}`;
+            document.getElementById('depCareCreditTotal').textContent = `Credit: $${depCareCredit.toLocaleString()}`;
+            document.getElementById('homeEnergyCreditTotal').textContent = `Credit: $${energyCredit.toLocaleString()}`;
+
+            const totalCredits = childCredit + depCareCredit + evCredit + energyCredit;
+            const finalTaxOwed = Math.max(0, totalTaxOwedBeforeCredits - totalCredits);
+            const totalGrossIncome = gross + totalStockGain + homeTaxableGain;
+            const takeHome = Math.max(0, totalGrossIncome - finalTaxOwed);
+            const effectiveRate = totalGrossIncome > 0 ? (finalTaxOwed / totalGrossIncome) * 100 : 0;
+
+            // Summary UI Update
+            document.getElementById('stat-gross').textContent = `$${gross.toLocaleString()}`;
+            document.getElementById('stat-deductions').textContent = `-$${finalDeduction.toLocaleString()}`;
+            document.getElementById('stat-deduction-type').textContent = deductionType;
+            document.getElementById('stat-taxable-gains').textContent = `$${totalCapitalGains.toLocaleString()}`;
+            document.getElementById('stat-taxable-ord').textContent = `$${baseTaxableOrdinaryIncome.toLocaleString()}`;
+            document.getElementById('stat-taxable').textContent = `$${totalTaxableIncome.toLocaleString()}`;
+            
+            const creditsRow = document.getElementById('stat-credits-row');
+            const taxBeforeCreditRow = document.getElementById('stat-tax-before-credit-row');
+            if (totalCredits === 0) {
+                creditsRow.classList.add('hidden');
+                taxBeforeCreditRow.classList.add('hidden');
+            } else {
+                creditsRow.classList.remove('hidden');
+                taxBeforeCreditRow.classList.remove('hidden');
+                document.getElementById('stat-credits').textContent = `-$${totalCredits.toLocaleString()}`;
+                document.getElementById('stat-tax-before-credit').textContent = `$${totalTaxOwedBeforeCredits.toLocaleString(undefined, {maximumFractionDigits: 0})}`;
+            }
+            document.getElementById('stat-tax-owed').textContent = `$${finalTaxOwed.toLocaleString(undefined, {maximumFractionDigits: 0})}`;
+
+            document.getElementById('stat-effective-rate').textContent = `${effectiveRate.toFixed(1)}% Effective Rate`;
+
+            document.getElementById('activeYearBadge').textContent = currentYear;
+            document.getElementById('statYearLabel').textContent = currentYear;
+
+            // Update Doughnut Chart based on active tab state
+            updateChart(finalDeduction, finalTaxOwed, takeHome, totalGrossIncome);
+
+            // Save state to Local Storage
+            saveState();
+        }
+
+        function resetCalculator() {
+            localStorage.removeItem(STORAGE_KEY);
+            localStorage.removeItem('us_tax_budget_state');
+            window.location.reload();
+        }
+
+        // ==========================================
+        // CHART.JS INTEGRATION
+        // ==========================================
+        let pieChart = null;
+
+        function updateChart(deductions, tax, takeHome, grossIncome) {
+            const isBudgetActive = (currentTab === 'deductions' && currentSubTab === 'budget');
+            const legendContainer = document.getElementById('legendContainer');
+
+            let chartData, chartLabels, chartColors;
+
+            if (isBudgetActive) {
+                const { grandTotalYr, interestTotalYr } = getBudgetTotals();
+                const totalExpenses = grandTotalYr;
+                const loanInterest = interestTotalYr;
+                const expensesExclInterest = Math.max(0, totalExpenses - loanInterest);
+                const surplusVal = grossIncome - expensesExclInterest - loanInterest - tax;
+                const isDeficit = surplusVal < 0;
+                const surplusLabel = isDeficit ? 'Deficit' : 'Surplus';
+                const surplusAbs = Math.abs(surplusVal);
+                const surplusFormatted = (isDeficit ? '-$' : '$') + surplusAbs.toLocaleString(undefined, {maximumFractionDigits: 0});
+                const monthlySurplusFormatted = (isDeficit ? '-$' : '$') + (surplusAbs / 12).toLocaleString(undefined, {maximumFractionDigits: 0});
+
+                if (legendContainer) {
+                    legendContainer.innerHTML = `
+                        <div class="p-1.5 bg-slate-900/60 rounded-lg border border-slate-800">
+                            <span class="block text-[10px] text-slate-400">Expenses (excl. Interest)</span>
+                            <span class="font-bold text-[#6a5acd]">$${expensesExclInterest.toLocaleString(undefined, {maximumFractionDigits: 0})}</span>
+                        </div>
+                        <div class="p-1.5 bg-slate-900/60 rounded-lg border border-slate-800">
+                            <span class="block text-[10px] text-slate-400">Loan Interest</span>
+                            <span class="font-bold text-red-400">$${loanInterest.toLocaleString(undefined, {maximumFractionDigits: 0})}</span>
+                        </div>
+                        <div class="p-1.5 bg-slate-900/60 rounded-lg border border-slate-800">
+                            <span class="block text-[10px] text-slate-400">Estimated Federal Tax</span>
+                            <span class="font-bold text-amber-400">$${tax.toLocaleString(undefined, {maximumFractionDigits: 0})}</span>
+                        </div>
+                        <div class="p-1.5 bg-emerald-500/10 border border-emerald-500/20 rounded-lg flex items-center justify-between text-left">
+                            <div>
+                                <span class="text-[9px] uppercase font-bold tracking-wider text-emerald-400 block">${surplusLabel}</span>
+                                <span id="stat-take-home" class="text-sm font-black text-emerald-300">${surplusFormatted}</span>
+                            </div>
+                            <div class="text-right ml-2">
+                                <span class="text-[9px] text-slate-400 block">Monthly</span>
+                                <span id="stat-monthly-takehome" class="text-xs font-bold text-slate-200">${monthlySurplusFormatted}</span>
+                            </div>
+                        </div>
+                    `;
+                }
+
+                chartData = [expensesExclInterest, loanInterest, tax, Math.max(0, surplusVal)];
+                chartLabels = ['Expenses (excl. Interest)', 'Loan Interest', 'Estimated Federal Tax', surplusLabel];
+                chartColors = ['#6a5acd', '#ef4444', '#f59e0b', '#10b981'];
+            } else {
+                if (legendContainer) {
+                    legendContainer.innerHTML = `
+                        <div class="p-2 bg-slate-900/60 rounded-lg border border-slate-800">
+                            <span class="block text-[10px] text-slate-400">Deductions</span>
+                            <span class="font-bold text-blue-400">$${deductions.toLocaleString(undefined, {maximumFractionDigits: 0})}</span>
+                        </div>
+                        <div class="p-2 bg-slate-900/60 rounded-lg border border-slate-800">
+                            <span class="block text-[10px] text-slate-400">Estimated Federal Tax</span>
+                            <span class="font-bold text-amber-400">$${tax.toLocaleString(undefined, {maximumFractionDigits: 0})}</span>
+                        </div>
+                        <div class="p-2 bg-emerald-500/10 border border-emerald-500/20 rounded-lg flex items-center justify-between text-left">
+                            <div>
+                                <span id="takeHomeLegendTitle" class="text-[9px] uppercase font-bold tracking-wider text-emerald-400 block">Est. Take-Home Pay</span>
+                                <span id="stat-take-home" class="text-sm font-black text-emerald-300">$${takeHome.toLocaleString(undefined, {maximumFractionDigits: 0})}</span>
+                            </div>
+                            <div class="text-right ml-2">
+                                <span id="takeHomeSubLabel" class="text-[9px] text-slate-400 block">Monthly</span>
+                                <span id="stat-monthly-takehome" class="text-xs font-bold text-slate-200">$${(takeHome / 12).toLocaleString(undefined, {maximumFractionDigits: 0})}</span>
+                            </div>
+                        </div>
+                    `;
+                }
+
+                chartData = [deductions, tax, takeHome];
+                chartLabels = ['Deductions', 'Federal Tax', 'Take-Home Pay'];
+                chartColors = ['#3b82f6', '#f59e0b', '#10b981'];
+            }
+
+            const ctx = document.getElementById('incomePieChart')?.getContext('2d');
+            if (!ctx) return;
+
+            if (pieChart) {
+                pieChart.data.labels = chartLabels;
+                pieChart.data.datasets[0].data = chartData;
+                pieChart.data.datasets[0].backgroundColor = chartColors;
+                pieChart.update();
+            } else {
+                pieChart = new Chart(ctx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: chartLabels,
+                        datasets: [{
+                            data: chartData,
+                            backgroundColor: chartColors,
+                            borderWidth: 2,
+                            borderColor: '#1e293b'
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { display: false }
+                        },
+                        cutout: '70%'
+                    }
+                });
+            }
+        }
+
+        // ==========================================
+        // BUDGET TABLES GENERATOR & DEDUCTION MAPPING
+        // ==========================================
+        const mainBudgetCategories = [
+            {
+                name: "Primary Home*",
+                items: [
+                    { id: "home-tax",   label: "(home) Tax*", default: 160, target: "saltInput" },
+                    { id: "home-hoa",   label: "(home) HOA", default: 0 },
+                    { id: "home-ins",   label: "(home) Insurance", default: 140 },
+                    { id: "home-maint", label: "(home) Maintenance", default: 50 },
+                    { id: "home-loan",  label: "(home) Loan Payment", default: 0 },
+                    { id: "stu-loan",   label: "(student) Loan Payment", default: 0 },
+                ]
+            },
+            {
+                name: "Car*",
+                items: [
+                    { id: "car-tax",   label: "(car) Tax*", default: 100 },
+                    { id: "car-reg",   label: "(car) Registion", default: 2 },
+                    { id: "car-gas",   label: "(car) Gasoline", default: 100 },
+                    { id: "car-ins",   label: "(car) Insurance", default: 70 },
+                    { id: "car-maint", label: "(car) Maintenance", default: 40 },
+                    { id: "car-loan",  label: "(car) Loan Payment", default: 0 },
+                ]
+            },
+            {
+                name: "Utilities",
+                items: [
+                    { id: "util-water", label: "Water", default: 50 },
+                    { id: "util-elec",  label: "Electric", default: 100 },
+                    { id: "util-gas",   label: "Natural Gas", default: 15 },
+                    { id: "util-tvnet", label: "TV and Internet", default: 40 },
+                    { id: "util-cell",  label: "Cell Phone", default: 20 },
+                ]
+            },
+            {
+                name: "Social",
+                items: [
+                    { id: "soc-pets", label: "Pets", default: 0 },
+                    { id: "soc-groc", label: "(food) Grocery", default: 200 },
+                    { id: "soc-rest", label: "(food) Restaurant", default: 300 },
+                    { id: "soc-gym",  label: "Gym Membership", default: 70 },
+                    { id: "soc-vac",  label: "Travel Vacation Cost", default: 200 },
+                ]
+            },
+            {
+                name: "Other*",
+                items: [
+                    { id: "oth-char",  label: "Charitable Gift*", default: 50, target: "charityInput" },
+                    { id: "oth-dent",  label: "Dental and Medical (7%)*", default: 50, target: "medicalInput" },
+                    { id: "oth-cloth", label: "Clothes", default: 20 },
+                    { id: "oth-hair",  label: "Hair Care", default: 20 },
+                    { id: "oth-cash",  label: "Cash Misc. Purchases", default: 0 },
+                    { id: "oth-cc",    label: "Credit Card Misc. Purchases", default: 100 },
+                ]
+            },
+            {
+                name: "Vacation Home (Rental)*",
+                items: [
+                    { id: "vac-loan",  label: "(vacation) Home Loan Payment", default: 0 },
+                    { id: "vac-tax",   label: "(vacation) Tax*", default: 0, target: "vacationInput" },
+                    { id: "vac-hoa",   label: "(vacation) HOA*", default: 0, target: "vacationInput" },
+                    { id: "vac-clean", label: "(vacation) Cleaning*", default: 0, target: "vacationInput" },
+                    { id: "vac-ins",   label: "(vacation) Insurance*", default: 0, target: "vacationInput" },
+                    { id: "vac-maint", label: "(vacation) Maintenance*", default: 0, target: "vacationInput" },
+                    { id: "vac-gas",   label: "(vacation) Gas Travel Expense*", default: 0, target: "vacationInput" },
+                ]
+            }
+        ];
+
+        const interestBudgetCategories = [
+            {
+                name: "Loan Interest*",
+                items: [
+                   { id: "home-int",  label: "(interest) Home Loan*", default: 0, target: "mortgageInput" },
+                   { id: "car-int",   label: "(interest) Car Loan*", default: 0, target: "carInterestInput" },
+                   { id: "stu-int",   label: "(interest) Student Loan*", default: 0, target: "studentLoanInput" },
+                   { id: "vac-int",   label: "(interest) Vacation Home*", default: 0, target: "vacationInput" },
+                   { id: "oth-int",   label: "(interest) Credit Card", default: 0 },
+                ]
+            }
+        ];
+
+        function renderBudgetTable() {
+            const container = document.getElementById('subtab-budget');
+            if (!container) return;
+
+            let html = `
+                <!-- MAIN BUDGET TABLE -->
+                <div class="overflow-x-auto bg-slate-800/40 rounded-2xl border border-slate-700/50 shadow-sm">
+                    <table class="w-full text-left text-sm text-slate-300">
+                        <thead class="bg-slate-900/80 text-slate-400 uppercase text-[10px] tracking-wider border-b border-slate-700">
+                            <tr>
+                                <th class="p-4 text-left">Expense Category</th>
+                                <th class="p-4 w-36 text-left">Monthly<br>Totals</th>
+                                <th class="p-4 w-36 text-left">Yearly<br> Totals</th>
+                                <th class="p-4 w-48 text-right">Deduction Action</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-800 bg-slate-900/40">
+            `;
+
+            mainBudgetCategories.forEach(cat => {
+                const catIdSafe = cat.name.replace(/[^a-zA-Z0-9]/g, '');
+                const isCatDeductible = cat.name.endsWith('*');
+
+                html += `
+                    <tr class="bg-slate-800/60">
+                        <td class="p-3 font-bold text-slate-200 text-sm pl-4 border-l-4 border-brand-500 flex items-center gap-2">
+                            <input type="checkbox" id="toggle-${catIdSafe}" onchange="toggleCategory('${catIdSafe}')" class="w-4 h-4 rounded text-brand-600 bg-slate-900 border-slate-700 focus:ring-0 cursor-pointer">
+                            <label for="toggle-${catIdSafe}" class="cursor-pointer select-none">${cat.name}</label>
+                        </td>
+                        <td class="p-3 font-bold text-slate-300 text-left" id="total-mo-cat-${catIdSafe}">$0</td>
+                        <td class="p-3 font-bold text-slate-300 text-left" id="total-yr-cat-${catIdSafe}">$0</td>
+                        <td class="p-3 text-right">
+                            ${isCatDeductible ? `<button id="btn-cat-${catIdSafe}" class="bg-brand-600/20 hover:bg-brand-600/40 text-brand-300 border border-brand-500/40 px-2.5 py-1 rounded text-xs font-semibold transition-all" onclick="applyCategoryDeduction('${cat.name}')">Apply Deductions</button>` : ''}
+                        </td>
+                    </tr>
+                `;
+
+                cat.items.forEach(item => {
+                    const isItemDeductible = item.label.endsWith('*') || item.target;
+
+                    html += `
+                        <tr class="subcat-row-${catIdSafe} hover:bg-slate-800/50 transition-colors hidden">
+                            <td class="p-3 pl-10 text-xs font-medium text-slate-300">${item.label}</td>
+                            <td class="p-3 text-left">
+                                <div class="relative">
+                                    <span class="absolute left-3 top-2 text-slate-400 text-xs">$</span>
+                                    <input type="number" id="${item.id}-mo" value="${item.default}" oninput="syncBudget('${item.id}', 'mo')" class="w-full bg-slate-900 border border-slate-700 rounded-lg py-1.5 pl-6 pr-2 text-xs text-white text-left focus:outline-none focus:border-brand-500 transition-colors">
+                                </div>
+                            </td>
+                            <td class="p-3 text-left">
+                                <div class="relative">
+                                    <span class="absolute left-3 top-2 text-slate-400 text-xs">$</span>
+                                    <input type="number" id="${item.id}-yr" value="${item.default * 12}" oninput="syncBudget('${item.id}', 'yr')" class="w-full bg-slate-900 border border-slate-700 rounded-lg py-1.5 pl-6 pr-2 text-xs text-white text-left focus:outline-none focus:border-brand-500 transition-colors">
+                                </div>
+                            </td>
+                            <td class="p-3 text-right align-middle">
+                                ${isItemDeductible && item.target ? `<button id="btn-item-${item.id}" class="text-brand-400 hover:text-brand-300 text-xs font-semibold transition-colors" onclick="applyItemDeduction('${item.id}', '${item.target}')">Deduction</button>` : ''}
+                            </td>
+                        </tr>
+                    `;
+                });
+            });
+
+            html += `
+                        </tbody>
+                        <tfoot class="bg-slate-900/90 border-t-2 border-slate-700">
+                            <tr>
+                                <td class="p-4 font-bold text-slate-300 text-right uppercase text-xs tracking-wider">Grand Total➔</td>
+                                <td class="p-4 font-black text-brand-400 text-base text-left" id="budget-grand-total-mo">$0</td>
+                                <td class="p-4 font-black text-brand-400 text-base text-left" id="budget-grand-total-yr">$0</td>
+                                <td></td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+
+                <!-- LOAN INTEREST TABLE (SEPARATE FROM GRAND TOTAL) -->
+                <div class="pt-4">
+                    <div class="flex items-center gap-2 mb-3">
+                        <i class="fa-solid fa-percent text-red-400 text-sm"></i>
+                        <h3 class="text-sm font-bold text-slate-200">Loan Interest Breakdown</h3>
+                        <span class="text-[11px] text-slate-400 font-normal">(Informational & Tax Reference - Excluded from Main Grand Total)</span>
+                    </div>
+
+                    <div class="overflow-x-auto bg-slate-800/40 rounded-2xl border border-slate-700/50 shadow-sm">
+                        <table class="w-full text-left text-sm text-slate-300">
+                            <thead class="bg-slate-900/80 text-slate-400 uppercase text-[10px] tracking-wider border-b border-slate-700">
+                                <tr>
+                                    <th class="p-4 text-left">Interest Category</th>
+                                    <th class="p-4 w-36 text-left">Monthly Interest</th>
+                                    <th class="p-4 w-36 text-left">Yearly Input</th>
+                                    <th class="p-4 w-48 text-right">Deduction Action</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-800 bg-slate-900/40">
+            `;
+
+            interestBudgetCategories.forEach(cat => {
+                const catIdSafe = cat.name.replace(/[^a-zA-Z0-9]/g, '');
+
+                html += `
+                    <tr class="bg-slate-800/60">
+                        <td class="p-3 font-bold text-red-400 text-sm pl-4 border-l-4 border-red-500 flex items-center gap-2">
+                            <input type="checkbox" id="toggle-${catIdSafe}" onchange="toggleCategory('${catIdSafe}')" class="w-4 h-4 rounded text-red-600 bg-slate-900 border-slate-700 focus:ring-0 cursor-pointer">
+                            <label for="toggle-${catIdSafe}" class="cursor-pointer select-none">${cat.name}</label>
+                        </td>
+                        <td class="p-3 font-bold text-red-400 text-left" id="total-mo-cat-${catIdSafe}">$0</td>
+                        <td class="p-3 font-bold text-red-400 text-left" id="total-yr-cat-${catIdSafe}">$0</td>
+                        <td class="p-3 text-right">
+                            <button id="btn-cat-${catIdSafe}" class="bg-red-600/20 hover:bg-red-600/40 text-red-300 border border-red-500/40 px-2.5 py-1 rounded text-xs font-semibold transition-all" onclick="applyCategoryDeduction('${cat.name}')">Apply Deductions</button>
+                        </td>
+                    </tr>
+                `;
+
+                cat.items.forEach(item => {
+                    const isItemDeductible = item.label.endsWith('*') || item.target;
+
+                    html += `
+                        <tr class="subcat-row-${catIdSafe} hover:bg-slate-800/50 transition-colors hidden">
+                            <td class="p-3 pl-10 text-xs font-medium text-slate-300">${item.label}</td>
+                            <td class="p-3 text-left">
+                                <div class="relative">
+                                    <span class="absolute left-3 top-2 text-slate-400 text-xs">$</span>
+                                    <input type="number" id="${item.id}-mo" value="${item.default}" oninput="syncBudget('${item.id}', 'mo')" class="w-full bg-slate-900 border border-slate-700 rounded-lg py-1.5 pl-6 pr-2 text-xs text-white text-left focus:outline-none focus:border-brand-500 transition-colors">
+                                </div>
+                            </td>
+                            <td class="p-3 text-left">
+                                <div class="relative">
+                                    <span class="absolute left-3 top-2 text-slate-400 text-xs">$</span>
+                                    <input type="number" id="${item.id}-yr" value="${item.default * 12}" oninput="syncBudget('${item.id}', 'yr')" class="w-full bg-slate-900 border border-slate-700 rounded-lg py-1.5 pl-6 pr-2 text-xs text-white text-left focus:outline-none focus:border-brand-500 transition-colors">
+                                </div>
+                            </td>
+                            <td class="p-3 text-right align-middle">
+                                ${isItemDeductible && item.target ? `<button id="btn-item-${item.id}" class="text-red-400 hover:text-red-300 text-xs font-semibold transition-colors" onclick="applyItemDeduction('${item.id}', '${item.target}')">Deduction</button>` : ''}
+                            </td>
+                        </tr>
+                    `;
+                });
+            });
+
+            html += `
+                            </tbody>
+                            <tfoot class="bg-slate-900/90 border-t-2 border-slate-700">
+                                <tr>
+                                    <td class="p-4 font-bold text-slate-300 text-right uppercase text-xs tracking-wider">Interest Total➔</td>
+                                    <td class="p-4 font-black text-red-400 text-base text-left" id="interest-grand-total-mo">$0</td>
+                                    <td class="p-4 font-black text-red-400 text-base text-left" id="interest-grand-total-yr">$0</td>
+                                    <td></td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                </div>
+            `;
+
+            container.innerHTML = html;
+            loadBudgetState();
+            calculateBudgetTotals();
+        }
+
+        function toggleCategory(catIdSafe) {
+            const isChecked = document.getElementById(`toggle-${catIdSafe}`).checked;
+            const rows = document.querySelectorAll(`.subcat-row-${catIdSafe}`);
+            rows.forEach(row => {
+                if (isChecked) {
+                    row.classList.remove('hidden');
+                } else {
+                    row.classList.add('hidden');
+                }
+            });
+        }
+
+        function syncBudget(id, source) {
+            const moInput = document.getElementById(`${id}-mo`);
+            const yrInput = document.getElementById(`${id}-yr`);
+
+            if (!moInput || !yrInput) return;
+
+            if (source === 'mo') {
+                const val = parseFloat(moInput.value) || 0;
+                yrInput.value = val * 12;
+            } else {
+                const val = parseFloat(yrInput.value) || 0;
+                moInput.value = (val / 12).toFixed(2).replace(/\.00$/, '');
+            }
+
+            calculateBudgetTotals();
+            saveBudgetState();
+            calculateTax();
+        }
+
+        function calculateBudgetTotals() {
+            let grandTotalMo = 0;
+            let grandTotalYr = 0;
+
+            mainBudgetCategories.forEach(cat => {
+                const catIdSafe = cat.name.replace(/[^a-zA-Z0-9]/g, '');
+                let catMo = 0;
+                let catYr = 0;
+
+                cat.items.forEach(item => {
+                    const moVal = parseFloat(document.getElementById(`${item.id}-mo`)?.value) || 0;
+                    const yrVal = parseFloat(document.getElementById(`${item.id}-yr`)?.value) || 0;
+                    catMo += moVal;
+                    catYr += yrVal;
+                });
+
+                const totalMoEl = document.getElementById(`total-mo-cat-${catIdSafe}`);
+                const totalYrEl = document.getElementById(`total-yr-cat-${catIdSafe}`);
+                if (totalMoEl) totalMoEl.textContent = `$${catMo.toLocaleString()}`;
+                if (totalYrEl) totalYrEl.textContent = `$${catYr.toLocaleString()}`;
+
+                grandTotalMo += catMo;
+                grandTotalYr += catYr;
+            });
+
+            const grandTotalMoEl = document.getElementById('budget-grand-total-mo');
+            const grandTotalYrEl = document.getElementById('budget-grand-total-yr');
+            if (grandTotalMoEl) grandTotalMoEl.textContent = `$${grandTotalMo.toLocaleString()}`;
+            if (grandTotalYrEl) grandTotalYrEl.textContent = `$${grandTotalYr.toLocaleString()}`;
+
+            let interestTotalMo = 0;
+            let interestTotalYr = 0;
+
+            interestBudgetCategories.forEach(cat => {
+                const catIdSafe = cat.name.replace(/[^a-zA-Z0-9]/g, '');
+                let catMo = 0;
+                let catYr = 0;
+
+                cat.items.forEach(item => {
+                    const moVal = parseFloat(document.getElementById(`${item.id}-mo`)?.value) || 0;
+                    const yrVal = parseFloat(document.getElementById(`${item.id}-yr`)?.value) || 0;
+                    catMo += moVal;
+                    catYr += yrVal;
+                });
+
+                const totalMoEl = document.getElementById(`total-mo-cat-${catIdSafe}`);
+                const totalYrEl = document.getElementById(`total-yr-cat-${catIdSafe}`);
+                if (totalMoEl) totalMoEl.textContent = `$${catMo.toLocaleString()}`;
+                if (totalYrEl) totalYrEl.textContent = `$${catYr.toLocaleString()}`;
+
+                interestTotalMo += catMo;
+                interestTotalYr += catYr;
+            });
+
+            const interestTotalMoEl = document.getElementById('interest-grand-total-mo');
+            const interestTotalYrEl = document.getElementById('interest-grand-total-yr');
+            if (interestTotalMoEl) interestTotalMoEl.textContent = `$${interestTotalMo.toLocaleString()}`;
+            if (interestTotalYrEl) interestTotalYrEl.textContent = `$${interestTotalYr.toLocaleString()}`;
+        }
+
+        const BUDGET_STORAGE_KEY = 'us_tax_budget_state';
+
+        function saveBudgetState() {
+            const budgetData = {};
+            mainBudgetCategories.concat(interestBudgetCategories).forEach(cat => {
+                cat.items.forEach(item => {
+                    const moEl = document.getElementById(`${item.id}-mo`);
+                    const yrEl = document.getElementById(`${item.id}-yr`);
+                    if (moEl && yrEl) {
+                        budgetData[item.id] = { mo: moEl.value, yr: yrEl.value };
+                    }
+                });
+            });
+            try {
+                localStorage.setItem(BUDGET_STORAGE_KEY, JSON.stringify(budgetData));
+            } catch (e) {
+                console.error('Failed to save budget state:', e);
+            }
+        }
+
+        function loadBudgetState() {
+            try {
+                const saved = localStorage.getItem(BUDGET_STORAGE_KEY);
+                if (!saved) return;
+                const budgetData = JSON.parse(saved);
+                Object.keys(budgetData).forEach(id => {
+                    const moEl = document.getElementById(`${id}-mo`);
+                    const yrEl = document.getElementById(`${id}-yr`);
+                    if (moEl && budgetData[id].mo !== undefined) moEl.value = budgetData[id].mo;
+                    if (yrEl && budgetData[id].yr !== undefined) yrEl.value = budgetData[id].yr;
+                });
+            } catch (e) {
+                console.error('Failed to load budget state:', e);
+            }
+        }
+
+        function applyItemDeduction(itemId, targetId) {
+            const yrVal = parseFloat(document.getElementById(`${itemId}-yr`)?.value) || 0;
+            const targetInput = document.getElementById(targetId);
+            if (targetInput) {
+                targetInput.value = yrVal;
+                calculateTax();
+            }
+        }
+
+        function applyCategoryDeduction_OLD(catName) {
+            const categoryObj = mainBudgetCategories.find(c => c.name === catName) || interestBudgetCategories.find(c => c.name === catName);
+            if (!categoryObj) return;
+
+            categoryObj.items.forEach(item => {
+                if (item.target) {
+                    applyItemDeduction(item.id, item.target);
+                }
+            });
+        }
+
+function applyCategoryDeduction(catName) {
+    if (catName === 'Primary Home*' || catName === 'Car*') {
+        const hometax = parseFloat(document.getElementById('home-tax-yr')?.value) || 0;
+        const cartax = parseFloat(document.getElementById('car-tax-yr')?.value) || 0;
+        const total = hometax + cartax;
+        document.getElementById('saltInput').value = total;
+        calculateTax();
+        showNotification(`$${hometax.toLocaleString()} applied to SALT (State & Local Tax - Max $10k), and <br>$${cartax.toLocaleString()} applied to Car Tax.`);
+    } else if (catName === 'Other*') {
+        const charYr = parseFloat(document.getElementById('oth-char-yr')?.value) || 0;
+        const dentYr = parseFloat(document.getElementById('oth-dent-yr')?.value) || 0;
+        
+        document.getElementById('charityInput').value = charYr;
+        document.getElementById('medicalInput').value = dentYr;
+        calculateTax();
+        showNotification(`$${charYr.toLocaleString()} applied to Charitable Contributions, and <br>$${dentYr.toLocaleString()} applied to Medical Expenses.`);
+    } else if (catName === 'Loan Interest*') {
+        const homeIntYr = parseFloat(document.getElementById('home-int-yr')?.value) || 0;
+        const carIntYr = parseFloat(document.getElementById('car-int-yr')?.value) || 0;
+        const stuIntYr = parseFloat(document.getElementById('stu-int-yr')?.value) || 0;
+        const vacIntYr = parseFloat(document.getElementById('vac-int-yr')?.value) || 0;
+        const vacExpYr = getVacationExpenses();
+        const vacTotal = vacIntYr + vacExpYr;
+
+        document.getElementById('mortgageInput').value = homeIntYr;
+        document.getElementById('carInterestInput').value = carIntYr;
+        document.getElementById('studentLoanInput').value = stuIntYr;
+        document.getElementById('vacationInput').value = vacTotal;
+
+        calculateTax();
+
+        const parts = [];
+        if (homeIntYr > 0) { parts.push(`$${homeIntYr.toLocaleString()} applied to Mortgage Interest`);}
+        if (carIntYr > 0)  { parts.push(`$${carIntYr.toLocaleString()} applied to Car Loan Interest`);}
+        if (stuIntYr > 0) { parts.push(`$${stuIntYr.toLocaleString()} applied to Student Loan Interest`);}
+        if (vacExpYr > 0 || vacIntYr > 0) { parts.push(`$${vacExpYr.toLocaleString()} applied to Vacation Home Expenses (including $${vacIntYr.toLocaleString()} for Vacation Mortgage Interest)`);}
+        const message = parts.length > 0 
+            ? `${parts.join(',<br>')}.` 
+            : 'No interest or expense deductions were applied.';
+        showNotification(message);
+    } else if (catName === 'Vacation Home (Rental)*') {
+        const vacIntYr = parseFloat(document.getElementById('vac-int-yr')?.value) || 0;
+        const vacExpYr = getVacationExpenses();
+        const vacTotal = vacIntYr + vacExpYr;
+
+        document.getElementById('vacationInput').value = vacTotal;
+        calculateTax();
+        if (vacExpYr > 0 || vacIntYr > 0)
+             { showNotification(`$${vacExpYr.toLocaleString()} applied to Vacation Home Expenses (including $${vacIntYr.toLocaleString()} for Vacation Mortgage Interest).`); }
+        else { showNotification(`No vacation expenses were found.`); }
+    }
+}
+
+function getVacationExpenses() {
+    const vacItems = ['vac-loan', 'vac-tax', 'vac-hoa', 'vac-clean', 'vac-ins', 'vac-maint', 'vac-gas'];
+    let total = 0;
+    vacItems.forEach(id => {
+        total += parseFloat(document.getElementById(`${id}-yr`)?.value) || 0;
+    });
+    return total; // Return number directly instead of { total }
+}
+
+function showNotification(msg) {
+    let toast = document.getElementById('tax-toast-notification');
+    if (!toast) {
+        toast = document.createElement('div');
+        toast.id = 'tax-toast-notification';
+        toast.className = 'fixed bottom-5 right-5 bg-brand-600 text-white px-4 py-3 rounded-xl shadow-2xl z-50 text-xs font-semibold flex items-center gap-2 border border-brand-400 transition-all duration-300 opacity-0 transform translate-y-2 pointer-events-none';
+        document.body.appendChild(toast);
+    }
+    toast.innerHTML = `<i class="fa-solid fa-circle-check text-emerald-300 text-sm"></i> <span>${msg}</span>`;
+    toast.classList.remove('opacity-0', 'translate-y-2', 'pointer-events-none');
+    toast.classList.add('opacity-100', 'translate-y-0');
+
+    setTimeout(() => {
+        toast.classList.add('opacity-0', 'translate-y-2', 'pointer-events-none');
+        toast.classList.remove('opacity-100', 'translate-y-0');
+    }, 3500);
+}
+
+        // Initialize App on DOM load
+        window.addEventListener('DOMContentLoaded', () => {
+            renderTaxSections();
+            renderBudgetTable();
+            loadState();
+            calculateTax();
+        });
+    </script>
+</body>
+</html>

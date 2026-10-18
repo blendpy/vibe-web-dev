@@ -1,0 +1,1249 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full bg-slate-50">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mortgage Amortization Schedule & Financial Planner</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        brand: {
+                            50: '#f0f9ff',
+                            100: '#e0f2fe',
+                            500: '#0ea5e9',
+                            600: '#0284c7',
+                            700: '#0369a1',
+                            900: '#0c4a6e',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* Custom scrollbar styling */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+        
+        /* Sticky header positioning */
+        .sticky-thead th {
+            position: sticky;
+            top: 0;
+            z-index: 20;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        /* Print optimizations */
+        @media print {
+            .no-print {
+                display: none !important;
+            }
+            body {
+                background: #ffffff !important;
+                color: #000000 !important;
+            }
+            .table-container {
+                max-height: none !important;
+                overflow: visible !important;
+            }
+            .card-shadow {
+                box-shadow: none !important;
+                border: 1px solid #e2e8f0 !important;
+            }
+        }
+    </style>
+</head>
+<body class="h-full text-slate-800 font-sans antialiased bg-slate-50 flex flex-col">
+
+    <header class="bg-slate-900 text-white border-b border-slate-800 no-print sticky top-0 z-30 shadow-md">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="bg-brand-500 p-2 rounded-lg text-white shadow">
+                    <i class="fa-solid fa-calculator text-xl"></i>
+                </div>
+                <div>
+                    <h1 class="font-bold text-lg leading-tight">Mortgage Amortization Schedule</h1>
+                    <p class="text-xs text-slate-400">Interactive Loan Calculator, PITI & Multi-Year Financial Planner</p>
+                </div>
+            </div>
+            <div class="flex items-center space-x-2 sm:space-x-3">
+                <button onclick="exportCSV()" class="inline-flex items-center text-xs sm:text-sm font-medium bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-2 rounded-lg transition shadow-sm">
+                    <i class="fa-solid fa-file-csv mr-2"></i> Export CSV
+                </button>
+                <button onclick="window.print()" class="inline-flex items-center text-xs sm:text-sm font-medium bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 px-3 py-2 rounded-lg transition">
+                    <i class="fa-solid fa-print mr-2"></i> Print Schedule
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+
+        <div class="no-print bg-white p-3 rounded-xl border border-slate-200 shadow-sm flex flex-wrap items-center justify-between gap-2">
+            <div class="flex items-center space-x-2 text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                <i class="fa-solid fa-wand-magic-sparkles text-brand-500"></i>
+                <span>Quick Loan Presets:</span>
+            </div>
+            <div class="flex flex-wrap items-center gap-2">
+                <button onclick="applyPreset(400000, 80000, 6.5, 30, 0, 'monthly', 'monthly', 4200, 1500, 0, 0.5)" class="text-xs font-medium px-3 py-1.5 bg-slate-100 hover:bg-brand-50 hover:text-brand-700 text-slate-700 rounded-lg border border-slate-200 transition">
+                    30-Yr Standard (20% Down)
+                </button>
+                <button onclick="applyPreset(400000, 20000, 6.5, 30, 0, 'monthly', 'monthly', 4200, 1500, 0, 0.75)" class="text-xs font-medium px-3 py-1.5 bg-slate-100 hover:bg-brand-50 hover:text-brand-700 text-slate-700 rounded-lg border border-slate-200 transition">
+                    5% Down + PMI
+                </button>
+                <button onclick="applyPreset(400000, 80000, 5.75, 15, 0, 'monthly', 'monthly', 4200, 1500, 0, 0)" class="text-xs font-medium px-3 py-1.5 bg-slate-100 hover:bg-brand-50 hover:text-brand-700 text-slate-700 rounded-lg border border-slate-200 transition">
+                    15-Yr Fixed (5.75%)
+                </button>
+                <button onclick="applyPreset(400000, 80000, 6.5, 30, 300, 'monthly', 'monthly', 4200, 1500, 0, 0)" class="text-xs font-medium px-3 py-1.5 bg-slate-100 hover:bg-emerald-50 hover:text-emerald-800 text-slate-700 rounded-lg border border-slate-200 transition">
+                    +$300/mo Extra
+                </button>
+                <button onclick="applyPreset(400000, 80000, 6.5, 30, 0, 'monthly', 'biweekly_accel', 4200, 1500, 0, 0)" class="text-xs font-medium px-3 py-1.5 bg-slate-100 hover:bg-teal-50 hover:text-teal-800 text-slate-700 rounded-lg border border-slate-200 transition">
+                    Accelerated Bi-Weekly
+                </button>
+                <button onclick="resetDefaults()" class="text-xs font-medium px-2.5 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-lg transition border border-rose-200">
+                    <i class="fa-solid fa-rotate-left mr-1"></i> Reset
+                </button>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            
+            <div class="lg:col-span-5 bg-white p-5 rounded-2xl border border-slate-200 shadow-sm card-shadow space-y-5">
+                
+                <!-- Main Input Tabs Header -->
+                <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+                    <h2 class="font-bold text-slate-900 flex items-center text-base">
+                        <i class="fa-solid fa-sliders text-brand-600 mr-2"></i> Mortgage Parameters
+                    </h2>
+                    <span class="text-xs bg-slate-100 text-slate-600 font-medium px-2 py-1 rounded">Live Recalculation</span>
+                </div>
+
+                <!-- SECTION 1: CORE LOAN DETAILS -->
+                <div class="space-y-3">
+                    <h3 class="text-xs font-extrabold text-slate-400 uppercase tracking-wider">1. Principal & Terms</h3>
+                    
+                    <div class="grid grid-cols-2 gap-3">
+                        <!-- Home Price -->
+                        <div>
+                            <label for="input-home-price" class="block text-xs font-semibold text-slate-700 mb-1">
+                                Home Price ($)
+                            </label>
+                            <div class="relative">
+                                <span class="absolute inset-y-0 left-0 pl-2.5 flex items-center text-slate-400 font-semibold">$</span>
+                                <input type="number" id="input-home-price" value="375000" min="1000" step="5000" 
+                                    class="w-full pl-7 pr-2 py-1.5 bg-slate-50 border border-slate-300 rounded-lg font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:bg-white transition text-xs sm:text-sm"
+                                    oninput="syncDownPaymentFromPrice()">
+                            </div>
+                        </div>
+
+                        <!-- Down Payment -->
+                        <div>
+                            <label for="input-down-payment" class="block text-xs font-semibold text-slate-700 mb-1">
+                                Down Payment (<span id="down-percent-label">20</span>%)
+                            </label>
+                            <div class="relative">
+                                <span class="absolute inset-y-0 left-0 pl-2.5 flex items-center text-slate-400 font-semibold">$</span>
+                                <input type="number" id="input-down-payment" value="75000" min="0" step="1000" 
+                                    class="w-full pl-7 pr-2 py-1.5 bg-slate-50 border border-slate-300 rounded-lg font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:bg-white transition text-xs sm:text-sm"
+                                    oninput="syncDownPaymentFromAmount()">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Calculated Loan Principal -->
+                    <div class="p-2.5 bg-slate-100/80 rounded-lg flex items-center justify-between border border-slate-200">
+                        <span class="text-xs font-medium text-slate-600">Calculated Loan Amount:</span>
+                        <span id="display-principal-calc" class="font-extrabold text-slate-900 text-sm">$300,000</span>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-3">
+                        <!-- Interest Rate -->
+                        <div>
+                            <label for="input-rate" class="block text-xs font-semibold text-slate-700 mb-1">
+                                Interest Rate (%)
+                            </label>
+                            <div class="relative">
+                                <input type="number" id="input-rate" value="6.5" min="0" max="25" step="0.125" 
+                                    class="w-full pr-7 pl-3 py-1.5 bg-slate-50 border border-slate-300 rounded-lg font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:bg-white transition text-xs sm:text-sm"
+                                    oninput="calculateAmortization()">
+                                <span class="absolute inset-y-0 right-0 pr-2.5 flex items-center text-slate-400 font-semibold">%</span>
+                            </div>
+                        </div>
+
+                        <!-- Loan Term -->
+                        <div>
+                            <label for="input-years" class="block text-xs font-semibold text-slate-700 mb-1">
+                                Loan Term (Years)
+                            </label>
+                            <input type="number" id="input-years" value="30" min="1" max="50" step="1" 
+                                class="w-full px-3 py-1.5 bg-slate-50 border border-slate-300 rounded-lg font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:bg-white transition text-xs sm:text-sm"
+                                oninput="calculateAmortization()">
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-3">
+                        <!-- Payment Frequency -->
+                        <div>
+                            <label for="input-frequency" class="block text-xs font-semibold text-slate-700 mb-1">
+                                Payment Frequency
+                            </label>
+                            <select id="input-frequency" onchange="calculateAmortization()" 
+                                class="w-full px-2 py-1.5 bg-slate-50 border border-slate-300 rounded-lg font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-brand-500 text-xs transition cursor-pointer">
+                                <option value="monthly" selected>Monthly (12/yr)</option>
+                                <option value="biweekly">Bi-Weekly (26/yr)</option>
+                                <option value="biweekly_accel">Accelerated Bi-Weekly</option>
+                                <option value="semi_monthly">Semi-Monthly (24/yr)</option>
+                                <option value="quarterly">Quarterly (4/yr)</option>
+                                <option value="yearly">Yearly (1/yr)</option>
+                            </select>
+                        </div>
+
+                        <!-- Start Date -->
+                        <div>
+                            <label for="input-start-date" class="block text-xs font-semibold text-slate-700 mb-1">
+                                Start Date
+                            </label>
+                            <input type="month" id="input-start-date" value="2026-10" 
+                                class="w-full px-2 py-1.5 bg-slate-50 border border-slate-300 rounded-lg font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-brand-500 text-xs transition"
+                                onchange="calculateAmortization()">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SECTION 2: ESCROW, TAXES & PMI -->
+                <div class="pt-3 border-t border-slate-100 space-y-3">
+                    <div class="flex items-center justify-between">
+                        <h3 class="text-xs font-extrabold text-slate-400 uppercase tracking-wider">2. Escrow, Taxes & PMI (PITI)</h3>
+                        <label class="inline-flex items-center cursor-pointer">
+                            <input type="checkbox" id="toggle-include-escrow" checked class="sr-only peer" onchange="calculateAmortization()">
+                            <div class="w-8 h-4 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-brand-600 relative"></div>
+                            <span class="ml-2 text-[11px] font-semibold text-slate-600">Include Escrow</span>
+                        </label>
+                    </div>
+
+                    <div id="escrow-inputs-container" class="grid grid-cols-2 gap-3">
+                        <!-- Property Tax -->
+                        <div>
+                            <label for="input-property-tax" class="block text-[11px] font-semibold text-slate-700 mb-1">
+                                Property Tax ($/yr)
+                            </label>
+                            <div class="relative">
+                                <span class="absolute inset-y-0 left-0 pl-2.5 flex items-center text-slate-400 font-semibold text-xs">$</span>
+                                <input type="number" id="input-property-tax" value="4200" min="0" step="100" 
+                                    class="w-full pl-6 pr-2 py-1.5 bg-slate-50 border border-slate-300 rounded-lg text-xs font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:bg-white transition"
+                                    oninput="calculateAmortization()">
+                            </div>
+                        </div>
+
+                        <!-- Homeowners Insurance -->
+                        <div>
+                            <label for="input-insurance" class="block text-[11px] font-semibold text-slate-700 mb-1">
+                                Home Insurance ($/yr)
+                            </label>
+                            <div class="relative">
+                                <span class="absolute inset-y-0 left-0 pl-2.5 flex items-center text-slate-400 font-semibold text-xs">$</span>
+                                <input type="number" id="input-insurance" value="1500" min="0" step="50" 
+                                    class="w-full pl-6 pr-2 py-1.5 bg-slate-50 border border-slate-300 rounded-lg text-xs font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:bg-white transition"
+                                    oninput="calculateAmortization()">
+                            </div>
+                        </div>
+
+                        <!-- HOA Fees -->
+                        <div>
+                            <label for="input-hoa" class="block text-[11px] font-semibold text-slate-700 mb-1">
+                                HOA Dues ($/mo)
+                            </label>
+                            <div class="relative">
+                                <span class="absolute inset-y-0 left-0 pl-2.5 flex items-center text-slate-400 font-semibold text-xs">$</span>
+                                <input type="number" id="input-hoa" value="0" min="0" step="25" 
+                                    class="w-full pl-6 pr-2 py-1.5 bg-slate-50 border border-slate-300 rounded-lg text-xs font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:bg-white transition"
+                                    oninput="calculateAmortization()">
+                            </div>
+                        </div>
+
+                        <!-- PMI Rate -->
+                        <div>
+                            <label for="input-pmi-rate" class="block text-[11px] font-semibold text-slate-700 mb-1">
+                                PMI Rate (%/yr)
+                            </label>
+                            <div class="relative">
+                                <input type="number" id="input-pmi-rate" value="0.5" min="0" max="5" step="0.05" 
+                                    class="w-full pr-6 pl-2 py-1.5 bg-slate-50 border border-slate-300 rounded-lg text-xs font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:bg-white transition disabled:opacity-50 disabled:cursor-not-allowed"
+                                    oninput="calculateAmortization()">
+                                <span class="absolute inset-y-0 right-0 pr-2 flex items-center text-slate-400 font-semibold text-xs">%</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SECTION 3: ACCELERATED EXTRA PAYMENTS -->
+                <div class="pt-3 border-t border-slate-100 space-y-3">
+                    <h3 class="text-xs font-extrabold text-slate-400 uppercase tracking-wider">3. Extra Principal & Lump Sums</h3>
+                    
+                    <div class="grid grid-cols-2 gap-3">
+                        <!-- Extra Per Payment -->
+                        <div>
+                            <label for="input-extra" class="block text-[11px] font-semibold text-slate-700 mb-1">
+                                Recurring Extra ($/period)
+                            </label>
+                            <div class="relative">
+                                <span class="absolute inset-y-0 left-0 pl-2.5 flex items-center text-slate-400 font-semibold text-xs">$</span>
+                                <input type="number" id="input-extra" value="0" min="0" step="50" 
+                                    class="w-full pl-6 pr-2 py-1.5 bg-slate-50 border border-slate-300 rounded-lg text-xs font-semibold text-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:bg-white transition"
+                                    oninput="calculateAmortization()">
+                            </div>
+                        </div>
+
+                        <!-- Annual Bonus Payment -->
+                        <div>
+                            <label for="input-annual-extra" class="block text-[11px] font-semibold text-slate-700 mb-1">
+                                Annual Extra ($/year)
+                            </label>
+                            <div class="relative">
+                                <span class="absolute inset-y-0 left-0 pl-2.5 flex items-center text-slate-400 font-semibold text-xs">$</span>
+                                <input type="number" id="input-annual-extra" value="0" min="0" step="500" 
+                                    class="w-full pl-6 pr-2 py-1.5 bg-slate-50 border border-slate-300 rounded-lg text-xs font-semibold text-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:bg-white transition"
+                                    oninput="calculateAmortization()">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-3">
+                        <!-- One-Time Lump Sum Amount -->
+                        <div>
+                            <label for="input-lump-sum" class="block text-[11px] font-semibold text-slate-700 mb-1">
+                                One-Time Lump Sum ($)
+                            </label>
+                            <div class="relative">
+                                <span class="absolute inset-y-0 left-0 pl-2.5 flex items-center text-slate-400 font-semibold text-xs">$</span>
+                                <input type="number" id="input-lump-sum" value="0" min="0" step="1000" 
+                                    class="w-full pl-6 pr-2 py-1.5 bg-slate-50 border border-slate-300 rounded-lg text-xs font-semibold text-teal-700 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:bg-white transition"
+                                    oninput="calculateAmortization()">
+                            </div>
+                        </div>
+
+                        <!-- One-Time Lump Sum Month -->
+                        <div>
+                            <label for="input-lump-month" class="block text-[11px] font-semibold text-slate-700 mb-1">
+                                Applied at Month #
+                            </label>
+                            <input type="number" id="input-lump-month" value="12" min="1" max="600" step="1" 
+                                class="w-full px-2 py-1.5 bg-slate-50 border border-slate-300 rounded-lg text-xs font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-brand-500 transition"
+                                oninput="calculateAmortization()">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Display Toggles -->
+                <div class="pt-3 border-t border-slate-100 grid grid-cols-2 gap-2 text-xs">
+                    <div class="flex items-center space-x-2 p-2 bg-slate-50 rounded-lg border border-slate-200">
+                        <input type="checkbox" id="toggle-cents" class="w-3.5 h-3.5 text-brand-600 rounded border-slate-300 focus:ring-brand-500" onchange="calculateAmortization()">
+                        <label for="toggle-cents" class="font-medium text-slate-700 cursor-pointer select-none text-[11px]">
+                            Show Cents ($0.00)
+                        </label>
+                    </div>
+
+                    <div class="flex items-center space-x-2 p-2 bg-slate-50 rounded-lg border border-slate-200">
+                        <input type="checkbox" id="toggle-subtotals" checked class="w-3.5 h-3.5 text-brand-600 rounded border-slate-300 focus:ring-brand-500" onchange="calculateAmortization()">
+                        <label for="toggle-subtotals" class="font-medium text-slate-700 cursor-pointer select-none text-[11px]">
+                            Annual Subtotals
+                        </label>
+                    </div>
+                </div>
+
+            </div>
+
+            <div class="lg:col-span-7 space-y-4">
+                
+                <!-- PRIMARY STAT CARDS GRID -->
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                    <!-- Base Principal & Interest -->
+                    <div class="bg-white p-3.5 rounded-xl border border-slate-200 shadow-sm card-shadow">
+                        <div id="stat-payment-label" class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Base P&I</div>
+                        <div id="stat-monthly-pi" class="text-lg sm:text-xl font-extrabold text-slate-900">$0</div>
+                        <div class="text-[10px] text-slate-500 mt-0.5">Principal + Interest</div>
+                    </div>
+
+                    <!-- Total Monthly Payment with Escrow -->
+                    <div class="bg-white p-3.5 rounded-xl border border-slate-200 shadow-sm card-shadow bg-gradient-to-br from-white to-brand-50/40">
+                        <div class="text-[10px] font-bold text-brand-700 uppercase tracking-wider mb-1">Full Monthly Payment</div>
+                        <div id="stat-total-piti" class="text-lg sm:text-xl font-extrabold text-brand-700">$0</div>
+                        <div id="stat-piti-sub" class="text-[10px] text-slate-500 mt-0.5">Includes Escrow & PMI</div>
+                    </div>
+
+                    <!-- Total Interest Paid -->
+                    <div class="bg-white p-3.5 rounded-xl border border-slate-200 shadow-sm card-shadow">
+                        <div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Total Interest</div>
+                        <div id="stat-total-interest" class="text-lg sm:text-xl font-extrabold text-amber-600">$0</div>
+                        <div id="stat-interest-percent" class="text-[10px] text-slate-500 mt-0.5">0% of total paid</div>
+                    </div>
+
+                    <!-- Payoff Date -->
+                    <div class="bg-white p-3.5 rounded-xl border border-slate-200 shadow-sm card-shadow">
+                        <div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Payoff Date</div>
+                        <div id="stat-payoff-date" class="text-base sm:text-lg font-extrabold text-emerald-600">Oct 2056</div>
+                        <div id="stat-total-months" class="text-[10px] text-slate-500 mt-0.5">360 Payments</div>
+                    </div>
+                </div>
+
+                <!-- EXTRA PAYMENT IMPACT CARD -->
+                <div id="extra-impact-card" class="bg-gradient-to-r from-emerald-900 via-teal-900 to-slate-900 text-white p-4 rounded-xl shadow-md flex items-center justify-between gap-4 hidden">
+                    <div class="flex items-center space-x-3">
+                        <div class="bg-emerald-500/20 p-2.5 rounded-lg border border-emerald-400/30">
+                            <i class="fa-solid fa-piggy-bank text-emerald-300 text-2xl"></i>
+                        </div>
+                        <div>
+                            <div class="font-bold text-xs sm:text-sm text-emerald-200">Accelerated Payoff Strategy Active</div>
+                            <div id="extra-impact-summary" class="text-xs text-emerald-100 font-medium leading-relaxed">
+                                Pay off 0 years early and save $0 in interest!
+                            </div>
+                        </div>
+                    </div>
+                    <span class="text-xs bg-emerald-400/20 text-emerald-200 px-3 py-1 rounded-full font-semibold border border-emerald-400/30 whitespace-nowrap hidden sm:inline-block">
+                        Smart Strategy
+                    </span>
+                </div>
+
+                <!-- VISUAL CHART PREVIEW -->
+                <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm card-shadow space-y-3">
+                    <div class="flex items-center justify-between border-b border-slate-100 pb-2">
+                        <h3 class="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center">
+                            <i class="fa-solid fa-chart-line text-brand-500 mr-2"></i> Financial Visualization
+                        </h3>
+                        <div class="flex space-x-1">
+                            <button onclick="switchChartMode('balance')" id="btn-chart-balance" class="text-[11px] font-semibold px-2.5 py-1 rounded bg-brand-500 text-white transition">Balance Trajectory</button>
+                            <button onclick="switchChartMode('breakdown')" id="btn-chart-breakdown" class="text-[11px] font-semibold px-2.5 py-1 rounded bg-slate-100 text-slate-600 hover:bg-slate-200 transition">Principal vs Interest</button>
+                        </div>
+                    </div>
+                    <div class="h-52 w-full relative">
+                        <canvas id="amortizationChart"></canvas>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- AMORTIZATION TABLE PANEL -->
+        <div class="bg-white rounded-2xl border border-slate-200 shadow-sm card-shadow overflow-hidden flex flex-col">
+            
+            <!-- Table Header Bar -->
+            <div class="p-4 bg-slate-900 text-white flex flex-wrap items-center justify-between gap-3">
+                <div class="flex items-center space-x-3">
+                    <div class="bg-brand-500 p-2 rounded-lg text-white">
+                        <i class="fa-solid fa-table-list"></i>
+                    </div>
+                    <div>
+                        <h2 class="font-bold text-base leading-tight">Amortization Schedule Table</h2>
+                        <p class="text-xs text-slate-400">Detailed period-by-period breakdown of principal, interest, escrow, and PMI</p>
+                    </div>
+                </div>
+
+                <div class="flex items-center space-x-3 text-xs">
+                    <div class="relative">
+                        <i class="fa-solid fa-magnifying-glass absolute left-3 top-2.5 text-slate-400"></i>
+                        <input type="text" id="table-search" placeholder="Search Date or Year..." 
+                            class="pl-8 pr-3 py-1.5 bg-slate-800 text-slate-200 placeholder-slate-500 border border-slate-700 rounded-lg focus:outline-none focus:ring-1 focus:ring-brand-500"
+                            oninput="filterTable()">
+                    </div>
+                    <button onclick="scrollToTopTable()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 p-2 rounded-lg border border-slate-700 transition" title="Scroll to Top">
+                        <i class="fa-solid fa-arrow-up"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- TABLE CONTAINER -->
+            <div class="table-container overflow-x-auto max-h-[600px] border-b border-slate-200">
+                <table class="w-full text-xs text-left border-collapse" id="amortization-table">
+                    <thead class="sticky-thead bg-slate-100 text-slate-700 font-bold uppercase tracking-wider border-b border-slate-300">
+                        <!-- Dynamic Amortization Table Headers Generated by JS -->
+                    </thead>
+                    <tbody id="schedule-body" class="divide-y divide-slate-100 font-mono text-slate-700">
+                        <!-- Dynamic Amortization Rows Generated by JS -->
+                    </tbody>
+                    <tfoot id="schedule-foot" class="sticky bottom-0 bg-slate-900 text-white font-mono font-bold text-xs shadow-lg">
+                        <!-- Grand Total Row Generated by JS -->
+                    </tfoot>
+                </table>
+            </div>
+
+            <!-- TABLE FOOTER METRICS SUMMARY -->
+            <div class="p-3 bg-slate-50 border-t border-slate-200 flex flex-wrap items-center justify-between text-xs text-slate-600 gap-2">
+                <div class="flex items-center space-x-4">
+                    <span><strong id="footer-row-count">0</strong> Payments Scheduled</span>
+                    <span class="text-slate-300">|</span>
+                    <span>Exact floating calculations formatted to your viewing preference</span>
+                </div>
+                <div class="flex items-center space-x-2">
+                    <span class="inline-block w-3 h-3 bg-indigo-100 border border-indigo-300 rounded"></span>
+                    <span>Annual Summary Rows</span>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- ADVANCED COMPOUNDING & ACCRUAL OPTIONS -->
+        <div class="no-print bg-white p-5 rounded-2xl border border-slate-200 shadow-sm card-shadow space-y-4">
+            <div class="flex items-center justify-between border-b border-slate-200 pb-3">
+                <div class="flex items-center space-x-2">
+                    <div class="bg-amber-500/10 text-amber-600 p-2 rounded-lg">
+                        <i class="fa-solid fa-sliders text-lg"></i>
+                    </div>
+                    <div>
+                        <h2 class="font-bold text-slate-900 text-base">Uncommon & Advanced Mortgage Customizations</h2>
+                        <p class="text-xs text-slate-500">Tailor compounding frequencies and non-standard interest accruals</p>
+                    </div>
+                </div>
+                <span class="text-xs bg-amber-50 text-amber-700 font-semibold px-2.5 py-1 rounded-full border border-amber-200">Advanced Terms</span>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2">
+                
+                <!-- Accrued Interest Type Column -->
+                <div class="space-y-2">
+                    <label for="input-accrued-type" class="block text-xs font-bold text-slate-800 uppercase tracking-wider">
+                        <i class="fa-solid fa-clock-rotate-left mr-1.5 text-amber-600"></i> Accrued Interest Calculation Type
+                    </label>
+                    <select id="input-accrued-type" onchange="calculateAmortization()" 
+                        class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg font-semibold text-slate-800 text-xs focus:outline-none focus:ring-2 focus:ring-amber-500 transition cursor-pointer">
+                        <option value="monthly" selected>Monthly Compound / Accrual (Standard US Mortgage)</option>
+                        <option value="semi_annual">Semi-Annual Compound (Standard Canadian Mortgage)</option>
+                        <option value="daily">Daily Accrual (365 days/year Simple Interest)</option>
+                        <option value="weekly">Weekly Accrual (52 periods/year)</option>
+                    </select>
+                    <p class="text-[11px] text-slate-500 leading-relaxed">
+                        Determines the compounding math engine. US mortgages standardly compound monthly, while Canadian mortgages compound semi-annually by law.
+                    </p>
+                </div>
+
+                <!-- Escrow & Tax Escalation Option -->
+                <div class="space-y-2">
+                    <label for="input-tax-inflation" class="block text-xs font-bold text-slate-800 uppercase tracking-wider">
+                        <i class="fa-solid fa-arrow-trend-up mr-1.5 text-brand-600"></i> Property Tax & Insurance Annual Escalation
+                    </label>
+                    <div class="relative">
+                        <input type="number" id="input-tax-inflation" value="2.5" min="0" max="15" step="0.5" 
+                            class="w-full pr-7 pl-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-xs font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-brand-500 transition"
+                            oninput="calculateAmortization()">
+                        <span class="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 font-semibold text-xs">% / yr</span>
+                    </div>
+                    <p class="text-[11px] text-slate-500 leading-relaxed">
+                        Simulates annual property tax and homeowners insurance inflation over the multi-decade lifespan of the mortgage.
+                    </p>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- REFINANCE COMPARISON MODULE -->
+        <div class="no-print bg-white p-5 rounded-2xl border border-slate-200 shadow-sm card-shadow space-y-4">
+            <div class="flex items-center justify-between border-b border-slate-200 pb-3">
+                <div class="flex items-center space-x-2">
+                    <div class="bg-emerald-500/10 text-emerald-600 p-2 rounded-lg">
+                        <i class="fa-solid fa-code-compare text-lg"></i>
+                    </div>
+                    <div>
+                        <h2 class="font-bold text-slate-900 text-base">Refinance & Rate Savings Comparison Calculator</h2>
+                        <p class="text-xs text-slate-500">Evaluate whether refinancing into a lower rate or shorter term saves money after closing costs</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2">
+                <div>
+                    <label for="refi-rate" class="block text-xs font-semibold text-slate-700 mb-1">New Proposed Interest Rate (%)</label>
+                    <div class="relative">
+                        <input type="number" id="refi-rate" value="5.25" min="0" max="25" step="0.125" class="w-full pr-7 pl-3 py-1.5 bg-slate-50 border border-slate-300 rounded-lg text-xs font-semibold text-slate-900" oninput="calculateRefinance()">
+                        <span class="absolute inset-y-0 right-0 pr-2.5 flex items-center text-slate-400 font-semibold text-xs">%</span>
+                    </div>
+                </div>
+
+                <div>
+                    <label for="refi-term" class="block text-xs font-semibold text-slate-700 mb-1">New Term (Years)</label>
+                    <input type="number" id="refi-term" value="20" min="1" max="40" step="1" class="w-full px-3 py-1.5 bg-slate-50 border border-slate-300 rounded-lg text-xs font-semibold text-slate-900" oninput="calculateRefinance()">
+                </div>
+
+                <div>
+                    <label for="refi-costs" class="block text-xs font-semibold text-slate-700 mb-1">Refinance Closing Costs ($)</label>
+                    <div class="relative">
+                        <span class="absolute inset-y-0 left-0 pl-2.5 flex items-center text-slate-400 font-semibold text-xs">$</span>
+                        <input type="number" id="refi-costs" value="4500" min="0" step="500" class="w-full pl-6 pr-2 py-1.5 bg-slate-50 border border-slate-300 rounded-lg text-xs font-semibold text-slate-900" oninput="calculateRefinance()">
+                    </div>
+                </div>
+            </div>
+
+            <div id="refi-results-panel" class="p-4 bg-slate-50 rounded-xl border border-slate-200 grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
+                <div>
+                    <span class="text-slate-500 font-medium block">New Monthly P&I Payment:</span>
+                    <span id="refi-new-pi" class="text-base font-extrabold text-slate-900">$0</span>
+                </div>
+                <div>
+                    <span class="text-slate-500 font-medium block">Monthly Savings / Difference:</span>
+                    <span id="refi-monthly-diff" class="text-base font-extrabold text-emerald-600">$0 / mo</span>
+                </div>
+                <div>
+                    <span class="text-slate-500 font-medium block">Break-even Period:</span>
+                    <span id="refi-breakeven" class="text-base font-extrabold text-brand-600">0 months</span>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <script>
+        // Global State & Chart Handles
+        let chartInstance = null;
+        let chartMode = 'balance'; // 'balance' or 'breakdown'
+        let globalScheduleData = [];
+
+        const MONTH_NAMES = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+        /**
+         * Currency formatting supporting dynamic rounding or exact 2 decimal places.
+         */
+        function formatCurrency(val, forceCents = false) {
+            const showCents = forceCents || document.getElementById('toggle-cents').checked;
+            if (showCents) {
+                return '$' + Number(val).toLocaleString('en-US', {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2
+                });
+            } else {
+                return '$' + Math.round(val).toLocaleString('en-US');
+            }
+        }
+
+        /**
+         * Keep Home Price & Down Payment inputs in sync
+         */
+        function syncDownPaymentFromPrice() {
+            const price = parseFloat(document.getElementById('input-home-price').value) || 0;
+            const down = parseFloat(document.getElementById('input-down-payment').value) || 0;
+            const pct = price > 0 ? ((down / price) * 100).toFixed(0) : 0;
+            document.getElementById('down-percent-label').innerText = pct;
+            calculateAmortization();
+        }
+
+        function syncDownPaymentFromAmount() {
+            const price = parseFloat(document.getElementById('input-home-price').value) || 0;
+            const down = parseFloat(document.getElementById('input-down-payment').value) || 0;
+            const pct = price > 0 ? ((down / price) * 100).toFixed(1) : 0;
+            document.getElementById('down-percent-label').innerText = pct;
+            calculateAmortization();
+        }
+
+        /**
+         * Preset loader
+         */
+        function applyPreset(price, down, rate, years, extra, freq, accelType, tax, insurance, hoa, pmiRate) {
+            document.getElementById('input-home-price').value = price;
+            document.getElementById('input-down-payment').value = down;
+            document.getElementById('input-rate').value = rate;
+            document.getElementById('input-years').value = years;
+            document.getElementById('input-extra').value = extra;
+            document.getElementById('input-frequency').value = freq;
+            document.getElementById('input-property-tax').value = tax;
+            document.getElementById('input-insurance').value = insurance;
+            document.getElementById('input-hoa').value = hoa;
+            document.getElementById('input-pmi-rate').value = pmiRate;
+            
+            syncDownPaymentFromAmount();
+        }
+
+        function resetDefaults() {
+            applyPreset(375000, 75000, 6.5, 30, 0, 'monthly', 'monthly', 4200, 1500, 0, 0.5);
+            document.getElementById('input-annual-extra').value = 0;
+            document.getElementById('input-lump-sum').value = 0;
+            document.getElementById('input-tax-inflation').value = 2.5;
+        }
+
+        function switchChartMode(mode) {
+            chartMode = mode;
+            document.getElementById('btn-chart-balance').className = mode === 'balance' 
+                ? 'text-[11px] font-semibold px-2.5 py-1 rounded bg-brand-500 text-white transition'
+                : 'text-[11px] font-semibold px-2.5 py-1 rounded bg-slate-100 text-slate-600 hover:bg-slate-200 transition';
+            document.getElementById('btn-chart-breakdown').className = mode === 'breakdown'
+                ? 'text-[11px] font-semibold px-2.5 py-1 rounded bg-brand-500 text-white transition'
+                : 'text-[11px] font-semibold px-2.5 py-1 rounded bg-slate-100 text-slate-600 hover:bg-slate-200 transition';
+            calculateAmortization();
+        }
+
+        /**
+         * CORE MORTGAGE ENGINE
+         */
+        function calculateAmortization() {
+            const homePrice = parseFloat(document.getElementById('input-home-price').value) || 0;
+            const downPayment = parseFloat(document.getElementById('input-down-payment').value) || 0;
+            const principal = Math.max(0, homePrice - downPayment);
+            
+            // Toggle disable state of PMI input if down payment is 20% or higher
+            const pmiInput = document.getElementById('input-pmi-rate');
+            if (pmiInput) {
+                pmiInput.disabled = homePrice > 0 && (downPayment / homePrice) >= 0.20;
+            }
+
+            document.getElementById('display-principal-calc').innerText = formatCurrency(principal, true);
+
+            const annualRate = parseFloat(document.getElementById('input-rate').value) || 0;
+            const years = parseFloat(document.getElementById('input-years').value) || 0;
+            const frequency = document.getElementById('input-frequency').value;
+            const startDateVal = document.getElementById('input-start-date').value || "2026-10";
+
+            const includeEscrow = document.getElementById('toggle-include-escrow').checked;
+            const propTaxYr = includeEscrow ? (parseFloat(document.getElementById('input-property-tax').value) || 0) : 0;
+            const insuranceYr = includeEscrow ? (parseFloat(document.getElementById('input-insurance').value) || 0) : 0;
+            const hoaMo = includeEscrow ? (parseFloat(document.getElementById('input-hoa').value) || 0) : 0;
+            const pmiRate = includeEscrow ? (parseFloat(document.getElementById('input-pmi-rate').value) || 0) : 0;
+            const taxEscalation = (parseFloat(document.getElementById('input-tax-inflation').value) || 0) / 100;
+
+            const extraPayment = parseFloat(document.getElementById('input-extra').value) || 0;
+            const annualExtra = parseFloat(document.getElementById('input-annual-extra').value) || 0;
+            const lumpSum = parseFloat(document.getElementById('input-lump-sum').value) || 0;
+            const lumpMonth = parseInt(document.getElementById('input-lump-month').value) || 1;
+
+            const showSubtotals = document.getElementById('toggle-subtotals').checked;
+            const accruedType = document.getElementById('input-accrued-type').value;
+
+            // Determine if PMI Column should be displayed
+            const showPmiCol = includeEscrow && pmiRate > 0 && !pmiInput.disabled;
+
+            // Dynamically Render Table Headers
+            const thead = document.querySelector('#amortization-table thead');
+            let headerHTML = `
+                <tr class="bg-slate-100 text-slate-700 font-bold uppercase tracking-wider border-b border-slate-300">
+                    <th scope="col" class="py-3 px-3 text-left w-32 bg-slate-100">Date</th>
+                    <th scope="col" class="py-3 px-3 text-right bg-slate-100">Start Principal</th>
+                    <th scope="col" class="py-3 px-3 text-right bg-slate-100" id="col-header-payment">Total Payment</th>
+                    <th scope="col" class="py-3 px-3 text-right bg-slate-100 text-emerald-700">Principal</th>
+                    <th scope="col" class="py-3 px-3 text-right bg-slate-100 text-amber-700">Interest</th>
+                    <th scope="col" class="py-3 px-3 text-right bg-slate-100">End Principal</th>
+            `;
+
+            if (showPmiCol) {
+                headerHTML += `<th scope="col" class="py-3 px-3 text-right bg-slate-100 text-rose-700 pmi-col">PMI</th>`;
+            }
+
+            if (includeEscrow) {
+                headerHTML += `<th scope="col" class="py-3 px-3 text-right bg-slate-100 text-purple-700 escrow-col">Escrow (excl. PMI)</th>`;
+            }
+
+            headerHTML += `</tr>`;
+            thead.innerHTML = headerHTML;
+
+            if (principal <= 0 || years <= 0) {
+                document.getElementById('schedule-body').innerHTML = `<tr><td colspan="8" class="p-8 text-center text-slate-400 font-sans">Please enter valid loan details above.</td></tr>`;
+                document.getElementById('schedule-foot').innerHTML = '';
+                return;
+            }
+
+            // Determine frequency parameters (f_pay)
+            let f_pay = 12;
+            let isAcceleratedBiweekly = false;
+
+            if (frequency === 'biweekly') f_pay = 26;
+            else if (frequency === 'biweekly_accel') { f_pay = 26; isAcceleratedBiweekly = true; }
+            else if (frequency === 'semi_monthly') f_pay = 24;
+            else if (frequency === 'quarterly') f_pay = 4;
+            else if (frequency === 'yearly') f_pay = 1;
+
+            // Determine interest rate per period (i_per)
+            const r = annualRate / 100;
+            const totalScheduledPeriods = Math.round(years * f_pay);
+            let i_per = 0;
+
+            if (r > 0) {
+                if (accruedType === 'semi_annual') {
+                    // Canadian Semi-annual compounding formula
+                    i_per = Math.pow(1 + (r / 2), 2 / f_pay) - 1;
+                } else if (accruedType === 'daily') {
+                    // Daily accrual formula
+                    i_per = Math.pow(1 + (r / 365), 365 / f_pay) - 1;
+                } else {
+                    // Standard compounding
+                    i_per = r / f_pay;
+                }
+            }
+
+            // Base periodic payment math
+            let baseMonthlyPayment = 0;
+            if (r > 0) {
+                const i_monthly = r / 12;
+                const n_months = years * 12;
+                baseMonthlyPayment = (principal * i_monthly * Math.pow(1 + i_monthly, n_months)) / (Math.pow(1 + i_monthly, n_months) - 1);
+            } else {
+                baseMonthlyPayment = principal / (years * 12);
+            }
+
+            let basePayment = 0;
+            if (isAcceleratedBiweekly) {
+                basePayment = baseMonthlyPayment / 2;
+            } else if (r > 0) {
+                basePayment = (principal * i_per * Math.pow(1 + i_per, totalScheduledPeriods)) / (Math.pow(1 + i_per, totalScheduledPeriods) - 1);
+            } else {
+                basePayment = principal / totalScheduledPeriods;
+            }
+
+            // Initial Escrow & PMI Estimates
+            let monthlyTax = propTaxYr / 12;
+            let monthlyInsurance = insuranceYr / 12;
+            let initialLTV = homePrice > 0 ? (principal / homePrice) : 1;
+            let initialPMI = (initialLTV > 0.80 && pmiRate > 0) ? (principal * (pmiRate / 100)) / 12 : 0;
+            let firstPeriodEscrowTotal = (monthlyTax + monthlyInsurance + hoaMo + initialPMI) * (12 / f_pay);
+
+            // Start Date Parsing
+            const [startYear, startMonthNum] = startDateVal.split('-').map(Number);
+            let currentYear = startYear;
+            let currentMonthIdx = startMonthNum - 1;
+
+            let balance = principal;
+            let periodCounter = 0;
+
+            let totalInterestPaid = 0;
+            let totalPrincipalPaid = 0;
+            let totalEscrowOnlyPaid = 0;
+            let totalPMIPaid = 0;
+            let totalAmountPaid = 0;
+
+            const tbody = document.getElementById('schedule-body');
+            tbody.innerHTML = '';
+            globalScheduleData = [];
+
+            // Annual Accumulators
+            let yearInterest = 0, yearPrincipal = 0, yearEscrowOnly = 0, yearPMI = 0, yearPayment = 0;
+
+            // Baseline standard comparison
+            let baselineInterest = (baseMonthlyPayment * years * 12) - principal;
+
+            // Chart Collections
+            const chartLabels = [], chartBalances = [], chartInterest = [], chartPrincipalCum = [];
+
+            const monthsStep = 12 / f_pay;
+
+            while (balance > 0.0001 && periodCounter < 1200) {
+                periodCounter++;
+
+                const begBalance = balance;
+                const interestForPeriod = begBalance * i_per;
+
+                // Escrow & Tax Escalation
+                const currentYearOffset = Math.floor((periodCounter - 1) / f_pay);
+                const inflationMult = Math.pow(1 + taxEscalation, currentYearOffset);
+
+                const currentTaxPerPeriod = (monthlyTax * inflationMult) * (12 / f_pay);
+                const currentInsPerPeriod = (monthlyInsurance * inflationMult) * (12 / f_pay);
+                const currentHoaPerPeriod = hoaMo * (12 / f_pay);
+
+                const escrowOnlyForPeriod = includeEscrow ? (currentTaxPerPeriod + currentInsPerPeriod + currentHoaPerPeriod) : 0;
+
+                // Auto-cancel PMI when Loan Balance drops to 80% or lower of Home Original Price (20% equity)
+                const currentLTV = homePrice > 0 ? (begBalance / homePrice) : (begBalance / principal);
+                const currentPMIPerPeriod = (includeEscrow && currentLTV > 0.80 && pmiRate > 0) ? ((principal * (pmiRate / 100)) / f_pay) : 0;
+
+                // Extra Principal Calculations
+                let basePrincipalForPeriod = basePayment - interestForPeriod;
+                let addExtra = extraPayment;
+
+                // Check for Annual Bonus
+                if (annualExtra > 0 && periodCounter % Math.round(f_pay) === 0) {
+                    addExtra += annualExtra;
+                }
+
+                // Check for One-Time Lump Sum
+                if (lumpSum > 0 && periodCounter === lumpMonth) {
+                    addExtra += lumpSum;
+                }
+
+                if (begBalance <= (basePrincipalForPeriod + addExtra)) {
+                    basePrincipalForPeriod = begBalance;
+                    addExtra = 0;
+                }
+
+                const totalPrincipalForPeriod = basePrincipalForPeriod + addExtra;
+                const totalPaymentForPeriod = interestForPeriod + totalPrincipalForPeriod + escrowOnlyForPeriod + currentPMIPerPeriod;
+                const endBalance = Math.max(0, begBalance - totalPrincipalForPeriod);
+                balance = endBalance;
+
+                // Accumulate totals
+                totalInterestPaid += interestForPeriod;
+                totalPrincipalPaid += totalPrincipalForPeriod;
+                totalEscrowOnlyPaid += escrowOnlyForPeriod;
+                totalPMIPaid += currentPMIPerPeriod;
+                totalAmountPaid += totalPaymentForPeriod;
+
+                yearInterest += interestForPeriod;
+                yearPrincipal += totalPrincipalForPeriod;
+                yearEscrowOnly += escrowOnlyForPeriod;
+                yearPMI += currentPMIPerPeriod;
+                yearPayment += totalPaymentForPeriod;
+
+                const dateLabel = `${MONTH_NAMES[currentMonthIdx]} ${currentYear}`;
+
+                globalScheduleData.push({
+                    periodNum: periodCounter,
+                    dateLabel: dateLabel,
+                    begBalance: begBalance,
+                    payment: totalPaymentForPeriod,
+                    principalPaid: totalPrincipalForPeriod,
+                    interestPaid: interestForPeriod,
+                    escrowPaid: escrowOnlyForPeriod,
+                    pmiPaid: currentPMIPerPeriod,
+                    endBalance: endBalance
+                });
+
+                // Chart Data Sampling
+                if (periodCounter === 1 || periodCounter % Math.round(f_pay) === 0 || balance === 0) {
+                    chartLabels.push(`${MONTH_NAMES[currentMonthIdx]}-${String(currentYear).slice(2)}`);
+                    chartBalances.push(Math.round(endBalance));
+                    chartInterest.push(Math.round(totalInterestPaid));
+                    chartPrincipalCum.push(Math.round(totalPrincipalPaid));
+                }
+
+                // Render Table Row
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-slate-50/80 transition text-right data-row";
+                tr.setAttribute('data-search', `${dateLabel} ${currentYear}`.toLowerCase());
+
+                let rowHTML = `
+                    <td class="py-2 px-3 text-left font-semibold text-slate-900 border-r border-slate-100">${dateLabel}</td>
+                    <td class="py-2 px-3">${formatCurrency(begBalance)}</td>
+                    <td class="py-2 px-3 font-semibold text-slate-900">${formatCurrency(totalPaymentForPeriod)}</td>
+                    <td class="py-2 px-3 text-emerald-600 font-semibold">${formatCurrency(totalPrincipalForPeriod)}</td>
+                    <td class="py-2 px-3 text-amber-600 font-semibold">${formatCurrency(interestForPeriod)}</td>
+                    <td class="py-2 px-3 font-bold text-slate-900">${formatCurrency(endBalance)}</td>
+                `;
+
+                if (showPmiCol) {
+                    rowHTML += `<td class="py-2 px-3 text-rose-600 font-semibold pmi-col">${formatCurrency(currentPMIPerPeriod)}</td>`;
+                }
+
+                if (includeEscrow) {
+                    rowHTML += `<td class="py-2 px-3 text-purple-700 font-semibold escrow-col">${formatCurrency(escrowOnlyForPeriod)}</td>`;
+                }
+
+                tr.innerHTML = rowHTML;
+                tbody.appendChild(tr);
+
+                // Check End of Year Subtotal
+                const nextMonthIdx = currentMonthIdx + monthsStep;
+                const isEndOfYear = (nextMonthIdx >= 12) || frequency === 'yearly';
+                const isFinished = (balance <= 0.0001);
+
+                if (showSubtotals && (isEndOfYear || isFinished)) {
+                    const subtr = document.createElement('tr');
+                    subtr.className = "bg-indigo-50/90 text-indigo-950 font-bold border-y border-indigo-200 text-right subtotal-row";
+                    subtr.setAttribute('data-search', `total ${currentYear}`.toLowerCase());
+
+                    let subHTML = `
+                        <td class="py-2 px-3 text-left font-bold text-indigo-900 border-r border-indigo-200/50">
+                            <span class="inline-flex items-center px-1.5 py-0.5 rounded bg-indigo-200/60 text-indigo-900 text-[9px] font-extrabold uppercase mr-1">Annual</span>
+                            Total ${currentYear}
+                        </td>
+                        <td class="py-2 px-3 text-slate-400 font-normal italic text-[10px]">— End Bal —</td>
+                        <td class="py-2 px-3 font-bold text-indigo-950">${formatCurrency(yearPayment)}</td>
+                        <td class="py-2 px-3 font-bold text-emerald-700">${formatCurrency(yearPrincipal)}</td>
+                        <td class="py-2 px-3 font-bold text-amber-700">${formatCurrency(yearInterest)}</td>
+                        <td class="py-2 px-3 font-bold text-indigo-950">${formatCurrency(endBalance)}</td>
+                    `;
+
+                    if (showPmiCol) {
+                        subHTML += `<td class="py-2 px-3 font-bold text-rose-700 pmi-col">${formatCurrency(yearPMI)}</td>`;
+                    }
+
+                    if (includeEscrow) {
+                        subHTML += `<td class="py-2 px-3 font-bold text-purple-800 escrow-col">${formatCurrency(yearEscrowOnly)}</td>`;
+                    }
+
+                    subtr.innerHTML = subHTML;
+                    tbody.appendChild(subtr);
+
+                    yearInterest = 0; yearPrincipal = 0; yearEscrowOnly = 0; yearPMI = 0; yearPayment = 0;
+                }
+
+                currentMonthIdx += monthsStep;
+                while (currentMonthIdx >= 12) {
+                    currentMonthIdx -= 12;
+                    currentYear++;
+                }
+            }
+
+            // Render Footers & Summaries
+            const tfoot = document.getElementById('schedule-foot');
+            let footHTML = `
+                <tr class="text-right border-t-2 border-slate-700">
+                    <td class="py-3 px-3 text-left font-extrabold text-white uppercase text-[10px] tracking-wider">
+                        Grand Total (${periodCounter} Pymts)
+                    </td>
+                    <td class="py-3 px-3 text-slate-400 font-normal">— Loan: ${formatCurrency(principal)} —</td>
+                    <td class="py-3 px-3 text-white font-extrabold">${formatCurrency(totalAmountPaid)}</td>
+                    <td class="py-3 px-3 text-emerald-400 font-extrabold">${formatCurrency(totalPrincipalPaid)}</td>
+                    <td class="py-3 px-3 text-amber-400 font-extrabold">${formatCurrency(totalInterestPaid)}</td>
+                    <td class="py-3 px-3 text-slate-300 font-extrabold">$0</td>
+            `;
+
+            if (showPmiCol) {
+                footHTML += `<td class="py-3 px-3 text-rose-300 font-extrabold pmi-col">${formatCurrency(totalPMIPaid)}</td>`;
+            }
+
+            if (includeEscrow) {
+                footHTML += `<td class="py-3 px-3 text-purple-300 font-extrabold escrow-col">${formatCurrency(totalEscrowOnlyPaid)}</td>`;
+            }
+
+            footHTML += `</tr>`;
+            tfoot.innerHTML = footHTML;
+
+            // Stat Cards Updates
+            document.getElementById('stat-monthly-pi').innerText = formatCurrency(basePayment);
+            document.getElementById('stat-total-piti').innerText = formatCurrency(basePayment + firstPeriodEscrowTotal);
+            document.getElementById('stat-total-interest').innerText = formatCurrency(totalInterestPaid);
+            
+            const intPct = ((totalInterestPaid / (totalInterestPaid + totalPrincipalPaid)) * 100).toFixed(1);
+            document.getElementById('stat-interest-percent').innerText = `${intPct}% of principal + interest`;
+
+            const lastRow = globalScheduleData[globalScheduleData.length - 1];
+            document.getElementById('stat-payoff-date').innerText = lastRow ? lastRow.dateLabel : 'N/A';
+            document.getElementById('stat-total-months').innerText = `${periodCounter} Total Payments`;
+            document.getElementById('footer-row-count').innerText = periodCounter;
+
+            // Extra Payment Impact Banner
+            const extraImpactCard = document.getElementById('extra-impact-card');
+            const totalScheduledBase = totalScheduledPeriods;
+            if (periodCounter < totalScheduledBase || extraPayment > 0 || annualExtra > 0 || lumpSum > 0 || isAcceleratedBiweekly) {
+                const periodsSaved = totalScheduledBase - periodCounter;
+                const yearsSaved = (periodsSaved / f_pay).toFixed(1);
+                const interestSaved = Math.max(0, baselineInterest - totalInterestPaid);
+
+                document.getElementById('extra-impact-summary').innerText = 
+                    `By using this payoff strategy, you'll finish ${yearsSaved} years earlier and save ${formatCurrency(interestSaved)} in interest charges!`;
+                extraImpactCard.classList.remove('hidden');
+            } else {
+                extraImpactCard.classList.add('hidden');
+            }
+
+            updateChart(chartLabels, chartBalances, chartInterest, chartPrincipalCum);
+            calculateRefinance();
+        }
+
+        /**
+         * Render dynamic Chart.js canvas graph
+         */
+        function updateChart(labels, balances, cumulativeInterest, cumulativePrincipal) {
+            const ctx = document.getElementById('amortizationChart').getContext('2d');
+
+            if (chartInstance) {
+                chartInstance.destroy();
+            }
+
+            const datasets = chartMode === 'balance' ? [
+                {
+                    label: 'Remaining Balance',
+                    data: balances,
+                    borderColor: '#0284c7',
+                    backgroundColor: 'rgba(2, 132, 199, 0.1)',
+                    fill: true,
+                    tension: 0.2,
+                    borderWidth: 2,
+                    pointRadius: 0
+                },
+                {
+                    label: 'Cumulative Interest Paid',
+                    data: cumulativeInterest,
+                    borderColor: '#d97706',
+                    backgroundColor: 'rgba(217, 119, 6, 0.05)',
+                    fill: true,
+                    tension: 0.2,
+                    borderWidth: 2,
+                    pointRadius: 0
+                }
+            ] : [
+                {
+                    label: 'Cumulative Principal Paid',
+                    data: cumulativePrincipal,
+                    borderColor: '#059669',
+                    backgroundColor: 'rgba(5, 150, 105, 0.15)',
+                    fill: true,
+                    tension: 0.2,
+                    borderWidth: 2,
+                    pointRadius: 0
+                },
+                {
+                    label: 'Cumulative Interest Paid',
+                    data: cumulativeInterest,
+                    borderColor: '#d97706',
+                    backgroundColor: 'rgba(217, 119, 6, 0.15)',
+                    fill: true,
+                    tension: 0.2,
+                    borderWidth: 2,
+                    pointRadius: 0
+                }
+            ];
+
+            chartInstance = new Chart(ctx, {
+                type: 'line',
+                data: { labels: labels, datasets: datasets },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'top',
+                            labels: { boxWidth: 10, font: { size: 10, family: 'Inter' } }
+                        },
+                        tooltip: {
+                            mode: 'index',
+                            intersect: false,
+                            callbacks: {
+                                label: (ctx) => `${ctx.dataset.label}: $${ctx.parsed.y.toLocaleString()}`
+                            }
+                        }
+                    },
+                    scales: {
+                        x: { grid: { display: false }, ticks: { font: { size: 9 }, maxTicksLimit: 12 } },
+                        y: {
+                            grid: { color: '#f1f5f9' },
+                            ticks: {
+                                font: { size: 9 },
+                                callback: (val) => '$' + (val >= 1000 ? (val/1000) + 'k' : val)
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        /**
+         * Refinance Comparison Analysis
+         */
+        function calculateRefinance() {
+            const homePrice = parseFloat(document.getElementById('input-home-price').value) || 0;
+            const down = parseFloat(document.getElementById('input-down-payment').value) || 0;
+            const currentBalance = Math.max(0, homePrice - down);
+
+            const refiRate = parseFloat(document.getElementById('refi-rate').value) || 0;
+            const refiTerm = parseFloat(document.getElementById('refi-term').value) || 0;
+            const refiCosts = parseFloat(document.getElementById('refi-costs').value) || 0;
+
+            const currentPI = parseFloat(document.getElementById('stat-monthly-pi').innerText.replace(/[^0-9.-]+/g,"")) || 0;
+
+            if (currentBalance <= 0 || refiTerm <= 0 || refiRate <= 0) return;
+
+            const r_new = (refiRate / 100) / 12;
+            const n_new = refiTerm * 12;
+            
+            const newPI = (currentBalance * r_new * Math.pow(1 + r_new, n_new)) / (Math.pow(1 + r_new, n_new) - 1);
+            const monthlyDiff = currentPI - newPI;
+
+            document.getElementById('refi-new-pi').innerText = formatCurrency(newPI, true);
+
+            if (monthlyDiff > 0) {
+                const breakevenMonths = Math.ceil(refiCosts / monthlyDiff);
+                document.getElementById('refi-monthly-diff').innerText = `Save ${formatCurrency(monthlyDiff, true)} / mo`;
+                document.getElementById('refi-monthly-diff').className = "text-base font-extrabold text-emerald-600";
+                document.getElementById('refi-breakeven').innerText = `${breakevenMonths} Months (${(breakevenMonths/12).toFixed(1)} yrs)`;
+            } else {
+                document.getElementById('refi-monthly-diff').innerText = `+${formatCurrency(Math.abs(monthlyDiff), true)} / mo higher`;
+                document.getElementById('refi-monthly-diff').className = "text-base font-extrabold text-rose-600";
+                document.getElementById('refi-breakeven').innerText = "N/A (Higher Payment)";
+            }
+        }
+
+        /**
+         * Table Search Filter
+         */
+        function filterTable() {
+            const query = document.getElementById('table-search').value.toLowerCase().trim();
+            const rows = document.querySelectorAll('#schedule-body tr');
+
+            rows.forEach(row => {
+                const searchData = row.getAttribute('data-search') || '';
+                if (!query || searchData.includes(query)) {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+        }
+
+        function scrollToTopTable() {
+            document.querySelector('.table-container').scrollTop = 0;
+        }
+
+        /**
+         * Export to CSV
+         */
+        function exportCSV() {
+            if (!globalScheduleData || globalScheduleData.length === 0) return;
+
+            const showCents = document.getElementById('toggle-cents').checked;
+            const includeEscrow = document.getElementById('toggle-include-escrow').checked;
+            const pmiRate = parseFloat(document.getElementById('input-pmi-rate').value) || 0;
+            const pmiDisabled = document.getElementById('input-pmi-rate').disabled;
+            const showPmiCol = includeEscrow && pmiRate > 0 && !pmiDisabled;
+
+            const headers = ["Period #", "Date", "Current Principal", "Total Payment", "Principal Paid", "Interest Paid", "Ending Principal"];
+            if (showPmiCol) headers.push("PMI Paid");
+            if (includeEscrow) headers.push("Total Escrow (excl. PMI)");
+
+            let csvContent = "data:text/csv;charset=utf-8," + headers.join(",") + "\n";
+
+            globalScheduleData.forEach(row => {
+                const rowArray = [
+                    row.periodNum,
+                    `"${row.dateLabel}"`,
+                    showCents ? row.begBalance.toFixed(2) : Math.round(row.begBalance),
+                    showCents ? row.payment.toFixed(2) : Math.round(row.payment),
+                    showCents ? row.principalPaid.toFixed(2) : Math.round(row.principalPaid),
+                    showCents ? row.interestPaid.toFixed(2) : Math.round(row.interestPaid),
+                    showCents ? row.endBalance.toFixed(2) : Math.round(row.endBalance)
+                ];
+
+                if (showPmiCol) {
+                    rowArray.push(showCents ? row.pmiPaid.toFixed(2) : Math.round(row.pmiPaid));
+                }
+                if (includeEscrow) {
+                    rowArray.push(showCents ? row.escrowPaid.toFixed(2) : Math.round(row.escrowPaid));
+                }
+
+                csvContent += rowArray.join(",") + "\n";
+            });
+
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", `mortgage_amortization_${new Date().toISOString().slice(0,10)}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        // Initialize on DOM Ready
+        window.addEventListener('DOMContentLoaded', () => {
+            calculateAmortization();
+        });
+    </script>
+</body>
+</html>

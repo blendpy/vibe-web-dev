@@ -1,0 +1,623 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Social Security Benefit & Breakeven Calculator</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js for Visualizations -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Inter', 'sans-serif'] },
+                    colors: {
+                        brand: {
+                            50: '#f0fdf4', 100: '#dcfce7', 500: '#22c55e',
+                            600: '#16a34a', 700: '#15803d', 800: '#166534', 900: '#14532d',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        input[type=range] { accent-color: #16a34a; }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #f1f5f9; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 antialiased font-sans min-h-screen flex flex-col">
+
+    <!-- Header -->
+    <header class="bg-slate-900 text-white sticky top-0 z-50 shadow-md">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="bg-blue-600 text-white p-2 rounded-lg flex items-center justify-center shadow-sm">
+                    <i class="fa-solid fa-hand-holding-dollar text-xl"></i>
+                </div>
+                <div>
+                    <h1 class="text-lg font-bold tracking-tight">Social Security Strategy Engine</h1>
+<p class="text-xs text-red-400 font-medium">(AI Generated - Use with caution)</p>
+                    <p class="text-xs text-slate-400">Claiming Age, Breakeven Analysis & Lifetime Benefit Calculator</p>
+                </div>
+            </div>
+            <div>
+                <button onclick="goBack()" id="backButton" class="hidden items-center space-x-2 bg-slate-800 hover:bg-slate-700 text-slate-200 px-3 py-2 rounded-lg text-sm font-medium transition-colors border border-slate-700 shadow-sm">
+                    <i class="fa-solid fa-arrow-left"></i>
+                    <span>Back</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-grow w-full space-y-8">
+        
+        <!-- Row 1: Controls & Interactive Chart -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+            
+            <!-- Left Controls Column -->
+            <div class="lg:col-span-4">
+                <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6 space-y-6 h-full flex flex-col justify-between">
+                    <div class="space-y-6">
+                        <h2 class="text-lg font-bold text-slate-900 border-b border-slate-100 pb-2 flex items-center">
+                            <i class="fa-solid fa-sliders text-brand-600 mr-2"></i> Financial Inputs
+                        </h2>
+                        
+                        <!-- Estimated FRA Monthly Benefit (PIA) -->
+                        <div>
+                            <div class="flex items-center justify-between mb-2">
+                                <label for="piaInput" class="text-sm font-semibold text-slate-800">FRA Monthly Benefit<br>(Age 67 $)</label>
+                                <div class="relative rounded-md shadow-sm">
+                                    <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
+                                        <span class="text-slate-500 sm:text-sm">$</span>
+                                    </div>
+                                    <input type="number" id="piaInput" value="2500" min="500" max="5000" step="50" oninput="syncPia(this.value)" class="block w-32 rounded-md border-0 py-1.5 pl-7 pr-3 text-slate-900 font-bold ring-1 ring-inset ring-slate-300 focus:ring-2 focus:ring-inset focus:ring-brand-600 text-right sm:text-sm">
+                                </div>
+                            </div>
+                            <input type="range" id="piaSlider" min="500" max="5000" step="50" value="2500" oninput="syncPia(this.value)" class="w-full h-2.5 bg-slate-200 rounded-lg appearance-none cursor-pointer">
+                        </div>
+
+                        <!-- Target Life Expectancy -->
+                        <div>
+                            <div class="flex items-center justify-between mb-2">
+                                <label for="lifeExpInput" class="text-sm font-semibold text-slate-800">Target Age / Life Expectancy</label>
+                                <div class="relative rounded-md shadow-sm">
+                                    <input type="number" id="lifeExpInput" value="100" min="70" max="100" step="1" oninput="syncLifeExp(this.value)" class="block w-24 rounded-md border-0 py-1.5 px-3 text-slate-900 font-bold ring-1 ring-inset ring-slate-300 focus:ring-2 focus:ring-inset focus:ring-brand-600 text-right sm:text-sm">
+                                </div>
+                            </div>
+                            <input type="range" id="lifeExpSlider" min="70" max="100" step="1" value="100" oninput="syncLifeExp(this.value)" class="w-full h-2.5 bg-slate-200 rounded-lg appearance-none cursor-pointer">
+                        </div>
+
+                        <!-- Filing Status -->
+                        <div>
+                            <label class="block text-sm font-semibold text-slate-800 mb-3">Claiming Status</label>
+                            <div class="grid grid-cols-2 gap-3">
+                                <label class="cursor-pointer">
+                                    <input type="radio" name="filingStatus" value="single" checked onchange="runEngine()" class="peer sr-only">
+                                    <div class="p-3 text-center rounded-lg border border-slate-200 peer-checked:border-brand-600 peer-checked:bg-brand-50 peer-checked:text-brand-700 hover:bg-slate-50 transition-all">
+                                        <div class="font-semibold text-sm">Single</div>
+                                    </div>
+                                </label>
+                                <label class="cursor-pointer">
+                                    <input type="radio" name="filingStatus" value="joint" onchange="runEngine()" class="peer sr-only">
+                                    <div class="p-3 text-center rounded-lg border border-slate-200 peer-checked:border-brand-600 peer-checked:bg-brand-50 peer-checked:text-brand-700 hover:bg-slate-50 transition-all">
+                                        <div class="font-semibold text-sm">Married</div>
+                                    </div>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Toggles -->
+                    <div class="pt-4 border-t border-slate-100 space-y-4">
+                        <!-- COLA Inflation Toggle -->
+                        <label class="flex items-start gap-3 cursor-pointer group">
+                            <div class="relative flex items-center mt-1">
+                                <input type="checkbox" id="colaToggle" checked onchange="runEngine()" class="sr-only peer">
+                                <div class="w-10 h-5 bg-slate-200 rounded-full peer peer-checked:after:translate-x-full peer-checked:bg-amber-500 after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all"></div>
+                            </div>
+                            <div>
+                                <span class="text-sm font-semibold text-slate-800 block">Include Annual COLA (2.5%)</span>
+                                <span class="text-xs text-slate-500 leading-tight">Simulates compounding Cost-of-Living Adjustments over time.</span>
+                            </div>
+                        </label>
+
+                        <!-- Invest Benefits Toggle -->
+                        <label class="flex items-start gap-3 cursor-pointer group">
+                            <div class="relative flex items-center mt-1">
+                                <input type="checkbox" id="investToggle" onchange="runEngine()" class="sr-only peer">
+                                <div class="w-10 h-5 bg-slate-200 rounded-full peer peer-checked:after:translate-x-full peer-checked:bg-emerald-600 after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all"></div>
+                            </div>
+                            <div>
+                                <span class="text-sm font-semibold text-slate-800 block">Invest Benefits (6% Return)</span>
+                                <span class="text-xs text-slate-500 leading-tight">Simulates compounding annual payouts at an 6% investment return.</span>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Visualization Column -->
+            <div class="lg:col-span-8">
+                <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm h-full flex flex-col">
+<h3 class="text-sm font-semibold text-slate-800 mb-4 flex items-center justify-between">
+    <span id="chartTitleText">Cumulative Lifetime Benefits by Claiming Age</span>
+    <span id="chartAgeRangeBadge" class="text-xs font-normal text-slate-500 bg-slate-100 px-2 py-1 rounded">Ages 62 – 85</span>
+</h3>
+                    <div class="w-full flex-grow relative min-h-[280px]">
+                        <canvas id="ssChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Row 2: Scenario Milestone Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6" id="scenarioCardsContainer">
+            <!-- Rendered dynamically via JavaScript -->
+        </div>
+
+        <!-- Row 3: Age-by-Age Comparison Breakdown Table -->
+        <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+            <div class="px-6 py-4 border-b border-slate-200 bg-slate-50 flex items-center justify-between">
+                <div>
+                    <h3 class="text-lg font-bold text-slate-900">Claiming Age Strategy & Breakeven Breakdown</h3>
+                    <p class="text-xs text-slate-500">Compare monthly payouts, cumulative returns, and breakeven milestones for claiming ages 62 to 70.</p>
+                </div>
+                <i class="fa-solid fa-table-list text-slate-400 text-xl"></i>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left text-sm text-slate-600">
+                    <thead class="bg-slate-100 text-slate-700 text-xs uppercase font-semibold">
+                        <tr>
+                            <th class="px-6 py-3">Claiming Age</th>
+                            <th class="px-6 py-3">% of FRA Benefit</th>
+                            <th class="px-6 py-3">Monthly Payout</th>
+                            <th class="px-6 py-3">Annual Payout</th>
+                            <th class="px-6 py-3">Lifetime Total @ 80</th>
+                            <th class="px-6 py-3">Lifetime Total @ 85</th>
+                            <th class="px-6 py-3">Breakeven vs Age 62</th>
+                        </tr>
+                    </thead>
+                    <tbody id="ssTableBody" class="divide-y divide-slate-200">
+                        <!-- Rendered dynamically via JavaScript -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Row 4: Social Security Rules & Planning Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-3">
+                <div class="flex items-center space-x-3 text-blue-600">
+                    <i class="fa-solid fa-calculator text-xl"></i>
+                    <h4 class="font-bold text-slate-900">How Benefits Are Calculated</h4>
+                </div>
+                <p class="text-xs text-slate-600 leading-relaxed">
+                    Social Security calculates your Primary Insurance Amount (PIA) based on your top <strong>35 highest-earning years</strong> (adjusted for wage growth). If you work fewer than 35 years, $0 earnings are factored into your Average Indexed Monthly Earnings (AIME).
+                </p>
+            </div>
+
+            <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-3">
+                <div class="flex items-center space-x-3 text-emerald-600">
+                    <i class="fa-solid fa-file-invoice-dollar text-xl"></i>
+                    <h4 class="font-bold text-slate-900">Taxation of SS Benefits</h4>
+                </div>
+                <p class="text-xs text-slate-600 leading-relaxed">
+                    Depending on your combined provisional income (AGI + nontaxable interest + 50% of SS benefit), up to <strong>50% or 85%</strong> of your benefits may be subject to federal income tax:
+                    <br>• Single: $25k–$34k (50%), &gt;$34k (85%)
+                    <br>• Joint: $32k–$44k (50%), &gt;$44k (85%)
+                </p>
+            </div>
+
+            <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-3">
+                <div class="flex items-center space-x-3 text-amber-600">
+                    <i class="fa-solid fa-briefcase text-xl"></i>
+                    <h4 class="font-bold text-slate-900">Working in Retirement</h4>
+                </div>
+                <p class="text-xs text-slate-600 leading-relaxed">
+                    If you claim early before Full Retirement Age (67) and continue working, $1 is withheld for every $2 earned above the annual earnings limit ($22,320). Once you reach FRA, no earnings test applies and withheld benefits are recalculated into higher payouts.
+                </p>
+            </div>
+        </div>
+
+    </main>
+
+    <script>
+        // Social Security Age & Benefit Multipliers relative to FRA (Age 67 = 100%)
+        const claimingAgeData = [
+            { age: 62, factor: 0.7000, label: "Age 62 (Earliest)", desc: "Maximum early penalty (-30%). Immediate liquidity, but lowest lifetime monthly check." },
+            { age: 63, factor: 0.7500, label: "Age 63", desc: "25% lifetime reduction compared to FRA." },
+            { age: 64, factor: 0.8000, label: "Age 64", desc: "20% lifetime reduction compared to FRA." },
+            { age: 65, factor: 0.8667, label: "Age 65", desc: "13.3% reduction. Aligns with Medicare eligibility age." },
+            { age: 66, factor: 0.9333, label: "Age 66", desc: "6.7% reduction compared to Full Retirement Age." },
+            { age: 67, factor: 1.0000, label: "Age 67 (FRA)", desc: "100% Primary Insurance Amount (PIA). Full baseline benefit." },
+            { age: 68, factor: 1.0800, label: "Age 68", desc: "+8% delayed retirement credit past FRA." },
+            { age: 69, factor: 1.1600, label: "Age 69", desc: "+16% delayed retirement credit past FRA." },
+            { age: 70, factor: 1.2400, label: "Age 70 (Maximum)", desc: "+24% maximum boost. Highest possible monthly check for life." }
+        ];
+
+        let ssChart = null;
+
+        function syncPia(val) {
+            document.getElementById('piaInput').value = val;
+            document.getElementById('piaSlider').value = val;
+            runEngine();
+        }
+
+        function syncLifeExp(val) {
+            document.getElementById('lifeExpInput').value = val;
+            document.getElementById('lifeExpSlider').value = val;
+            runEngine();
+        }
+
+        function calculateMonthlyBenefit(pia, age) {
+            const item = claimingAgeData.find(d => d.age === age);
+            return item ? pia * item.factor : pia;
+        }
+
+
+
+function calculateCumulative(pia, claimAge, targetAge, useCola, multiplier = 1.0, useInvest = false) {
+    const colaRate = useCola ? 0.025 : 0.0;
+    const returnRate = useInvest ? 0.060 : 0.0;
+    const initialMonthly = calculateMonthlyBenefit(pia, claimAge) * multiplier;
+    
+    let cumulative = 0;
+    const trajectory = [];
+
+    // Run loop up to targetAge instead of hardcoded 90
+    for (let currentAge = 62; currentAge <= targetAge; currentAge++) {
+        if (currentAge < claimAge) {
+            trajectory.push(cumulative);
+        } else {
+            const yearsIn = currentAge - claimAge;
+            const monthlyThisYear = initialMonthly * Math.pow(1 + colaRate, yearsIn);
+            const annualThisYear = monthlyThisYear * 12;
+            cumulative = cumulative * (1 + returnRate) + annualThisYear;
+            trajectory.push(cumulative);
+        }
+    }
+
+    let exactTotalAtTarget = 0;
+    if (targetAge >= claimAge) {
+        for (let a = claimAge; a < targetAge; a++) {
+            const yearsIn = a - claimAge;
+            const monthlyThisYear = initialMonthly * Math.pow(1 + colaRate, yearsIn);
+            const annualThisYear = monthlyThisYear * 12;
+            exactTotalAtTarget = exactTotalAtTarget * (1 + returnRate) + annualThisYear;
+        }
+    }
+
+    return { trajectory, initialMonthly, exactTotalAtTarget };
+}
+
+
+        function findBreakevenAge(claimAgeA, claimAgeB, pia, useCola, useInvest = false) {
+            const colaRate = useCola ? 0.025 : 0.0;
+            const returnRate = useInvest ? 0.060 : 0.0;
+            const monthlyA = calculateMonthlyBenefit(pia, claimAgeA);
+            const monthlyB = calculateMonthlyBenefit(pia, claimAgeB);
+
+            let cumA = 0;
+            let cumB = 0;
+
+            for (let age = 62; age <= 120; age++) {
+                if (age >= claimAgeA) {
+                    const annualA = (monthlyA * Math.pow(1 + colaRate, age - claimAgeA)) * 12;
+                    cumA = cumA * (1 + returnRate) + annualA;
+                }
+                if (age >= claimAgeB) {
+                    const annualB = (monthlyB * Math.pow(1 + colaRate, age - claimAgeB)) * 12;
+                    cumB = cumB * (1 + returnRate) + annualB;
+                }
+
+                if (age >= claimAgeB && cumB >= cumA) {
+                    return age;
+                }
+            }
+            return "Never";
+        }
+
+
+
+
+function runEngine() {
+    const pia = parseFloat(document.getElementById('piaInput').value) || 2500;
+    const targetAge = parseInt(document.getElementById('lifeExpInput').value) || 85;
+    const useCola = document.getElementById('colaToggle').checked;
+    const useInvest = document.getElementById('investToggle').checked;
+    
+    const status = document.querySelector('input[name="filingStatus"]:checked').value;
+    const householdMultiplier = (status === 'joint') ? 1.5 : 1.0;
+
+    const results = claimingAgeData.map(item => {
+        const monthly = (pia * item.factor) * householdMultiplier;
+        const annual = monthly * 12;
+        const total80 = calculateCumulative(pia, item.age, 80, useCola, householdMultiplier, useInvest).exactTotalAtTarget;
+        const total85 = calculateCumulative(pia, item.age, 85, useCola, householdMultiplier, useInvest).exactTotalAtTarget;
+        const totalTarget = calculateCumulative(pia, item.age, targetAge, useCola, householdMultiplier, useInvest).exactTotalAtTarget;
+        const breakevenVs62 = item.age === 62 ? "N/A (Baseline)" : `Age ${findBreakevenAge(62, item.age, pia, useCola, useInvest)}`;
+
+        return {
+            ...item,
+            monthly,
+            annual,
+            total80,
+            total85,
+            totalTarget,
+            breakevenVs62
+        };
+    });
+
+    renderScenarioCards(results, targetAge);
+    renderTable(results);
+    // Pass targetAge to updateChart
+    updateChart(pia, targetAge, useCola, householdMultiplier, useInvest);
+}
+
+
+
+
+        function renderScenarioCards(results, targetAge) {
+            const container = document.getElementById('scenarioCardsContainer');
+            container.innerHTML = '';
+
+            const featuredAges = [62, 67, 70];
+            const displayResults = results.filter(r => featuredAges.includes(r.age));
+
+            const formatter = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 });
+
+            displayResults.forEach(res => {
+                let badgeColor = "bg-amber-100 text-amber-800";
+                let monthlyColor = "text-amber-600";
+                if (res.age === 67) { badgeColor = "bg-blue-100 text-blue-800"; monthlyColor = "text-blue-600"; }
+                if (res.age === 70) { badgeColor = "bg-emerald-100 text-emerald-800"; monthlyColor = "text-brand-600"; }
+
+                container.innerHTML += `
+                    <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
+                        <div class="flex justify-between items-start mb-2">
+                            <div>
+                                <div class="text-xs font-bold text-slate-500 uppercase tracking-wide">Claiming Milestone</div>
+                                <h4 class="text-base font-bold text-slate-900">${res.label}</h4>
+                            </div>
+                            <span class="${badgeColor} text-[11px] px-2 py-0.5 rounded font-bold">${(res.factor * 100).toFixed(0)}% PIA</span>
+                        </div>
+                        <p class="text-xs text-slate-500 mb-4 h-9">${res.desc}</p>
+                        
+                        <div class="bg-slate-50 rounded-lg p-3 border border-slate-100 space-y-3">
+                            <div class="grid grid-cols-2 gap-2 text-center">
+                                <div>
+                                    <div class="text-[10px] uppercase tracking-wide font-semibold text-slate-500">Monthly Check</div>
+                                    <div class="text-base font-black ${monthlyColor}">${formatter.format(res.monthly)}</div>
+                                </div>
+                                <div>
+                                    <div class="text-[10px] uppercase tracking-wide font-semibold text-slate-500">Annual Benefit</div>
+                                    <div class="text-base font-black text-slate-800">${formatter.format(res.annual)}</div>
+                                </div>
+                            </div>
+                            <div class="pt-2 border-t border-slate-200 flex justify-between items-center text-xs">
+                                <span class="text-slate-500 font-semibold">Total @ Age ${targetAge}:</span>
+                                <span class="font-bold text-slate-900">${formatter.format(res.totalTarget)}</span>
+                            </div>
+                            <div class="flex justify-between items-center text-xs pt-1">
+                                <span class="text-slate-500 font-semibold">Breakeven vs 62:</span>
+                                <span class="font-bold text-blue-600">${res.breakevenVs62}</span>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+
+            // Card 4: Strategy Summary Card
+            const piaVal = parseFloat(document.getElementById('piaInput').value) || 2500;
+            const boost70 = (calculateMonthlyBenefit(piaVal, 70) - calculateMonthlyBenefit(piaVal, 62));
+            const useCola = document.getElementById('colaToggle').checked;
+            const useInvest = document.getElementById('investToggle').checked;
+            const be70vs62 = findBreakevenAge(62, 70, piaVal, useCola, useInvest);
+            const be70vs67 = findBreakevenAge(67, 70, piaVal, useCola, useInvest);
+
+            container.innerHTML += `
+                <div class="bg-slate-900 text-white p-5 rounded-xl shadow-sm hover:shadow-md transition-shadow flex flex-col justify-between">
+                    <div>
+                        <div class="flex justify-between items-start mb-2">
+                            <div>
+                                <div class="text-xs font-bold text-brand-500 uppercase tracking-wide">Optimization Insight</div>
+                                <h4 class="text-base font-bold text-white">Delaying to Age 70</h4>
+                            </div>
+                            <span class="bg-brand-500/20 text-brand-400 text-[11px] px-2 py-0.5 rounded font-bold">+77% vs 62</span>
+                        </div>
+                        <p class="text-xs text-slate-300 mb-4">
+                            Waiting from 62 to 70 increases your monthly income check by <strong>+77%</strong> (${formatter.format(boost70)}/mo extra for life).
+                        </p>
+                    </div>
+                    <div class="bg-slate-800 rounded-lg p-3 border border-slate-700 space-y-2">
+                        <div class="text-xs text-slate-300 flex justify-between">
+                            <span>Breakeven Age 70 vs 62:</span>
+                            <span class="font-bold text-emerald-400">~Age ${be70vs62}</span>
+                        </div>
+                        <div class="text-xs text-slate-300 flex justify-between">
+                            <span>Breakeven Age 70 vs 67:</span>
+                            <span class="font-bold text-emerald-400">~Age ${be70vs67}</span>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderTable(results) {
+            const tbody = document.getElementById('ssTableBody');
+            tbody.innerHTML = '';
+            const formatter = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 });
+
+            results.forEach(res => {
+                const isHighlight = res.age === 62 || res.age === 67 || res.age === 70;
+                const rowBg = isHighlight ? 'bg-slate-50/80 font-medium' : '';
+
+                tbody.innerHTML += `
+                    <tr class="hover:bg-slate-100/80 transition-colors ${rowBg}">
+                        <td class="px-6 py-3.5">
+                            <div class="font-bold text-slate-900">${res.label}</div>
+                            <div class="text-xs text-slate-500">${res.desc}</div>
+                        </td>
+                        <td class="px-6 py-3.5 font-bold text-slate-700">${(res.factor * 100).toFixed(1)}%</td>
+                        <td class="px-6 py-3.5 font-black text-slate-900">${formatter.format(res.monthly)}</td>
+                        <td class="px-6 py-3.5 font-bold text-slate-800">${formatter.format(res.annual)}</td>
+                        <td class="px-6 py-3.5 font-semibold text-slate-700">${formatter.format(res.total80)}</td>
+                        <td class="px-6 py-3.5 font-bold text-brand-700">${formatter.format(res.total85)}</td>
+                        <td class="px-6 py-3.5 font-bold text-blue-600">${res.breakevenVs62}</td>
+                    </tr>
+                `;
+            });
+        }
+
+ 
+
+
+
+
+function updateChart(pia, targetAge, useCola, householdMultiplier, useInvest) {
+    const ctx = document.getElementById('ssChart').getContext('2d');
+    
+    // Dynamically calculate the label age array from 62 to targetAge
+    const totalYears = Math.max(0, targetAge - 62 + 1);
+    const agesLabel = Array.from({ length: totalYears }, (_, i) => (62 + i).toString());
+
+    // Calculate trajectories up to targetAge
+    const trajectory62 = calculateCumulative(pia, 62, targetAge, useCola, householdMultiplier, useInvest).trajectory;
+    const trajectory67 = calculateCumulative(pia, 67, targetAge, useCola, householdMultiplier, useInvest).trajectory;
+    const trajectory70 = calculateCumulative(pia, 70, targetAge, useCola, householdMultiplier, useInvest).trajectory;
+
+    // Optional: Update the badge display next to the chart title
+    const ageBadge = document.getElementById('chartAgeRangeBadge');
+    if (ageBadge) {
+        ageBadge.textContent = `Ages 62 – ${targetAge}`;
+    }
+
+    const datasets = [
+        {
+            label: 'Claim at Age 62 (70% PIA)',
+            data: trajectory62,
+            borderColor: '#d97706',
+            backgroundColor: 'rgba(217, 119, 6, 0.05)',
+            borderWidth: 2.5,
+            fill: false,
+            tension: 0.2,
+            pointRadius: 2,
+            pointHoverRadius: 6
+        },
+        {
+            label: 'Claim at Age 67 (FRA - 100% PIA)',
+            data: trajectory67,
+            borderColor: '#2563eb',
+            backgroundColor: 'rgba(37, 99, 235, 0.05)',
+            borderWidth: 2.5,
+            fill: false,
+            tension: 0.2,
+            pointRadius: 2,
+            pointHoverRadius: 6
+        },
+        {
+            label: 'Claim at Age 70 (Delayed - 124% PIA)',
+            data: trajectory70,
+            borderColor: '#16a34a',
+            backgroundColor: 'rgba(22, 163, 74, 0.05)',
+            borderWidth: 2.5,
+            fill: false,
+            tension: 0.2,
+            pointRadius: 2,
+            pointHoverRadius: 6
+        }
+    ];
+
+    const formatter = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 });
+
+    if (ssChart) {
+        ssChart.data.labels = agesLabel;
+        ssChart.data.datasets = datasets;
+        ssChart.update();
+    } else {
+        ssChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: agesLabel,
+                datasets: datasets
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: { mode: 'index', intersect: false },
+                plugins: {
+                    legend: {
+                        display: true,
+                        position: 'top',
+                        labels: {
+                            usePointStyle: true,
+                            boxWidth: 8,
+                            font: { size: 12, family: "'Inter', sans-serif" }
+                        }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                let label = context.dataset.label || '';
+                                if (label) label += ': ';
+                                if (context.parsed.y !== null) {
+                                    label += formatter.format(context.parsed.y);
+                                }
+                                return label;
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            callback: function(value) {
+                                return '$' + (value / 1000).toFixed(0) + 'k';
+                            }
+                        }
+                    },
+                    x: {
+                        title: { display: true, text: 'Age (Years Old)', font: { size: 12, weight: 'bold' } },
+                        grid: { display: false }
+                    }
+                }
+            }
+        });
+    }
+}
+
+
+
+        function goBack() {
+            if (window.history.length > 1) {
+                window.history.back();
+            } else {
+                window.location.href = 'index.html';
+            }
+        }
+
+        window.onload = function() {
+            runEngine();
+            if (window.history.length > 1) {
+                const btn = document.getElementById('backButton');
+                if (btn) {
+                    btn.classList.remove('hidden');
+                    btn.classList.add('flex');
+                }
+            }
+        };
+    </script>
+</body>
+</html>
