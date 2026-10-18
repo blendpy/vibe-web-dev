@@ -1,0 +1,1869 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>U.S. Federal Budget & Debt Elimination Simulator</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        slate: {
+                            850: '#131e32',
+                            950: '#070d18',
+                        },
+                        emerald: {
+                            450: '#10b981',
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace'],
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #070d18;
+            color: #f1f5f9;
+        }
+        .font-mono-num {
+            font-family: 'JetBrains Mono', monospace;
+        }
+        /* Custom scrollbars */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0f172a;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #334155;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #475569;
+        }
+        /* Range Slider Styling */
+        input[type=range] {
+            -webkit-appearance: none;
+            background: transparent;
+        }
+        input[type=range]:focus {
+            outline: none;
+        }
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 8px;
+            cursor: pointer;
+            background: #334155;
+            border-radius: 4px;
+        }
+        input[type=range]::-webkit-slider-thumb {
+            height: 18px;
+            width: 18px;
+            border-radius: 50%;
+            background: #38bdf8;
+            cursor: pointer;
+            -webkit-appearance: none;
+            margin-top: -5px;
+            box-shadow: 0 0 10px rgba(56, 189, 248, 0.5);
+            transition: transform 0.1s ease;
+        }
+        input[type=range]::-webkit-slider-thumb:hover {
+            transform: scale(1.15);
+            background: #0ea5e9;
+        }
+        /* Glassmorphism cards */
+        .glass-card {
+            background: rgba(15, 23, 42, 0.75);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(51, 65, 85, 0.5);
+        }
+        .glass-card-hover {
+            transition: all 0.2s ease-in-out;
+        }
+        .glass-card-hover:hover {
+            border-color: rgba(56, 189, 248, 0.4);
+            box-shadow: 0 4px 20px -2px rgba(14, 165, 233, 0.15);
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col text-slate-100 antialiased selection:bg-sky-500 selection:text-white">
+
+    <!-- Top Navigation Header -->
+    <header class="bg-slate-900/90 border-b border-slate-800 sticky top-0 z-50 backdrop-blur-md">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <!-- Logo / Title -->
+                <div class="flex items-center space-x-3">
+                    <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-sky-600 via-indigo-600 to-emerald-500 flex items-center justify-center shadow-lg shadow-sky-500/20">
+                        <i class="fa-solid font-bold fa-landmark text-white text-lg"></i>
+                    </div>
+                    <div>
+                        <div class="flex items-center space-x-2">
+                            <h1 class="text-lg font-bold text-white tracking-tight">U.S. Federal Budget Simulator</h1>
+                            <span class="px-2 py-0.5 text-xs font-semibold bg-sky-500/20 text-sky-400 border border-sky-500/30 rounded-full">FY 2026 Model</span>
+                        </div>
+                        <p class="text-xs text-slate-400 hidden sm:block">Explore revenue options, adjust agency spending & simulate debt elimination trajectories</p>
+                    </div>
+                </div>
+
+                <!-- Action Controls -->
+                <div class="flex items-center space-x-2 sm:space-x-3">
+                    <button id="exportBtn" onclick="openExportModal()" class="px-3 py-1.5 text-xs font-medium bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-lg transition-colors flex items-center space-x-1.5 shadow-sm">
+                        <i class="fa-solid fa-file-export text-sky-400"></i>
+                        <span class="hidden sm:inline">Export Summary</span>
+                    </button>
+                    <button id="presetBtn" onclick="togglePresetsMenu()" class="px-3 py-1.5 text-xs font-medium bg-sky-600 hover:bg-sky-500 text-white rounded-lg transition-colors flex items-center space-x-1.5 shadow-md shadow-sky-600/30">
+                        <i class="fa-solid fa-wand-magic-sparkles"></i>
+                        <span>Policy Presets</span>
+                        <i class="fa-solid fa-chevron-down text-[10px] ml-0.5"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Preset Dropdown Menu -->
+        <div id="presetsDropdown" class="hidden absolute right-4 sm:right-8 top-16 w-80 bg-slate-900 border border-slate-700 rounded-xl shadow-2xl z-50 p-3 space-y-2">
+            <div class="text-xs font-semibold text-slate-400 px-2 py-1 uppercase tracking-wider">Quick Scenarios</div>
+            <button onclick="applyPreset('baseline')" class="w-full text-left p-2.5 rounded-lg hover:bg-slate-800 transition flex items-start space-x-3 group">
+                <i class="fa-solid fa-rotate-left text-slate-400 group-hover:text-sky-400 mt-1"></i>
+                <div>
+                    <div class="text-sm font-semibold text-white">Reset to Baseline FY2026</div>
+                    <div class="text-xs text-slate-400">$5.60T Revenue, $7.40T Spending, $1.80T Deficit</div>
+                </div>
+            </button>
+            <button onclick="applyPreset('balanced')" class="w-full text-left p-2.5 rounded-lg hover:bg-slate-800 transition flex items-start space-x-3 group">
+                <i class="fa-solid fa-scale-balanced text-emerald-400 mt-1"></i>
+                <div>
+                    <div class="text-sm font-semibold text-emerald-400">Balanced Budget Plan</div>
+                    <div class="text-xs text-slate-400">Zero deficit, modest revenue increase + target cuts</div>
+                </div>
+            </button>
+            <button onclick="applyPreset('debt15')" class="w-full text-left p-2.5 rounded-lg hover:bg-slate-800 transition flex items-start space-x-3 group">
+                <i class="fa-solid fa-rocket text-indigo-400 mt-1"></i>
+                <div>
+                    <div class="text-sm font-semibold text-indigo-400">15-Year Debt Payoff Plan</div>
+                    <div class="text-xs text-slate-400">Generates ~$2.2T annual surplus to erase debt by ~2041</div>
+                </div>
+            </button>
+            <button onclick="applyPreset('lowtax')" class="w-full text-left p-2.5 rounded-lg hover:bg-slate-800 transition flex items-start space-x-3 group">
+                <i class="fa-solid fa-percent text-amber-400 mt-1"></i>
+                <div>
+                    <div class="text-sm font-semibold text-amber-400">Low Tax / Flat Spending Reform</div>
+                    <div class="text-xs text-slate-400">15% Corporate, lowered brackets, targeted agency caps</div>
+                </div>
+            </button>
+            <button onclick="applyPreset('social')" class="w-full text-left p-2.5 rounded-lg hover:bg-slate-800 transition flex items-start space-x-3 group">
+                <i class="fa-solid fa-heart-pulse text-rose-400 mt-1"></i>
+                <div>
+                    <div class="text-sm font-semibold text-rose-400">Safety Net & Science Boost</div>
+                    <div class="text-xs text-slate-400">Higher cap gains/top income rates to expand programs</div>
+                </div>
+            </button>
+        </div>
+    </header>
+
+    <!-- Sticky KPI Overview Bar -->
+    <section class="bg-slate-900/95 border-b border-slate-800/80 shadow-lg py-3 px-4 sm:px-6 lg:px-8">
+        <div class="max-w-7xl mx-auto grid grid-cols-2 md:grid-cols-5 gap-3 sm:gap-4">
+            <!-- Total Revenue Card -->
+            <div class="bg-slate-950/70 border border-slate-800 rounded-xl p-3 flex flex-col justify-between">
+                <div class="flex items-center justify-between text-xs text-slate-400">
+                    <span class="font-medium">Total Revenue</span>
+                    <i class="fa-solid fa-hand-holding-dollar text-sky-400"></i>
+                </div>
+                <div class="mt-1 flex items-baseline justify-between">
+                    <span id="kpiRevenue" class="text-lg sm:text-xl font-bold font-mono-num text-sky-400">$5.60 T</span>
+                    <span id="kpiRevDelta" class="text-xs font-semibold text-slate-400 font-mono-num">+$0.00B</span>
+                </div>
+                <div class="text-[10px] text-slate-500 mt-0.5">Baseline: $5.60 Trillion</div>
+            </div>
+
+            <!-- Total Spending Card -->
+            <div class="bg-slate-950/70 border border-slate-800 rounded-xl p-3 flex flex-col justify-between">
+                <div class="flex items-center justify-between text-xs text-slate-400">
+                    <span class="font-medium">Total Spending</span>
+                    <i class="fa-solid fa-money-bill-transfer text-amber-400"></i>
+                </div>
+                <div class="mt-1 flex items-baseline justify-between">
+                    <span id="kpiSpending" class="text-lg sm:text-xl font-bold font-mono-num text-amber-400">$7.40 T</span>
+                    <span id="kpiSpendDelta" class="text-xs font-semibold text-slate-400 font-mono-num">+$0.00B</span>
+                </div>
+                <div class="text-[10px] text-slate-500 mt-0.5">Includes Net Interest</div>
+            </div>
+
+            <!-- Net Surplus / Deficit Card -->
+            <div id="kpiBalanceCard" class="bg-slate-950/70 border border-rose-900/50 rounded-xl p-3 flex flex-col justify-between">
+                <div class="flex items-center justify-between text-xs text-slate-400">
+                    <span class="font-medium">Budget Balance</span>
+                    <i id="kpiBalanceIcon" class="fa-solid fa-triangle-exclamation text-rose-400"></i>
+                </div>
+                <div class="mt-1 flex items-baseline justify-between">
+                    <span id="kpiBalance" class="text-lg sm:text-xl font-bold font-mono-num text-rose-400">-$1.80 T</span>
+                    <span id="kpiBalanceLabel" class="text-[11px] font-semibold text-rose-400 uppercase tracking-wide">DEFICIT</span>
+                </div>
+                <div class="text-[10px] text-slate-500 mt-0.5">Annual net cash flow</div>
+            </div>
+
+            <!-- Total Debt Card -->
+            <div class="bg-slate-950/70 border border-slate-800 rounded-xl p-3 flex flex-col justify-between">
+                <div class="flex items-center justify-between text-xs text-slate-400">
+                    <span class="font-medium">National Debt</span>
+                    <i class="fa-solid fa-vault text-purple-400"></i>
+                </div>
+                <div class="mt-1 flex items-baseline justify-between">
+                    <span id="kpiDebt" class="text-lg sm:text-xl font-bold font-mono-num text-purple-300">$38.50 T</span>
+                    <span id="kpiInterest" class="text-xs text-purple-400 font-mono-num">$1.35T Int.</span>
+                </div>
+                <div class="text-[10px] text-slate-500 mt-0.5">Rate: <span id="kpiInterestRateDisplay">3.5%</span> avg interest</div>
+            </div>
+
+            <!-- Debt Payoff Timeline Card -->
+            <div class="col-span-2 md:col-span-1 bg-slate-950/70 border border-slate-800 rounded-xl p-3 flex flex-col justify-between">
+                <div class="flex items-center justify-between text-xs text-slate-400">
+                    <span class="font-medium">Payoff Horizon</span>
+                    <i class="fa-solid fa-clock-rotate-left text-emerald-400"></i>
+                </div>
+                <div class="mt-1 flex items-baseline justify-between">
+                    <span id="kpiPayoffYears" class="text-lg sm:text-xl font-bold font-mono-num text-slate-400">Never</span>
+                    <span id="kpiPayoffBadge" class="px-2 py-0.5 text-[10px] font-semibold bg-rose-500/20 text-rose-400 rounded-md border border-rose-500/30">Deficit</span>
+                </div>
+                <div id="kpiPayoffSubtext" class="text-[10px] text-slate-400 truncate mt-0.5">Requires annual budget surplus</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Navigation Tabs -->
+    <nav class="bg-slate-900 border-b border-slate-800">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex space-x-1 sm:space-x-4 overflow-x-auto no-scrollbar py-2">
+                <button onclick="switchTab('overview')" id="tab-overview" class="tab-btn active px-4 py-2 text-xs sm:text-sm font-medium rounded-lg transition-all flex items-center space-x-2 whitespace-nowrap bg-sky-600 text-white shadow-md">
+                    <i class="fa-solid fa-gauge-high"></i>
+                    <span>Dashboard & Debt Clock</span>
+                </button>
+                <button onclick="switchTab('revenue')" id="tab-revenue" class="tab-btn px-4 py-2 text-xs sm:text-sm font-medium text-slate-400 hover:text-slate-200 hover:bg-slate-800 rounded-lg transition-all flex items-center space-x-2 whitespace-nowrap">
+                    <i class="fa-solid fa-calculator text-sky-400"></i>
+                    <span>Tax & Revenue Customizer</span>
+                </button>
+                <button onclick="switchTab('spending')" id="tab-spending" class="tab-btn px-4 py-2 text-xs sm:text-sm font-medium text-slate-400 hover:text-slate-200 hover:bg-slate-800 rounded-lg transition-all flex items-center space-x-2 whitespace-nowrap">
+                    <i class="fa-solid fa-chart-pie text-amber-400"></i>
+                    <span>Agency Spending & Allocations</span>
+                </button>
+                <button onclick="switchTab('projections')" id="tab-projections" class="tab-btn px-4 py-2 text-xs sm:text-sm font-medium text-slate-400 hover:text-slate-200 hover:bg-slate-800 rounded-lg transition-all flex items-center space-x-2 whitespace-nowrap">
+                    <i class="fa-solid fa-chart-line text-emerald-400"></i>
+                    <span>30-Year Debt Elimination Engine</span>
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <main class="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-8">
+
+        <!-- TAB 1: OVERVIEW & DEBT CLOCK -->
+        <div id="view-overview" class="tab-content space-y-6">
+            
+            <!-- Live National Debt Clock Banner -->
+            <div class="glass-card rounded-2xl p-6 relative overflow-hidden bg-gradient-to-r from-slate-900 via-slate-850 to-slate-900 border border-slate-700/80 shadow-2xl">
+                <div class="absolute -right-12 -bottom-12 w-64 h-64 bg-sky-500/10 rounded-full blur-3xl pointer-events-none"></div>
+                <div class="relative z-10 grid grid-cols-1 md:grid-cols-3 gap-6 items-center">
+                    <div class="md:col-span-2 space-y-2">
+                        <div class="flex items-center space-x-2 text-sky-400 text-xs font-semibold tracking-wider uppercase">
+                            <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+                            <span>Live Simulated U.S. National Debt Ticker</span>
+                        </div>
+                        <div id="liveDebtClock" class="text-3xl sm:text-5xl font-black font-mono-num text-transparent bg-clip-text bg-gradient-to-r from-white via-slate-100 to-sky-300 tracking-tight">
+                            $38,500,000,000,000
+                        </div>
+                        <p id="debtClockSubtext" class="text-xs text-slate-400">
+                            At baseline deficit ($1.80T/yr), national debt grows by approximately <span class="text-rose-400 font-semibold font-mono-num">$57,077 per second</span>.
+                        </p>
+                    </div>
+                    <div class="bg-slate-950/80 border border-slate-800 rounded-xl p-4 flex flex-col justify-center space-y-3">
+                        <div class="flex justify-between items-center text-xs">
+                            <span class="text-slate-400">Net Annual Interest:</span>
+                            <span id="overviewNetInterest" class="font-bold font-mono-num text-amber-400">$1,347.5 Billion</span>
+                        </div>
+                        <div class="flex justify-between items-center text-xs">
+                            <span class="text-slate-400">Interest Share of Budget:</span>
+                            <span id="overviewInterestShare" class="font-bold font-mono-num text-amber-300">18.2%</span>
+                        </div>
+                        <div class="w-full bg-slate-800 rounded-full h-2 overflow-hidden">
+                            <div id="interestShareBar" class="bg-amber-400 h-2 rounded-full transition-all duration-300" style="width: 18.2%"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Split View: Revenue vs Spending Quick Breakdown -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                
+                <!-- Revenue Card & Chart -->
+                <div class="glass-card rounded-2xl p-5 space-y-4">
+                    <div class="flex justify-between items-center border-b border-slate-800 pb-3">
+                        <div>
+                            <h3 class="font-bold text-white flex items-center space-x-2">
+                                <i class="fa-solid fa-coins text-sky-400"></i>
+                                <span>Revenue Composition</span>
+                            </h3>
+                            <p class="text-xs text-slate-400">Total Tax & Fee Collections</p>
+                        </div>
+                        <span id="overviewRevTotal" class="text-lg font-bold font-mono-num text-sky-400">$5.60 Trillion</span>
+                    </div>
+
+                    <div class="h-60 relative flex items-center justify-center">
+                        <canvas id="overviewRevenueChart"></canvas>
+                    </div>
+
+                    <!-- Revenue Quick List -->
+                    <div id="overviewRevenueList" class="space-y-2 text-xs divide-y divide-slate-800/60 max-h-48 overflow-y-auto pr-1">
+                        <!-- Populated by JS -->
+                    </div>
+                </div>
+
+                <!-- Spending Card & Chart -->
+                <div class="glass-card rounded-2xl p-5 space-y-4">
+                    <div class="flex justify-between items-center border-b border-slate-800 pb-3">
+                        <div>
+                            <h3 class="font-bold text-white flex items-center space-x-2">
+                                <i class="fa-solid fa-pie-chart text-amber-400"></i>
+                                <span>Spending & Agency Allocations</span>
+                            </h3>
+                            <p class="text-xs text-slate-400">Mandatory, Discretionary & Interest</p>
+                        </div>
+                        <span id="overviewSpendTotal" class="text-lg font-bold font-mono-num text-amber-400">$7.40 Trillion</span>
+                    </div>
+
+                    <div class="h-60 relative flex items-center justify-center">
+                        <canvas id="overviewSpendingChart"></canvas>
+                    </div>
+
+                    <!-- Spending Quick List -->
+                    <div id="overviewSpendingList" class="space-y-2 text-xs divide-y divide-slate-800/60 max-h-48 overflow-y-auto pr-1">
+                        <!-- Populated by JS -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Scenario Impact Summary Banner -->
+            <div class="glass-card rounded-xl p-5 border border-slate-700/60">
+                <h4 class="text-sm font-bold text-white mb-3 flex items-center space-x-2">
+                    <i class="fa-solid fa-lightbulb text-amber-400"></i>
+                    <span>Fiscal Status & Reform Insights</span>
+                </h4>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
+                    <div id="insightBox1" class="bg-slate-950/60 border border-slate-800 rounded-lg p-3">
+                        <div class="font-semibold text-slate-300 mb-1">Primary Revenue Driver</div>
+                        <div id="insightRevenueDriver" class="text-slate-400">Individual Income Tax produces ~48% of overall tax revenues.</div>
+                    </div>
+                    <div id="insightBox2" class="bg-slate-950/60 border border-slate-800 rounded-lg p-3">
+                        <div class="font-semibold text-slate-300 mb-1">Primary Spending Driver</div>
+                        <div id="insightSpendingDriver" class="text-slate-400">Entitlement programs (Social Security & HHS) comprise ~44% of spending.</div>
+                    </div>
+                    <div id="insightBox3" class="bg-slate-950/60 border border-slate-800 rounded-lg p-3">
+                        <div class="font-semibold text-slate-300 mb-1">Compounding Interest Effect</div>
+                        <div id="insightInterestEffect" class="text-slate-400">Net Interest is calculated as National Debt x Average Interest Rate (~3.5%).</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 2: TAX & REVENUE CUSTOMIZER -->
+        <div id="view-revenue" class="tab-content hidden space-y-6">
+            
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 glass-card p-5 rounded-2xl">
+                <div>
+                    <h2 class="text-xl font-bold text-white flex items-center space-x-2">
+                        <i class="fa-solid fa-calculator text-sky-400"></i>
+                        <span>Federal Revenue Engine</span>
+                    </h2>
+                    <p class="text-xs text-slate-400 mt-1">Adjust individual tax brackets, payroll, corporate, tariffs, capital gains, estate, and excise tax rates.</p>
+                </div>
+                <div class="flex items-center space-x-4 bg-slate-950/80 px-4 py-2 rounded-xl border border-slate-800">
+                    <div>
+                        <div class="text-[10px] uppercase text-slate-400 font-semibold">Simulated Total Revenue</div>
+                        <div id="revenueTabTotal" class="text-xl font-bold font-mono-num text-sky-400">$5,600.0B</div>
+                    </div>
+                    <div class="text-right border-l border-slate-800 pl-4">
+                        <div class="text-[10px] uppercase text-slate-400 font-semibold">Delta from Baseline</div>
+                        <div id="revenueTabDelta" class="text-sm font-bold font-mono-num text-emerald-400">+$0.0B (+0.0%)</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Main Tax Customizer Layout -->
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                
+                <!-- Left Column: Individual Income Tax Brackets (7 Columns) -->
+                <div class="lg:col-span-7 glass-card rounded-2xl p-5 space-y-5">
+                    <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+                        <div>
+                            <h3 class="font-bold text-white flex items-center space-x-2">
+                                <i class="fa-solid fa-users text-sky-400"></i>
+                                <span>Individual Income Tax Brackets & Multiplier</span>
+                            </h3>
+                            <p class="text-xs text-slate-400">Modify marginal rates and thresholds for all 7 brackets</p>
+                        </div>
+                        <button onclick="resetIncomeTaxBrackets()" class="text-xs text-sky-400 hover:text-sky-300 font-medium">Reset Brackets</button>
+                    </div>
+
+                    <!-- Overall Income Tax Revenue Multiplier Slider -->
+                    <div class="bg-slate-950/70 p-4 rounded-xl border border-slate-800 space-y-2">
+                        <div class="flex justify-between items-center text-xs">
+                            <span class="font-semibold text-slate-200">Income Tax Revenue Scaling Multiplier</span>
+                            <span id="incomeTaxMultiplierVal" class="font-bold font-mono-num text-sky-400">100% (Baseline)</span>
+                        </div>
+                        <input type="range" id="incomeTaxMultiplier" min="50" max="200" value="100" step="1" oninput="updateRevenueCalculations()" class="w-full">
+                        <div class="flex justify-between text-[10px] text-slate-500">
+                            <span>-50% Tax Cut</span>
+                            <span>100% (Baseline)</span>
+                            <span>+100% Surcharge</span>
+                        </div>
+                    </div>
+
+                    <!-- 7 Income Tax Brackets Table -->
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-xs text-left">
+                            <thead class="bg-slate-950/80 text-slate-400 uppercase text-[10px]">
+                                <tr>
+                                    <th class="p-2.5 rounded-l-lg">Bracket</th>
+                                    <th class="p-2.5">Single Income Cutoff</th>
+                                    <th class="p-2.5">Marginal Tax Rate</th>
+                                    <th class="p-2.5 rounded-r-lg">Est. Bracket Share</th>
+                                </tr>
+                            </thead>
+                            <tbody id="bracketsTableBody" class="divide-y divide-slate-800/60">
+                                <!-- Populated dynamically by JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Right Column: Other Revenue Sources Sliders -->
+                <div class="lg:col-span-5 glass-card rounded-2xl p-5 space-y-5">
+                    <div class="border-b border-slate-800 pb-3">
+                        <h3 class="font-bold text-white flex items-center space-x-2">
+                            <i class="fa-solid fa-sliders text-emerald-400"></i>
+                            <span>Other Major Revenue Streams</span>
+                        </h3>
+                        <p class="text-xs text-slate-400">Adjust payroll, corporate, capital gains, tariff, and excise taxes</p>
+                    </div>
+
+                    <div class="space-y-4 text-xs">
+                        
+                        <!-- Payroll Tax -->
+                        <div class="bg-slate-950/50 p-3.5 rounded-xl border border-slate-800 space-y-2">
+                            <div class="flex justify-between items-center">
+                                <div>
+                                    <div class="font-semibold text-white">Payroll Tax Rate (SS & Medicare)</div>
+                                    <div class="text-[10px] text-slate-400">Baseline combined rate: 15.3%</div>
+                                </div>
+                                <div id="val-payrollTax" class="font-bold font-mono-num text-emerald-400">15.3%</div>
+                            </div>
+                            <input type="range" id="slider-payrollTax" min="0" max="25" value="15.3" step="0.1" oninput="updateRevenueCalculations()" class="w-full">
+                            <div class="flex justify-between text-[10px] text-slate-500">
+                                <span>0%</span>
+                                <span>15.3%</span>
+                                <span>25.0%</span>
+                            </div>
+                        </div>
+
+                        <!-- Corporate Income Tax -->
+                        <div class="bg-slate-950/50 p-3.5 rounded-xl border border-slate-800 space-y-2">
+                            <div class="flex justify-between items-center">
+                                <div>
+                                    <div class="font-semibold text-white">Corporate Income Tax Rate</div>
+                                    <div class="text-[10px] text-slate-400">Baseline rate: 21.0%</div>
+                                </div>
+                                <div id="val-corporateTax" class="font-bold font-mono-num text-sky-400">21.0%</div>
+                            </div>
+                            <input type="range" id="slider-corporateTax" min="0" max="50" value="21.0" step="0.5" oninput="updateRevenueCalculations()" class="w-full">
+                            <div class="flex justify-between text-[10px] text-slate-500">
+                                <span>0%</span>
+                                <span>21.0%</span>
+                                <span>50.0%</span>
+                            </div>
+                        </div>
+
+                        <!-- Tariffs & Customs Duties -->
+                        <div class="bg-slate-950/50 p-3.5 rounded-xl border border-slate-800 space-y-2">
+                            <div class="flex justify-between items-center">
+                                <div>
+                                    <div class="font-semibold text-white">Tariffs & Customs Average Rate</div>
+                                    <div class="text-[10px] text-slate-400">Baseline average: ~3.0%</div>
+                                </div>
+                                <div id="val-tariffs" class="font-bold font-mono-num text-amber-400">3.0%</div>
+                            </div>
+                            <input type="range" id="slider-tariffs" min="0" max="50" value="3.0" step="0.5" oninput="updateRevenueCalculations()" class="w-full">
+                            <div class="flex justify-between text-[10px] text-slate-500">
+                                <span>0%</span>
+                                <span>3.0%</span>
+                                <span>50.0%</span>
+                            </div>
+                        </div>
+
+                        <!-- Capital Gains Tax Top Rate -->
+                        <div class="bg-slate-950/50 p-3.5 rounded-xl border border-slate-800 space-y-2">
+                            <div class="flex justify-between items-center">
+                                <div>
+                                    <div class="font-semibold text-white">Capital Gains Top Rate</div>
+                                    <div class="text-[10px] text-slate-400">Baseline rate: 20.0%</div>
+                                </div>
+                                <div id="val-capitalGains" class="font-bold font-mono-num text-purple-400">20.0%</div>
+                            </div>
+                            <input type="range" id="slider-capitalGains" min="0" max="45" value="20.0" step="0.5" oninput="updateRevenueCalculations()" class="w-full">
+                            <div class="flex justify-between text-[10px] text-slate-500">
+                                <span>0%</span>
+                                <span>20.0%</span>
+                                <span>45.0%</span>
+                            </div>
+                        </div>
+
+                        <!-- Estate & Gift Tax -->
+                        <div class="bg-slate-950/50 p-3.5 rounded-xl border border-slate-800 space-y-2">
+                            <div class="flex justify-between items-center">
+                                <div>
+                                    <div class="font-semibold text-white">Estate & Inheritance Top Rate</div>
+                                    <div class="text-[10px] text-slate-400">Baseline rate: 40.0% over $13.6M</div>
+                                </div>
+                                <div id="val-estateTax" class="font-bold font-mono-num text-indigo-400">40.0%</div>
+                            </div>
+                            <input type="range" id="slider-estateTax" min="0" max="70" value="40.0" step="1.0" oninput="updateRevenueCalculations()" class="w-full">
+                            <div class="flex justify-between text-[10px] text-slate-500">
+                                <span>0%</span>
+                                <span>40.0%</span>
+                                <span>70.0%</span>
+                            </div>
+                        </div>
+
+                        <!-- Excise Taxes -->
+                        <div class="bg-slate-950/50 p-3.5 rounded-xl border border-slate-800 space-y-2">
+                            <div class="flex justify-between items-center">
+                                <div>
+                                    <div class="font-semibold text-white">Excise & Luxury Tax Multiplier</div>
+                                    <div class="text-[10px] text-slate-400">Fuel, alcohol, tobacco & luxury duties</div>
+                                </div>
+                                <div id="val-exciseTax" class="font-bold font-mono-num text-pink-400">1.0x</div>
+                            </div>
+                            <input type="range" id="slider-exciseTax" min="0.2" max="3.0" value="1.0" step="0.1" oninput="updateRevenueCalculations()" class="w-full">
+                            <div class="flex justify-between text-[10px] text-slate-500">
+                                <span>0.2x (-80%)</span>
+                                <span>1.0x (Baseline)</span>
+                                <span>3.0x (+200%)</span>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- TAB 3: AGENCY SPENDING & ALLOCATIONS -->
+        <div id="view-spending" class="tab-content hidden space-y-6">
+            
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 glass-card p-5 rounded-2xl">
+                <div>
+                    <h2 class="text-xl font-bold text-white flex items-center space-x-2">
+                        <i class="fa-solid fa-chart-pie text-amber-400"></i>
+                        <span>Federal Spending & Agency Allocations</span>
+                    </h2>
+                    <p class="text-xs text-slate-400 mt-1">Adjust individual agency budgets in $ Billions. Net interest recalculates dynamically based on total debt and interest rates.</p>
+                </div>
+                <div class="flex items-center space-x-4 bg-slate-950/80 px-4 py-2 rounded-xl border border-slate-800">
+                    <div>
+                        <div class="text-[10px] uppercase text-slate-400 font-semibold">Simulated Total Spending</div>
+                        <div id="spendingTabTotal" class="text-xl font-bold font-mono-num text-amber-400">$7,400.0B</div>
+                    </div>
+                    <div class="text-right border-l border-slate-800 pl-4">
+                        <div class="text-[10px] uppercase text-slate-400 font-semibold">Delta from Baseline</div>
+                        <div id="spendingTabDelta" class="text-sm font-bold font-mono-num text-emerald-400">+$0.0B (+0.0%)</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Dynamic Net Interest Settings Box -->
+            <div class="glass-card rounded-2xl p-5 border border-amber-500/30 bg-gradient-to-r from-amber-950/20 via-slate-900 to-slate-900">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 items-center">
+                    <div>
+                        <div class="flex items-center space-x-2 text-amber-400 font-bold text-sm">
+                            <i class="fa-solid fa-calculator"></i>
+                            <span>Dynamic Net Interest on Debt</span>
+                        </div>
+                        <p class="text-xs text-slate-400 mt-1">
+                            Net Interest is mandatory service on $38.5T debt. As budget surpluses reduce national debt, interest payments drop automatically.
+                        </p>
+                    </div>
+                    <div class="space-y-2 bg-slate-950/70 p-3.5 rounded-xl border border-slate-800">
+                        <div class="flex justify-between items-center text-xs">
+                            <span class="text-slate-300 font-medium">Average Borrowing Interest Rate:</span>
+                            <span id="interestRateVal" class="font-bold font-mono-num text-amber-400">3.5%</span>
+                        </div>
+                        <input type="range" id="slider-interestRate" min="1.0" max="8.0" value="3.5" step="0.1" oninput="updateSpendingCalculations()" class="w-full">
+                        <div class="flex justify-between text-[10px] text-slate-500">
+                            <span>1.0%</span>
+                            <span>3.5% (Baseline)</span>
+                            <span>8.0%</span>
+                        </div>
+                    </div>
+                    <div class="bg-slate-950/80 p-3.5 rounded-xl border border-slate-800 flex flex-col justify-center space-y-1">
+                        <div class="text-[10px] text-slate-400 uppercase font-semibold">Current Year Net Interest Cost</div>
+                        <div id="netInterestDisplay" class="text-2xl font-bold font-mono-num text-amber-400">$1,347.5 Billion</div>
+                        <div class="text-[10px] text-slate-500">Computed as National Debt x Average Interest Rate</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Agency Spending Grid -->
+            <div class="glass-card rounded-2xl p-5 space-y-4">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-800 pb-3">
+                    <h3 class="font-bold text-white flex items-center space-x-2">
+                        <i class="fa-solid fa-building-columns text-sky-400"></i>
+                        <span>Department & Agency Allocations ($ Billions)</span>
+                    </h3>
+                    <div class="flex items-center space-x-2">
+                        <button onclick="applyPercentageAdjustment(-10)" class="px-2.5 py-1 text-xs bg-slate-800 hover:bg-slate-700 text-rose-300 rounded border border-slate-700 transition">-10% All Spending</button>
+                        <button onclick="applyPercentageAdjustment(10)" class="px-2.5 py-1 text-xs bg-slate-800 hover:bg-slate-700 text-emerald-300 rounded border border-slate-700 transition">+10% All Spending</button>
+                        <button onclick="resetAgencySpending()" class="px-2.5 py-1 text-xs bg-slate-800 hover:bg-slate-700 text-sky-300 rounded border border-slate-700 transition">Reset Agencies</button>
+                    </div>
+                </div>
+
+                <!-- Agency Sliders Container -->
+                <div id="agencyListContainer" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <!-- Dynamic rendering of agency sliders by JavaScript -->
+                </div>
+            </div>
+
+        </div>
+
+        <!-- TAB 4: 30-YEAR PROJECTION & DEBT PAYOFF ENGINE -->
+        <div id="view-projections" class="tab-content hidden space-y-6">
+            
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 glass-card p-5 rounded-2xl">
+                <div>
+                    <h2 class="text-xl font-bold text-white flex items-center space-x-2">
+                        <i class="fa-solid fa-chart-line text-emerald-400"></i>
+                        <span>30-Year Fiscal Projection & Debt Elimination Engine</span>
+                    </h2>
+                    <p class="text-xs text-slate-400 mt-1">Multi-year forecast modeling debt trajectory, dynamic interest savings, and exact payoff horizon under your custom budget plan.</p>
+                </div>
+                <div class="flex items-center space-x-3">
+                    <span id="projPayoffBadge" class="px-3 py-1.5 rounded-lg text-xs font-bold font-mono-num bg-rose-500/20 text-rose-400 border border-rose-500/30">
+                        Deficit: Debt Escalates
+                    </span>
+                </div>
+            </div>
+
+            <!-- Key Payoff Metrics Summary Row -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div class="bg-slate-900/90 border border-slate-800 rounded-xl p-4 space-y-1">
+                    <div class="text-xs text-slate-400">Payoff Timeframe</div>
+                    <div id="projPayoffTime" class="text-xl font-bold font-mono-num text-slate-200">Never</div>
+                    <div id="projPayoffDate" class="text-[10px] text-slate-500">Current plan generates deficit</div>
+                </div>
+                <div class="bg-slate-900/90 border border-slate-800 rounded-xl p-4 space-y-1">
+                    <div class="text-xs text-slate-400">Debt in 10 Years (2036)</div>
+                    <div id="projDebt10Yr" class="text-xl font-bold font-mono-num text-rose-400">$56.50 T</div>
+                    <div id="projDebt10YrDelta" class="text-[10px] text-slate-500">+$18.00T growth</div>
+                </div>
+                <div class="bg-slate-900/90 border border-slate-800 rounded-xl p-4 space-y-1">
+                    <div class="text-xs text-slate-400">Debt in 30 Years (2056)</div>
+                    <div id="projDebt30Yr" class="text-xl font-bold font-mono-num text-rose-400">$108.20 T</div>
+                    <div id="projDebt30YrDelta" class="text-[10px] text-slate-500">+$69.70T growth</div>
+                </div>
+                <div class="bg-slate-900/90 border border-slate-800 rounded-xl p-4 space-y-1">
+                    <div class="text-xs text-slate-400">30-Year Net Interest Saved</div>
+                    <div id="projInterestSaved" class="text-xl font-bold font-mono-num text-amber-400">$0.00 B</div>
+                    <div id="projInterestSavedSub" class="text-[10px] text-slate-500">Vs baseline deficit trajectory</div>
+                </div>
+            </div>
+
+            <!-- 30-Year Chart Card -->
+            <div class="glass-card rounded-2xl p-5 space-y-4">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-800 pb-3">
+                    <div>
+                        <h3 class="font-bold text-white flex items-center space-x-2">
+                            <i class="fa-solid fa-chart-area text-sky-400"></i>
+                            <span>30-Year National Debt Trajectory ($ Trillions)</span>
+                        </h3>
+                        <p class="text-xs text-slate-400">Custom Policy vs Status Quo Baseline</p>
+                    </div>
+                    <div class="flex items-center space-x-4 text-xs">
+                        <span class="flex items-center space-x-1.5">
+                            <span class="w-3 h-3 rounded-full bg-sky-400"></span>
+                            <span class="text-slate-300">Your Plan</span>
+                        </span>
+                        <span class="flex items-center space-x-1.5">
+                            <span class="w-3 h-3 rounded-full bg-rose-500/60 border border-rose-500"></span>
+                            <span class="text-slate-400">Status Quo Baseline</span>
+                        </span>
+                    </div>
+                </div>
+
+                <div class="h-96 w-full relative">
+                    <canvas id="projectionChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Annual Deficit / Surplus Projection Chart -->
+            <div class="glass-card rounded-2xl p-5 space-y-4">
+                <div class="border-b border-slate-800 pb-3">
+                    <h3 class="font-bold text-white flex items-center space-x-2">
+                        <i class="fa-solid fa-arrows-up-down text-emerald-400"></i>
+                        <span>Annual Budget Surplus / Deficit Trajectory ($ Billions)</span>
+                    </h3>
+                    <p class="text-xs text-slate-400">Shows compounding interest reductions freeing up budget room year over year</p>
+                </div>
+                <div class="h-64 w-full relative">
+                    <canvas id="surplusChart"></canvas>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- REVENUE POLICY PANELS SECTION -->
+        <section class="space-y-4 pt-6 border-t border-slate-800/80">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                <div>
+                    <h3 class="text-xl font-bold text-white flex items-center space-x-2">
+                        <i class="fa-solid fa-scale-balanced text-sky-400"></i>
+                        <span>Revenue Policy Analysis & Reform Proposals</span>
+                    </h3>
+                    <p class="text-xs text-slate-400 mt-0.5">Detailed yield, economic impact, feasibility, and socioeconomic breakdowns for 9 targeted federal tax reforms.</p>
+                </div>
+                <div class="text-xs text-slate-400 font-mono-num bg-slate-900 px-3 py-1.5 rounded-lg border border-slate-800">
+                    9 Policy Modules Active
+                </div>
+            </div>
+
+            <!-- Grid Container for 9 Policy Panels -->
+            <div id="policyPanelsContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <!-- Dynamically populated by JS via REVENUE_POLICY_DETAILS -->
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Export Summary Modal -->
+    <div id="exportModal" class="hidden fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-slate-900 border border-slate-700 rounded-2xl max-w-2xl w-full p-6 space-y-4 max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center border-b border-slate-800 pb-3">
+                <h3 class="text-lg font-bold text-white flex items-center space-x-2">
+                    <i class="fa-solid fa-file-invoice text-sky-400"></i>
+                    <span>Federal Budget Reform Summary</span>
+                </h3>
+                <button onclick="closeExportModal()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+
+            <div id="exportModalContent" class="space-y-4 text-xs font-mono text-slate-300 bg-slate-950 p-4 rounded-xl border border-slate-800">
+                <!-- Dynamic text report filled by JS -->
+            </div>
+
+            <div class="flex justify-end space-x-3 pt-2">
+                <button onclick="copyExportSummary()" class="px-4 py-2 text-xs font-medium bg-slate-800 hover:bg-slate-700 text-white rounded-lg transition flex items-center space-x-2">
+                    <i class="fa-solid fa-copy"></i>
+                    <span>Copy Text</span>
+                </button>
+                <button onclick="window.print()" class="px-4 py-2 text-xs font-medium bg-sky-600 hover:bg-sky-500 text-white rounded-lg transition flex items-center space-x-2">
+                    <i class="fa-solid fa-print"></i>
+                    <span>Print Report</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notification Toast Box -->
+    <div id="toastNotification" class="fixed bottom-5 right-5 z-50 transition-all duration-300 transform translate-y-20 opacity-0 pointer-events-none">
+        <div class="bg-slate-900 border border-sky-500/50 text-white px-4 py-3 rounded-xl shadow-2xl flex items-center space-x-3 text-xs">
+            <i id="toastIcon" class="fa-solid fa-circle-check text-emerald-400 text-base"></i>
+            <span id="toastMessage">Scenario preset loaded successfully!</span>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-slate-900 border-t border-slate-800 py-4 mt-auto text-center text-xs text-slate-500">
+        <div class="max-w-7xl mx-auto px-4">
+            U.S. Federal Budget & Debt Elimination Simulator &bull; Interactive FY2026 Fiscal Policy Engine
+        </div>
+    </footer>
+
+    <script>
+        // Revenue Policy Metadata & Detailed Analysis Content
+
+
+
+// Updated REVENUE_POLICY_DETAILS with 9 valid Federal Revenue Reforms
+const REVENUE_POLICY_DETAILS = {
+    irs_funding: {
+        title: "1. Boost IRS Funding by $80B",
+        yield: 240, // Net annual tax gap recovery $240B/yr ($400B gross - $80B allocation)
+        tag: "+$240 Billion / yr",
+        economic: "Recovers uncollected tax revenues by targeting illegal tax evasion, offshore accounts, and complex corporate tax shelters without raising statutory rates on compliant citizens.",
+        feasibility: "High operational feasibility over 5-10 years. Requires modernized IT systems, specialized forensic accountants, and long-term hiring commitments.",
+        socioeconomic: "Highly progressive tax enforcement equity. Addresses the estimated $600B+ annual US tax gap. Main criticism centers on concerns over small business audit oversight."
+    },
+    church_tax: {
+        title: "2. Tax Churches as Corporations",
+        yield: 8,
+        tag: "+$8 Billion / yr",
+        economic: "Levies the standard 21% corporate tax rate on non-charitable revenues and commercial investment holdings of religious organizations.",
+        feasibility: "Moderate administrative complexity. Demands clear accounting segregation between purely charitable/religious operations and commercial revenue streams.",
+        socioeconomic: "Faces intense constitutional scrutiny under the First Amendment (Establishment and Free Exercise Clauses). Opponents argue it breaches church-state separation and burdens local community programs."
+    },
+    inheritance_tax: {
+        title: "3. Direct Inheritance Taxation",
+        yield: 30,
+        tag: "+$30 Billion / yr",
+        economic: "Replaces stepped-up basis loopholes with a direct tax on high-value asset transfers and inheritances upon receipt.",
+        feasibility: "Moderate feasibility. Leverages existing probate and IRS gift/estate reporting mechanisms.",
+        socioeconomic: "Mitigates intergenerational wealth concentration and promotes equal opportunity. Opponents raise concerns regarding liquidity hurdles for multi-generational family farms and closely-held businesses."
+    },
+    unrealized_gains: {
+        title: "4. Tax Stocks with Unrealized Gains",
+        yield: 40,
+        tag: "+$40 Billion / yr",
+        economic: "Levies annual mark-to-market taxes on unrealized capital gains in publicly traded securities for ultra-high-net-worth individual portfolios.",
+        feasibility: "High administrative complexity. Requires annual valuation protocols and refund/deduction mechanisms during market downturns.",
+        socioeconomic: "Prevents buy-borrow-die tax avoidance strategies. Concerns include potential market volatility, forced stock liquidations, and constitutional challenges under the 16th Amendment Direct Tax clause."
+    },
+    keep_tariffs: {
+        title: "5. Maintain 2026 Import Tariffs",
+        yield: 200,
+        tag: "+$200 Billion / yr",
+        economic: "Generates $200B annually in tariff duties across foreign goods, electronics, steel, and manufactured imports.",
+        feasibility: "Very high administrative feasibility; already implemented via U.S. Customs and Border Protection (CBP).",
+        socioeconomic: "Protects domestic manufacturing sectors, but acts as an indirect consumption tax on domestic consumers. Risks supply chain inflation and retaliatory foreign tariffs."
+    },
+    vat_tax: {
+        title: "6. Broad-Based 5% Federal VAT",
+        yield: 300,
+        tag: "+$300 Billion / yr",
+        economic: "Imposes a standard 5% national Value-Added Tax (VAT) collected at each stage of production and distribution, excluding basic necessities like groceries and healthcare.",
+        feasibility: "High long-term feasibility; widely utilized across developed nations, though requires establishing new federal sales tracking architecture.",
+        socioeconomic: "Highly stable and broad-based revenue stream. Broad exemptions for essential goods help mitigate the inherently regressive nature of consumption taxes."
+    },
+    top_bracket_50: {
+        title: "7. Increase Top Tax Bracket to 50%",
+        yield: 160,
+        tag: "+$160 Billion / yr",
+        economic: "Increases the marginal individual income tax rate on earnings above $609,350 from 37% to 50%. Auto-updates top bracket input to 50%.",
+        feasibility: "Very high feasibility using existing IRS marginal bracket infrastructure.",
+        socioeconomic: "Restores tax progressivity levels comparable to pre-1986 tax law. Critics contend it could disincentivize top executive capital allocation and encourage tax avoidance structures."
+    },
+    financial_transaction_tax: {
+        title: "8. 0.1% Financial Transaction Tax",
+        yield: 80,
+        tag: "+$80 Billion / yr",
+        economic: "Levies a modest 0.1% fee on trades of equities, bonds, and derivatives to generate revenue while curtailing speculative high-frequency trading.",
+        feasibility: "High administrative feasibility; easily collected via clearing houses and electronic trading platforms.",
+        socioeconomic: "Mainly affects institutional trading firms and high-volume investors. Critics warn it could lower market liquidity and impact retail retirement portfolio returns."
+    },
+    carbon_fee: {
+        title: "9. National Carbon Fee ($50/ton)",
+        yield: 150,
+        tag: "+$150 Billion / yr",
+        economic: "Imposes a $50 per metric ton tax on the carbon content of fossil fuels at the point of extraction or import.",
+        feasibility: "High feasibility; monitored at the upstream fuel production, refinery, and pipeline level.",
+        socioeconomic: "Provides a market-based incentive to reduce emissions and accelerate green energy infrastructure. May increase consumer utility and transport costs unless paired with rebate dividends."
+    }
+};
+
+
+
+
+
+
+
+        // BASELINE U.S. FEDERAL BUDGET DATA (FY 2026)
+        const BASE_DEBT = 38500.0; // $38.5 Trillion in Billions
+        const BASE_INTEREST_RATE = 3.5; // 3.5%
+        
+        // Baseline Revenue Sources ($ Billions)
+        const BASE_REVENUE_SOURCES = {
+            incomeTax: { name: "Individual Income Tax", value: 2700.0, icon: "fa-user-large", color: "#38bdf8" },
+            payrollTax: { name: "Payroll Tax (SS & Medicare)", value: 1750.0, icon: "fa-users", color: "#10b981" },
+            corporateTax: { name: "Corporate Income Tax", value: 550.0, icon: "fa-building", color: "#f59e0b" },
+            tariffs: { name: "Tariffs & Customs Duties", value: 100.0, icon: "fa-boxes-packing", color: "#ec4899" },
+            capitalGains: { name: "Capital Gains Tax", value: 250.0, icon: "fa-chart-line-up", color: "#a855f7" },
+            estateTax: { name: "Estate & Gift Taxes", value: 50.0, icon: "fa-monument", color: "#6366f1" },
+            exciseTax: { name: "Excise & Luxury Taxes", value: 200.0, icon: "fa-receipt", color: "#f43f5e" }
+        };
+
+        // Baseline 7 Income Tax Brackets
+        const BASE_INCOME_BRACKETS = [
+            { id: 1, rate: 10.0, threshold: 0, shareWeight: 0.08, name: "10% Bracket ($0 - $11.6k)" },
+            { id: 2, rate: 12.0, threshold: 11600, shareWeight: 0.18, name: "12% Bracket ($11.6k - $47.1k)" },
+            { id: 3, rate: 22.0, threshold: 47150, shareWeight: 0.24, name: "22% Bracket ($47.1k - $100.5k)" },
+            { id: 4, rate: 24.0, threshold: 100525, shareWeight: 0.20, name: "24% Bracket ($100.5k - $191.9k)" },
+            { id: 5, rate: 32.0, threshold: 191950, shareWeight: 0.12, name: "32% Bracket ($191.9k - $243.7k)" },
+            { id: 6, rate: 35.0, threshold: 243725, shareWeight: 0.10, name: "35% Bracket ($243.7k - $609.3k)" },
+            { id: 7, rate: 37.0, threshold: 609350, shareWeight: 0.08, name: "37% Bracket (Over $609.3k)" }
+        ];
+
+        // Baseline Spending Agencies ($ Billions) - Total Non-Interest = $6,052.5B
+        const BASE_AGENCIES = {
+            socialSecurity: { name: "Social Security Administration", value: 1550.0, category: "Mandatory", icon: "fa-hand-holding-heart", color: "#10b981", desc: "Retirement, disability and survivor benefits" },
+            medicareHhs: { name: "HHS (Medicare & Medicaid)", value: 1700.0, category: "Mandatory", icon: "fa-hospital-user", color: "#06b6d4", desc: "Healthcare coverage for seniors and low-income families" },
+            defense: { name: "Department of Defense", value: 880.0, category: "Discretionary", icon: "fa-shield-halved", color: "#f59e0b", desc: "Military personnel, readiness, procurement and operations" },
+            veterans: { name: "Department of Veterans Affairs", value: 380.0, category: "Mandatory", icon: "fa-user-shield", color: "#8b5cf6", desc: "VA healthcare, pensions, and disability compensation" },
+            agriculture: { name: "Department of Agriculture (USDA)", value: 210.0, category: "Discretionary", icon: "fa-wheat-awn", color: "#84cc16", desc: "SNAP nutrition programs, farm subsidies, rural development" },
+            transportation: { name: "Department of Transportation", value: 115.0, category: "Discretionary", icon: "fa-road", color: "#f97316", desc: "Highways, transit, aviation, bridge infrastructure" },
+            education: { name: "Department of Education", value: 110.0, category: "Discretionary", icon: "fa-graduation-cap", color: "#3b82f6", desc: "Pell grants, student aid, K-12 Title I support" },
+            homelandSecurity: { name: "Dept. of Homeland Security", value: 90.0, category: "Discretionary", icon: "fa-passport", color: "#64748b", desc: "Border security, TSA, Coast Guard, FEMA disaster relief" },
+            stateForeign: { name: "State Dept. & Foreign Aid", value: 65.0, category: "Discretionary", icon: "fa-earth-americas", color: "#0284c7", desc: "Diplomacy, embassies, international development assistance" },
+            energy: { name: "Department of Energy", value: 50.0, category: "Discretionary", icon: "fa-bolt", color: "#eab308", desc: "Nuclear stockpile safety, energy research, grid resilience" },
+            justice: { name: "Department of Justice", value: 45.0, category: "Discretionary", icon: "fa-scale-balanced", color: "#ec4899", desc: "FBI, federal courts, federal prisons, law enforcement" },
+            nasaScience: { name: "NASA & Science Foundation", value: 40.0, category: "Discretionary", icon: "fa-rocket", color: "#d946ef", desc: "Space exploration, scientific research, satellite monitoring" },
+            otherAgencies: { name: "Other Agencies & Mandatory", value: 817.5, category: "Mandatory", icon: "fa-boxes-stacked", color: "#94a3b8", desc: "Judicial branch, postal service, federal pensions, interior" }
+        };
+
+        // DYNAMIC APP STATE
+        let currentState = {
+            brackets: JSON.parse(JSON.stringify(BASE_INCOME_BRACKETS)),
+            incomeMultiplier: 100, // %
+            payrollRate: 15.3,
+            corporateRate: 21.0,
+            tariffRate: 3.0,
+            capitalGainsRate: 20.0,
+            estateRate: 40.0,
+            exciseMultiplier: 1.0,
+            
+            agencies: JSON.parse(JSON.stringify(BASE_AGENCIES)),
+            interestRate: 3.5,
+            
+            // Calculated dynamic values
+            totalRevenue: 5600.0,
+            agencySpending: 6052.5,
+            netInterest: 1347.5,
+            totalSpending: 7400.0,
+            netBalance: -1800.0,
+            
+            // Chart references
+            revenueChart: null,
+            spendingChart: null,
+            projectionChart: null,
+            surplusChart: null
+        };
+
+        // Render 9 Policy Panels to the bottom section
+        function renderPolicyPanels() {
+            const container = document.getElementById('policyPanelsContainer');
+            if (!container) return;
+            container.innerHTML = '';
+
+            Object.entries(REVENUE_POLICY_DETAILS).forEach(([key, policy]) => {
+                const card = document.createElement('div');
+                card.className = "glass-card glass-card-hover rounded-2xl p-5 flex flex-col justify-between space-y-4 border border-slate-800 bg-slate-900/80";
+                
+                card.innerHTML = `
+                    <div class="space-y-3">
+                        <div class="flex items-start justify-between gap-2 border-b border-slate-800/80 pb-3">
+                            <h4 class="font-bold text-white text-base leading-snug">${policy.title}</h4>
+                            <span class="px-2.5 py-1 text-xs font-bold font-mono-num rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 whitespace-nowrap">
+                                ${policy.tag}
+                            </span>
+                        </div>
+                        <div class="text-xs text-slate-300 leading-relaxed">
+                            <span class="font-semibold text-sky-400 block mb-0.5">Economic Impact:</span>
+                            ${policy.economic}
+                        </div>
+                    </div>
+
+                    <div class="space-y-2 pt-3 border-t border-slate-800/80 text-xs">
+                        <div>
+                            <span class="font-semibold text-amber-400 block mb-0.5">Implementation & Feasibility:</span>
+                            <span class="text-slate-400 leading-relaxed block">${policy.feasibility}</span>
+                        </div>
+                        <div>
+                            <span class="font-semibold text-purple-400 block mb-0.5 mt-2">Socioeconomic Analysis:</span>
+                            <span class="text-slate-400 leading-relaxed block">${policy.socioeconomic}</span>
+                        </div>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        // Recalculate complete federal budget figures
+        function recalculateBudget() {
+            // 1. Calculate Income Tax Revenue
+            let baseIncomeTax = BASE_REVENUE_SOURCES.incomeTax.value;
+            let bracketWeightedFactor = 0;
+            
+            currentState.brackets.forEach((b, idx) => {
+                let baseBracket = BASE_INCOME_BRACKETS[idx];
+                let rateRatio = b.rate / baseBracket.rate;
+                bracketWeightedFactor += rateRatio * baseBracket.shareWeight;
+            });
+
+            let incomeTaxRev = baseIncomeTax * bracketWeightedFactor * (currentState.incomeMultiplier / 100);
+
+            // 2. Calculate Other Revenues
+            let payrollRev = BASE_REVENUE_SOURCES.payrollTax.value * (currentState.payrollRate / 15.3);
+            
+            // Corporate tax elasticity factor
+            let corpRatio = currentState.corporateRate / 21.0;
+            let corpElasticity = corpRatio > 1.5 ? 0.95 : 1.0;
+            let corporateRev = BASE_REVENUE_SOURCES.corporateTax.value * corpRatio * corpElasticity;
+            
+            let tariffRev = BASE_REVENUE_SOURCES.tariffs.value * (currentState.tariffRate / 3.0);
+            let capGainsRev = BASE_REVENUE_SOURCES.capitalGains.value * (currentState.capitalGainsRate / 20.0);
+            let estateRev = BASE_REVENUE_SOURCES.estateTax.value * (currentState.estateRate / 40.0);
+            let exciseRev = BASE_REVENUE_SOURCES.exciseTax.value * currentState.exciseMultiplier;
+
+            currentState.currentRevenueBreakdown = {
+                incomeTax: incomeTaxRev,
+                payrollTax: payrollRev,
+                corporateTax: corporateRev,
+                tariffs: tariffRev,
+                capitalGains: capGainsRev,
+                estateTax: estateRev,
+                exciseTax: exciseRev
+            };
+
+            currentState.totalRevenue = Object.values(currentState.currentRevenueBreakdown).reduce((a, b) => a + b, 0);
+
+            // 3. Calculate Spending
+            let totalAgencySpend = 0;
+            for (let key in currentState.agencies) {
+                totalAgencySpend += currentState.agencies[key].value;
+            }
+            currentState.agencySpending = totalAgencySpend;
+
+            // 4. Calculate Net Interest on Debt (Year 0)
+            currentState.netInterest = BASE_DEBT * (currentState.interestRate / 100);
+
+            // 5. Total Spending & Net Deficit / Surplus
+            currentState.totalSpending = currentState.agencySpending + currentState.netInterest;
+            currentState.netBalance = currentState.totalRevenue - currentState.totalSpending;
+
+            // Update UI Views
+            updateKPIs();
+            updateRevenueView();
+            updateSpendingView();
+            updateProjections();
+        }
+
+        function updateKPIs() {
+            // Revenue KPI
+            document.getElementById('kpiRevenue').textContent = formatTrillion(currentState.totalRevenue);
+            let revDelta = currentState.totalRevenue - 5600.0;
+            document.getElementById('kpiRevDelta').textContent = formatDeltaBillions(revDelta);
+            document.getElementById('kpiRevDelta').className = `text-xs font-semibold font-mono-num ${revDelta >= 0 ? 'text-emerald-400' : 'text-rose-400'}`;
+
+            // Spending KPI
+            document.getElementById('kpiSpending').textContent = formatTrillion(currentState.totalSpending);
+            let spendDelta = currentState.totalSpending - 7400.0;
+            document.getElementById('kpiSpendDelta').textContent = formatDeltaBillions(spendDelta);
+            document.getElementById('kpiSpendDelta').className = `text-xs font-semibold font-mono-num ${spendDelta <= 0 ? 'text-emerald-400' : 'text-rose-400'}`;
+
+            // Net Balance KPI
+            let balCard = document.getElementById('kpiBalanceCard');
+            let balVal = document.getElementById('kpiBalance');
+            let balLabel = document.getElementById('kpiBalanceLabel');
+            let balIcon = document.getElementById('kpiBalanceIcon');
+
+            balVal.textContent = formatTrillion(currentState.netBalance);
+
+            if (currentState.netBalance >= 0) {
+                balCard.className = "bg-slate-950/70 border border-emerald-500/50 rounded-xl p-3 flex flex-col justify-between";
+                balVal.className = "text-lg sm:text-xl font-bold font-mono-num text-emerald-400";
+                balLabel.textContent = "SURPLUS";
+                balLabel.className = "text-[11px] font-semibold text-emerald-400 uppercase tracking-wide";
+                balIcon.className = "fa-solid fa-circle-check text-emerald-400";
+            } else {
+                balCard.className = "bg-slate-950/70 border border-rose-900/50 rounded-xl p-3 flex flex-col justify-between";
+                balVal.className = "text-lg sm:text-xl font-bold font-mono-num text-rose-400";
+                balLabel.textContent = "DEFICIT";
+                balLabel.className = "text-[11px] font-semibold text-rose-400 uppercase tracking-wide";
+                balIcon.className = "fa-solid fa-triangle-exclamation text-rose-400";
+            }
+
+            // Net Interest KPI
+            document.getElementById('kpiInterest').textContent = `${formatTrillion(currentState.netInterest)} Int.`;
+            document.getElementById('kpiInterestRateDisplay').textContent = `${currentState.interestRate.toFixed(1)}%`;
+
+            // Overview Net Interest Summary
+            document.getElementById('overviewNetInterest').textContent = `$${currentState.netInterest.toFixed(1)} Billion`;
+            let interestShare = (currentState.netInterest / currentState.totalSpending) * 100;
+            document.getElementById('overviewInterestShare').textContent = `${interestShare.toFixed(1)}%`;
+            document.getElementById('interestShareBar').style.width = `${Math.min(interestShare, 100)}%`;
+
+            // Update Insights Text
+            if (currentState.netBalance >= 0) {
+                document.getElementById('insightBox3').className = "bg-slate-950/60 border border-emerald-800 rounded-lg p-3";
+                document.getElementById('insightInterestEffect').innerHTML = `<span class="text-emerald-400 font-semibold">Budget Surplus achieved!</span> Debt will decline annually, rapidly reducing net interest burdens.`;
+            } else {
+                document.getElementById('insightBox3').className = "bg-slate-950/60 border border-slate-800 rounded-lg p-3";
+                document.getElementById('insightInterestEffect').innerHTML = `Annual deficit adds <span class="text-rose-400 font-semibold">${formatTrillion(Math.abs(currentState.netBalance))}</span> to debt, compounding net interest expenses.`;
+            }
+        }
+
+        function updateRevenueView() {
+            document.getElementById('revenueTabTotal').textContent = formatTrillion(currentState.totalRevenue);
+            let delta = currentState.totalRevenue - 5600.0;
+            let pct = (delta / 5600.0) * 100;
+            let deltaElem = document.getElementById('revenueTabDelta');
+            deltaElem.textContent = `${formatDeltaBillions(delta)} (${pct >= 0 ? '+' : ''}${pct.toFixed(1)}%)`;
+            deltaElem.className = `text-sm font-bold font-mono-num ${delta >= 0 ? 'text-emerald-400' : 'text-rose-400'}`;
+
+            // Multiplier text
+            document.getElementById('incomeTaxMultiplierVal').textContent = `${currentState.incomeMultiplier}%`;
+
+            // Render Brackets Table
+            let tbody = document.getElementById('bracketsTableBody');
+            tbody.innerHTML = '';
+
+            currentState.brackets.forEach((b, idx) => {
+                let tr = document.createElement('tr');
+                tr.className = "hover:bg-slate-900/50 transition";
+                
+                let bracketShareRev = (currentState.currentRevenueBreakdown.incomeTax * b.shareWeight).toFixed(1);
+
+                tr.innerHTML = `
+                    <td class="p-2.5 font-semibold text-slate-200">Bracket ${b.id}</td>
+                    <td class="p-2.5 font-mono-num text-slate-400">
+                        <input type="number" value="${b.threshold}" onchange="updateBracketThreshold(${idx}, this.value)" class="w-24 bg-slate-900 border border-slate-700 rounded px-2 py-1 text-white font-mono text-xs focus:border-sky-500 focus:outline-none">
+                    </td>
+                    <td class="p-2.5 font-mono-num text-sky-400">
+                        <div class="flex items-center space-x-2">
+                            <input type="range" min="0" max="60" value="${b.rate}" step="0.5" oninput="updateBracketRate(${idx}, this.value)" class="w-20">
+                            <span class="w-10 text-right font-bold">${b.rate.toFixed(1)}%</span>
+                        </div>
+                    </td>
+                    <td class="p-2.5 font-mono-num text-slate-300">$${bracketShareRev}B</td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            // Update Sliders Text Display
+            document.getElementById('val-payrollTax').textContent = `${currentState.payrollRate.toFixed(1)}%`;
+            document.getElementById('val-corporateTax').textContent = `${currentState.corporateRate.toFixed(1)}%`;
+            document.getElementById('val-tariffs').textContent = `${currentState.tariffRate.toFixed(1)}%`;
+            document.getElementById('val-capitalGains').textContent = `${currentState.capitalGainsRate.toFixed(1)}%`;
+            document.getElementById('val-estateTax').textContent = `${currentState.estateRate.toFixed(1)}%`;
+            document.getElementById('val-exciseTax').textContent = `${currentState.exciseMultiplier.toFixed(1)}x`;
+
+            // Update Overview Breakdown List
+            let revList = document.getElementById('overviewRevenueList');
+            revList.innerHTML = '';
+            for (let key in BASE_REVENUE_SOURCES) {
+                let val = currentState.currentRevenueBreakdown[key];
+                let share = ((val / currentState.totalRevenue) * 100).toFixed(1);
+                let item = BASE_REVENUE_SOURCES[key];
+
+                let div = document.createElement('div');
+                div.className = "flex items-center justify-between py-1.5";
+                div.innerHTML = `
+                    <div class="flex items-center space-x-2">
+                        <i class="fa-solid ${item.icon} text-slate-400 w-4 text-center"></i>
+                        <span class="text-slate-300 font-medium">${item.name}</span>
+                    </div>
+                    <div class="flex items-center space-x-3 font-mono-num">
+                        <span class="text-slate-400 text-[10px]">${share}%</span>
+                        <span class="font-bold text-sky-400">$${val.toFixed(1)}B</span>
+                    </div>
+                `;
+                revList.appendChild(div);
+            }
+
+            renderRevenueCharts();
+        }
+
+        function updateBracketRate(index, val) {
+            currentState.brackets[index].rate = parseFloat(val);
+            recalculateBudget();
+        }
+
+        function updateBracketThreshold(index, val) {
+            currentState.brackets[index].threshold = parseFloat(val) || 0;
+            recalculateBudget();
+        }
+
+        function resetIncomeTaxBrackets() {
+            currentState.brackets = JSON.parse(JSON.stringify(BASE_INCOME_BRACKETS));
+            currentState.incomeMultiplier = 100;
+            document.getElementById('incomeTaxMultiplier').value = 100;
+            recalculateBudget();
+            showToast("Income tax brackets reset to baseline!");
+        }
+
+        function updateRevenueCalculations() {
+            currentState.incomeMultiplier = parseFloat(document.getElementById('incomeTaxMultiplier').value);
+            currentState.payrollRate = parseFloat(document.getElementById('slider-payrollTax').value);
+            currentState.corporateRate = parseFloat(document.getElementById('slider-corporateTax').value);
+            currentState.tariffRate = parseFloat(document.getElementById('slider-tariffs').value);
+            currentState.capitalGainsRate = parseFloat(document.getElementById('slider-capitalGains').value);
+            currentState.estateRate = parseFloat(document.getElementById('slider-estateTax').value);
+            currentState.exciseMultiplier = parseFloat(document.getElementById('slider-exciseTax').value);
+
+            recalculateBudget();
+        }
+
+        function updateSpendingView() {
+            document.getElementById('spendingTabTotal').textContent = formatTrillion(currentState.totalSpending);
+            let delta = currentState.totalSpending - 7400.0;
+            let pct = (delta / 7400.0) * 100;
+            let deltaElem = document.getElementById('spendingTabDelta');
+            deltaElem.textContent = `${formatDeltaBillions(delta)} (${pct >= 0 ? '+' : ''}${pct.toFixed(1)}%)`;
+            deltaElem.className = `text-sm font-bold font-mono-num ${delta <= 0 ? 'text-emerald-400' : 'text-rose-400'}`;
+
+            document.getElementById('interestRateVal').textContent = `${currentState.interestRate.toFixed(1)}%`;
+            document.getElementById('netInterestDisplay').textContent = `$${currentState.netInterest.toFixed(1)} Billion`;
+
+            // Render Agency Sliders Grid
+            let container = document.getElementById('agencyListContainer');
+            container.innerHTML = '';
+
+            for (let key in currentState.agencies) {
+                let ag = currentState.agencies[key];
+                let baseVal = BASE_AGENCIES[key].value;
+                let pctOfTotal = ((ag.value / currentState.totalSpending) * 100).toFixed(1);
+                let deltaVal = ag.value - baseVal;
+
+                let card = document.createElement('div');
+                card.className = "bg-slate-950/60 border border-slate-800 p-3.5 rounded-xl space-y-2.5 hover:border-slate-700 transition";
+                card.innerHTML = `
+                    <div class="flex justify-between items-start">
+                        <div class="flex items-center space-x-2">
+                            <div class="w-7 h-7 rounded-lg bg-slate-800 flex items-center justify-center text-slate-300">
+                                <i class="fa-solid ${ag.icon}"></i>
+                            </div>
+                            <div>
+                                <div class="font-semibold text-white text-xs">${ag.name}</div>
+                                <div class="text-[10px] text-slate-400">${ag.category} &bull; ${pctOfTotal}% of total spend</div>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <div class="font-bold font-mono-num text-amber-400 text-sm">$${ag.value.toFixed(1)}B</div>
+                            <div class="text-[10px] font-mono-num ${deltaVal >= 0 ? 'text-amber-300' : 'text-emerald-400'}">
+                                ${formatDeltaBillions(deltaVal)}
+                            </div>
+                        </div>
+                    </div>
+                    <p class="text-[10px] text-slate-500 leading-tight">${ag.desc}</p>
+                    <div class="space-y-1">
+                        <input type="range" min="0" max="${Math.round(baseVal * 2.5)}" value="${ag.value}" step="1" oninput="updateAgencyValue('${key}', this.value)" class="w-full">
+                        <div class="flex justify-between text-[9px] text-slate-500">
+                            <span>$0B (-100%)</span>
+                            <span>Baseline: $${baseVal}B</span>
+                            <span>$${Math.round(baseVal * 2.5)}B</span>
+                        </div>
+                    </div>
+                `;
+                container.appendChild(card);
+            }
+
+            // Update Overview Spending Quick List
+            let spendList = document.getElementById('overviewSpendingList');
+            spendList.innerHTML = '';
+
+            // Add Net Interest item first
+            let netIntShare = ((currentState.netInterest / currentState.totalSpending) * 100).toFixed(1);
+            let intDiv = document.createElement('div');
+            intDiv.className = "flex items-center justify-between py-1.5 font-semibold text-amber-300";
+            intDiv.innerHTML = `
+                <div class="flex items-center space-x-2">
+                    <i class="fa-solid fa-calculator text-amber-400 w-4 text-center"></i>
+                    <span>Net Interest on Public Debt</span>
+                </div>
+                <div class="flex items-center space-x-3 font-mono-num">
+                    <span class="text-slate-400 text-[10px]">${netIntShare}%</span>
+                    <span class="font-bold">$${currentState.netInterest.toFixed(1)}B</span>
+                </div>
+            `;
+            spendList.appendChild(intDiv);
+
+            // Add Top Agencies
+            for (let key in currentState.agencies) {
+                let ag = currentState.agencies[key];
+                let share = ((ag.value / currentState.totalSpending) * 100).toFixed(1);
+
+                let div = document.createElement('div');
+                div.className = "flex items-center justify-between py-1.5";
+                div.innerHTML = `
+                    <div class="flex items-center space-x-2">
+                        <i class="fa-solid ${ag.icon} text-slate-400 w-4 text-center"></i>
+                        <span class="text-slate-300 font-medium">${ag.name}</span>
+                    </div>
+                    <div class="flex items-center space-x-3 font-mono-num">
+                        <span class="text-slate-400 text-[10px]">${share}%</span>
+                        <span class="font-bold text-amber-400">$${ag.value.toFixed(1)}B</span>
+                    </div>
+                `;
+                spendList.appendChild(div);
+            }
+
+            renderSpendingCharts();
+        }
+
+        function updateAgencyValue(key, value) {
+            currentState.agencies[key].value = parseFloat(value) || 0;
+            recalculateBudget();
+        }
+
+        function updateSpendingCalculations() {
+            currentState.interestRate = parseFloat(document.getElementById('slider-interestRate').value);
+            recalculateBudget();
+        }
+
+        function applyPercentageAdjustment(pct) {
+            let factor = 1 + (pct / 100);
+            for (let key in currentState.agencies) {
+                currentState.agencies[key].value = Math.max(0, Math.round(currentState.agencies[key].value * factor * 10) / 10);
+            }
+            recalculateBudget();
+            showToast(`Adjusted all agency budgets by ${pct > 0 ? '+' : ''}${pct}%`);
+        }
+
+        function resetAgencySpending() {
+            currentState.agencies = JSON.parse(JSON.stringify(BASE_AGENCIES));
+            currentState.interestRate = 3.5;
+            document.getElementById('slider-interestRate').value = 3.5;
+            recalculateBudget();
+            showToast("Agency spending reset to baseline!");
+        }
+
+        function updateProjections() {
+            let yearlyProjections = [];
+            let baselineProjections = [];
+
+            let currentDebt = BASE_DEBT; // $38,500B
+            let baselineDebt = BASE_DEBT;
+
+            let nonInterestSpending = currentState.agencySpending;
+            let revenue = currentState.totalRevenue;
+            let r = currentState.interestRate / 100;
+
+            let payoffYear = null;
+            let payoffMonth = null;
+            let totalInterestPaidCustom = 0;
+            let totalInterestPaidBaseline = 0;
+
+            // Baseline assumptions: 3% baseline growth per year in deficit
+            let baseRevenue = 5600.0;
+            let baseNonInterestSpend = 6052.5;
+
+            for (let t = 0; t <= 30; t++) {
+                if (t === 0) {
+                    yearlyProjections.push({ year: 2026, debt: currentDebt, surplus: currentState.netBalance, interest: currentState.netInterest });
+                    baselineProjections.push({ year: 2026, debt: baselineDebt, surplus: -1800.0 });
+                    continue;
+                }
+
+                // 1. Custom Trajectory Calculation
+                let interestPayment = Math.max(0, currentDebt * r);
+                totalInterestPaidCustom += interestPayment;
+
+                let totalSpendingYear = nonInterestSpending + interestPayment;
+                let netSurplusYear = revenue - totalSpendingYear;
+
+                if (currentDebt > 0) {
+                    currentDebt = currentDebt - netSurplusYear;
+                    if (currentDebt <= 0 && payoffYear === null) {
+                        payoffYear = t;
+                        // Calculate exact month
+                        let prevDebt = currentDebt + netSurplusYear;
+                        let monthlyPayoff = netSurplusYear / 12;
+                        payoffMonth = Math.ceil(prevDebt / monthlyPayoff);
+                        currentDebt = 0; // Debt paid off!
+                    }
+                } else {
+                    currentDebt = 0; // Surplus builds national wealth or reserve
+                }
+
+                yearlyProjections.push({
+                    year: 2026 + t,
+                    debt: currentDebt,
+                    surplus: netSurplusYear,
+                    interest: interestPayment
+                });
+
+                // 2. Baseline Trajectory Calculation
+                let baseInterest = baselineDebt * 0.035;
+                totalInterestPaidBaseline += baseInterest;
+                let baseDeficit = (baseNonInterestSpend * Math.pow(1.02, t)) + baseInterest - (baseRevenue * Math.pow(1.02, t));
+                baselineDebt = baselineDebt + baseDeficit;
+
+                baselineProjections.push({
+                    year: 2026 + t,
+                    debt: baselineDebt,
+                    surplus: -baseDeficit
+                });
+            }
+
+            // Update Projection KPIs & Cards
+            let payoffTimeElem = document.getElementById('projPayoffTime');
+            let payoffDateElem = document.getElementById('projPayoffDate');
+            let payoffBadge = document.getElementById('projPayoffBadge');
+
+            if (payoffYear !== null) {
+                let exactYear = 2026 + payoffYear;
+                payoffTimeElem.textContent = `${payoffYear} Yrs ${payoffMonth} Mos`;
+                payoffTimeElem.className = "text-xl font-bold font-mono-num text-emerald-400";
+                payoffDateElem.textContent = `National Debt Eradicated in ${exactYear}!`;
+                payoffBadge.textContent = `DEBT ELIMINATION PLAN (${exactYear})`;
+                payoffBadge.className = "px-3 py-1.5 rounded-lg text-xs font-bold font-mono-num bg-emerald-500/20 text-emerald-400 border border-emerald-500/30";
+
+                document.getElementById('kpiPayoffYears').textContent = `${payoffYear} Years`;
+                document.getElementById('kpiPayoffYears').className = "text-lg sm:text-xl font-bold font-mono-num text-emerald-400";
+                document.getElementById('kpiPayoffBadge').textContent = `Payoff: ${exactYear}`;
+                document.getElementById('kpiPayoffBadge').className = "px-2 py-0.5 text-[10px] font-semibold bg-emerald-500/20 text-emerald-400 rounded-md border border-emerald-500/30";
+                document.getElementById('kpiPayoffSubtext').textContent = `Erases $38.5T debt completely!`;
+            } else {
+                payoffTimeElem.textContent = "Never (Deficit)";
+                payoffTimeElem.className = "text-xl font-bold font-mono-num text-rose-400";
+                payoffDateElem.textContent = "Requires positive annual surplus";
+                payoffBadge.textContent = "DEFICIT: DEBT ESCALATING";
+                payoffBadge.className = "px-3 py-1.5 rounded-lg text-xs font-bold font-mono-num bg-rose-500/20 text-rose-400 border border-rose-500/30";
+
+                document.getElementById('kpiPayoffYears').textContent = "Never";
+                document.getElementById('kpiPayoffYears').className = "text-lg sm:text-xl font-bold font-mono-num text-slate-400";
+                document.getElementById('kpiPayoffBadge').textContent = "Deficit";
+                document.getElementById('kpiPayoffBadge').className = "px-2 py-0.5 text-[10px] font-semibold bg-rose-500/20 text-rose-400 rounded-md border border-rose-500/30";
+                document.getElementById('kpiPayoffSubtext').textContent = "Requires annual budget surplus";
+            }
+
+            // 10 & 30 Year Debt Cards
+            let debt10 = yearlyProjections[10].debt;
+            let debt30 = yearlyProjections[30].debt;
+
+            document.getElementById('projDebt10Yr').textContent = formatTrillion(debt10);
+            document.getElementById('projDebt10Yr').className = `text-xl font-bold font-mono-num ${debt10 < BASE_DEBT ? 'text-emerald-400' : 'text-rose-400'}`;
+            let delta10 = debt10 - BASE_DEBT;
+            document.getElementById('projDebt10YrDelta').textContent = `${delta10 >= 0 ? '+' : ''}${formatTrillion(delta10)} from current`;
+
+            document.getElementById('projDebt30Yr').textContent = formatTrillion(debt30);
+            document.getElementById('projDebt30Yr').className = `text-xl font-bold font-mono-num ${debt30 < BASE_DEBT ? 'text-emerald-400' : 'text-rose-400'}`;
+            let delta30 = debt30 - BASE_DEBT;
+            document.getElementById('projDebt30YrDelta').textContent = `${delta30 >= 0 ? '+' : ''}${formatTrillion(delta30)} from current`;
+
+            // Interest Saved Card
+            let interestSaved = Math.max(0, totalInterestPaidBaseline - totalInterestPaidCustom);
+            document.getElementById('projInterestSaved').textContent = formatTrillion(interestSaved);
+
+            renderProjectionCharts(yearlyProjections, baselineProjections);
+        }
+
+        function renderRevenueCharts() {
+            let ctx = document.getElementById('overviewRevenueChart').getContext('2d');
+            let dataValues = Object.values(currentState.currentRevenueBreakdown);
+            let labels = Object.values(BASE_REVENUE_SOURCES).map(s => s.name);
+            let colors = Object.values(BASE_REVENUE_SOURCES).map(s => s.color);
+
+            if (currentState.revenueChart) {
+                currentState.revenueChart.destroy();
+            }
+
+            currentState.revenueChart = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        data: dataValues,
+                        backgroundColor: colors,
+                        borderWidth: 2,
+                        borderColor: '#0f172a'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return ` ${context.label}: $${context.raw.toFixed(1)} Billion`;
+                                }
+                            }
+                        }
+                    },
+                    cutout: '70%'
+                }
+            });
+        }
+
+        function renderSpendingCharts() {
+            let ctx = document.getElementById('overviewSpendingChart').getContext('2d');
+            
+            let dataValues = [currentState.netInterest];
+            let labels = ["Net Interest on Public Debt"];
+            let colors = ["#f59e0b"];
+
+            for (let key in currentState.agencies) {
+                dataValues.push(currentState.agencies[key].value);
+                labels.push(currentState.agencies[key].name);
+                colors.push(currentState.agencies[key].color);
+            }
+
+            if (currentState.spendingChart) {
+                currentState.spendingChart.destroy();
+            }
+
+            currentState.spendingChart = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        data: dataValues,
+                        backgroundColor: colors,
+                        borderWidth: 2,
+                        borderColor: '#0f172a'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return ` ${context.label}: $${context.raw.toFixed(1)} Billion`;
+                                }
+                            }
+                        }
+                    },
+                    cutout: '70%'
+                }
+            });
+        }
+
+        function renderProjectionCharts(customProjections, baselineProjections) {
+            let labels = customProjections.map(p => p.year);
+            let customDebtData = customProjections.map(p => p.debt / 1000); // In Trillions
+            let baselineDebtData = baselineProjections.map(p => p.debt / 1000);
+
+            // Chart 1: Debt Trajectory
+            let ctx1 = document.getElementById('projectionChart').getContext('2d');
+            if (currentState.projectionChart) currentState.projectionChart.destroy();
+
+            currentState.projectionChart = new Chart(ctx1, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: 'Your Custom Policy Debt',
+                            data: customDebtData,
+                            borderColor: '#38bdf8',
+                            backgroundColor: 'rgba(56, 189, 248, 0.1)',
+                            fill: true,
+                            tension: 0.3,
+                            borderWidth: 3,
+                            pointRadius: 2
+                        },
+                        {
+                            label: 'Baseline Deficit Trajectory',
+                            data: baselineDebtData,
+                            borderColor: '#f43f5e',
+                            borderDash: [5, 5],
+                            borderWidth: 2,
+                            pointRadius: 0,
+                            fill: false
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            grid: { color: '#1e293b' },
+                            ticks: {
+                                color: '#94a3b8',
+                                callback: function(val) { return `$${val.toFixed(0)}T`; }
+                            }
+                        },
+                        x: {
+                            grid: { color: '#1e293b' },
+                            ticks: { color: '#94a3b8' }
+                        }
+                    },
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: function(ctx) { return ` ${ctx.dataset.label}: $${ctx.raw.toFixed(2)} Trillion`; }
+                            }
+                        }
+                    }
+                }
+            });
+
+            // Chart 2: Annual Surplus / Deficit Trajectory
+            let ctx2 = document.getElementById('surplusChart').getContext('2d');
+            if (currentState.surplusChart) currentState.surplusChart.destroy();
+
+            let surplusData = customProjections.map(p => p.surplus);
+            let barColors = surplusData.map(v => v >= 0 ? '#10b981' : '#f43f5e');
+
+            currentState.surplusChart = new Chart(ctx2, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Annual Net Surplus / Deficit ($B)',
+                        data: surplusData,
+                        backgroundColor: barColors,
+                        borderRadius: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            grid: { color: '#1e293b' },
+                            ticks: {
+                                color: '#94a3b8',
+                                callback: function(val) { return `$${val}B`; }
+                            }
+                        },
+                        x: {
+                            grid: { color: '#1e293b' },
+                            ticks: { color: '#94a3b8' }
+                        }
+                    },
+                    plugins: {
+                        legend: { display: false }
+                    }
+                }
+            });
+        }
+
+        function applyPreset(presetKey) {
+            togglePresetsMenu();
+
+            if (presetKey === 'baseline') {
+                currentState.brackets = JSON.parse(JSON.stringify(BASE_INCOME_BRACKETS));
+                currentState.incomeMultiplier = 100;
+                currentState.payrollRate = 15.3;
+                currentState.corporateRate = 21.0;
+                currentState.tariffRate = 3.0;
+                currentState.capitalGainsRate = 20.0;
+                currentState.estateRate = 40.0;
+                currentState.exciseMultiplier = 1.0;
+                currentState.agencies = JSON.parse(JSON.stringify(BASE_AGENCIES));
+                currentState.interestRate = 3.5;
+
+                showToast("Reset budget to baseline FY2026 status!");
+            }
+            else if (presetKey === 'balanced') {
+                // Balanced budget preset
+                currentState.incomeMultiplier = 110; // +10% revenue
+                currentState.corporateRate = 25.0;
+                currentState.tariffRate = 8.0;
+                currentState.capitalGainsRate = 24.0;
+
+                // Adjust spending downwards slightly across agencies
+                for (let key in currentState.agencies) {
+                    if (key !== 'socialSecurity' && key !== 'medicareHhs') {
+                        currentState.agencies[key].value = Math.round(BASE_AGENCIES[key].value * 0.88 * 10) / 10;
+                    }
+                }
+                showToast("Applied Balanced Budget Policy Scenario!");
+            }
+            else if (presetKey === 'debt15') {
+                // 15-Year Debt Payoff
+                currentState.incomeMultiplier = 135; // Significant tax reform
+                currentState.corporateRate = 28.0;
+                currentState.payrollRate = 17.0;
+                currentState.capitalGainsRate = 28.0;
+                currentState.estateRate = 50.0;
+                currentState.tariffRate = 12.0;
+
+                for (let key in currentState.agencies) {
+                    currentState.agencies[key].value = Math.round(BASE_AGENCIES[key].value * 0.82 * 10) / 10;
+                }
+                showToast("Applied 15-Year Debt Elimination Plan!");
+            }
+            else if (presetKey === 'lowtax') {
+                // Low Tax Scenario
+                currentState.incomeMultiplier = 85;
+                currentState.corporateRate = 15.0;
+                currentState.capitalGainsRate = 15.0;
+                currentState.tariffRate = 15.0;
+
+                for (let key in currentState.agencies) {
+                    currentState.agencies[key].value = Math.round(BASE_AGENCIES[key].value * 0.72 * 10) / 10;
+                }
+                showToast("Applied Low-Tax & Fiscal Restraint Preset!");
+            }
+            else if (presetKey === 'social') {
+                // Social Safety Net & Science
+                currentState.incomeMultiplier = 125;
+                currentState.corporateRate = 30.0;
+                currentState.capitalGainsRate = 32.0;
+                currentState.estateRate = 55.0;
+
+                currentState.agencies.socialSecurity.value = 1750.0;
+                currentState.agencies.medicareHhs.value = 1900.0;
+                currentState.agencies.education.value = 160.0;
+                currentState.agencies.nasaScience.value = 80.0;
+
+                showToast("Applied Social Safety Net & Science Expansion!");
+            }
+
+            // Sync range inputs with state
+            document.getElementById('incomeTaxMultiplier').value = currentState.incomeMultiplier;
+            document.getElementById('slider-payrollTax').value = currentState.payrollRate;
+            document.getElementById('slider-corporateTax').value = currentState.corporateRate;
+            document.getElementById('slider-tariffs').value = currentState.tariffRate;
+            document.getElementById('slider-capitalGains').value = currentState.capitalGainsRate;
+            document.getElementById('slider-estateTax').value = currentState.estateRate;
+            document.getElementById('slider-exciseTax').value = currentState.exciseMultiplier;
+            document.getElementById('slider-interestRate').value = currentState.interestRate;
+
+            recalculateBudget();
+        }
+
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.className = "tab-btn px-4 py-2 text-xs sm:text-sm font-medium text-slate-400 hover:text-slate-200 hover:bg-slate-800 rounded-lg transition-all flex items-center space-x-2 whitespace-nowrap";
+            });
+
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.add('hidden');
+            });
+
+            let activeBtn = document.getElementById(`tab-${tabId}`);
+            activeBtn.className = "tab-btn active px-4 py-2 text-xs sm:text-sm font-medium rounded-lg transition-all flex items-center space-x-2 whitespace-nowrap bg-sky-600 text-white shadow-md";
+
+            document.getElementById(`view-${tabId}`).classList.remove('hidden');
+        }
+
+        function togglePresetsMenu() {
+            let menu = document.getElementById('presetsDropdown');
+            menu.classList.toggle('hidden');
+        }
+
+        function showToast(msg) {
+            let toast = document.getElementById('toastNotification');
+            document.getElementById('toastMessage').textContent = msg;
+            toast.classList.remove('translate-y-20', 'opacity-0', 'pointer-events-none');
+            setTimeout(() => {
+                toast.classList.add('translate-y-20', 'opacity-0', 'pointer-events-none');
+            }, 3000);
+        }
+
+        function openExportModal() {
+            let content = document.getElementById('exportModalContent');
+            let isSurplus = currentState.netBalance >= 0;
+
+            content.innerHTML = `
+============================================================
+           U.S. FEDERAL BUDGET REFORM SUMMARY (FY2026)
+============================================================
+Simulated Total Revenue:  $${(currentState.totalRevenue / 1000).toFixed(2)} Trillion ($${currentState.totalRevenue.toFixed(1)}B)
+Simulated Total Spending: $${(currentState.totalSpending / 1000).toFixed(2)} Trillion ($${currentState.totalSpending.toFixed(1)}B)
+------------------------------------------------------------
+Net Annual Balance:       ${isSurplus ? '+$' : '-$'}${Math.abs(currentState.netBalance / 1000).toFixed(2)} Trillion (${isSurplus ? 'SURPLUS' : 'DEFICIT'})
+Current National Debt:    $38.50 Trillion ($38,500.0 Billion)
+Net Interest Expense:     $${currentState.netInterest.toFixed(1)} Billion (${currentState.interestRate}% Interest)
+------------------------------------------------------------
+REVENUE BREAKDOWN:
+ - Individual Income Tax: $${currentState.currentRevenueBreakdown.incomeTax.toFixed(1)}B
+ - Payroll Taxes (SS/Med): $${currentState.currentRevenueBreakdown.payrollTax.toFixed(1)}B
+ - Corporate Income Tax:  $${currentState.currentRevenueBreakdown.corporateTax.toFixed(1)}B
+ - Tariffs & Customs:     $${currentState.currentRevenueBreakdown.tariffs.toFixed(1)}B
+ - Capital Gains Tax:     $${currentState.currentRevenueBreakdown.capitalGains.toFixed(1)}B
+ - Estate & Gift Taxes:   $${currentState.currentRevenueBreakdown.estateTax.toFixed(1)}B
+ - Excise & Luxury Taxes: $${currentState.currentRevenueBreakdown.exciseTax.toFixed(1)}B
+
+SPENDING ALLOCATIONS:
+ - Net Interest on Debt:  $${currentState.netInterest.toFixed(1)}B
+ - Social Security:       $${currentState.agencies.socialSecurity.value.toFixed(1)}B
+ - HHS (Medicare/Medicaid):$${currentState.agencies.medicareHhs.value.toFixed(1)}B
+ - Dept of Defense:       $${currentState.agencies.defense.value.toFixed(1)}B
+ - Dept of Veterans Aff:  $${currentState.agencies.veterans.value.toFixed(1)}B
+ - Dept of Agriculture:   $${currentState.agencies.agriculture.value.toFixed(1)}B
+ - Dept of Transportation:$${currentState.agencies.transportation.value.toFixed(1)}B
+ - Dept of Education:     $${currentState.agencies.education.value.toFixed(1)}B
+ - Homeland Security:     $${currentState.agencies.homelandSecurity.value.toFixed(1)}B
+ - State Dept & Foreign:  $${currentState.agencies.stateForeign.value.toFixed(1)}B
+ - Other Federal Agencies:$${currentState.agencies.otherAgencies.value.toFixed(1)}B
+============================================================
+Generated via US Federal Budget & Debt Elimination Engine
+            `;
+
+            document.getElementById('exportModal').classList.remove('hidden');
+        }
+
+        function closeExportModal() {
+            document.getElementById('exportModal').classList.add('hidden');
+        }
+
+        function copyExportSummary() {
+            let text = document.getElementById('exportModalContent').innerText;
+            navigator.clipboard.writeText(text);
+            showToast("Summary copied to clipboard!");
+        }
+
+        // FORMATTING HELPERS
+        function formatTrillion(valInBillions) {
+            let t = valInBillions / 1000;
+            return `$${t.toFixed(2)} T`;
+        }
+
+        function formatDeltaBillions(valInBillions) {
+            let prefix = valInBillions >= 0 ? '+' : '';
+            return `${prefix}$${valInBillions.toFixed(1)}B`;
+        }
+
+        let simulatedDebt = 38500000000000;
+        function updateDebtClockTicker() {
+            // Deficit per second = annual deficit / (365 * 86400)
+            let annualDeficitInDollars = Math.abs(currentState.netBalance) * 1000000000;
+            let perSecond = annualDeficitInDollars / 31536000;
+
+            if (currentState.netBalance < 0) {
+                simulatedDebt += perSecond / 10;
+                document.getElementById('debtClockSubtext').innerHTML = 
+                    `At current deficit (${formatTrillion(Math.abs(currentState.netBalance))}/yr), national debt grows by <span class="text-rose-400 font-semibold font-mono-num">$${perSecond.toFixed(0)} per second</span>.`;
+            } else {
+                simulatedDebt -= perSecond / 10;
+                document.getElementById('debtClockSubtext').innerHTML = 
+                    `<span class="text-emerald-400 font-semibold">Budget Surplus Active!</span> National debt is being reduced by <span class="text-emerald-400 font-semibold font-mono-num">$${perSecond.toFixed(0)} per second</span>.`;
+            }
+
+            document.getElementById('liveDebtClock').textContent = `$${Math.round(simulatedDebt).toLocaleString()}`;
+        }
+
+        // INITIALIZATION ON WINDOW LOAD
+        window.onload = function() {
+            recalculateBudget();
+            renderPolicyPanels();
+            setInterval(updateDebtClockTicker, 100);
+
+            // Close preset dropdown on outside click
+            window.addEventListener('click', function(e) {
+                let dropdown = document.getElementById('presetsDropdown');
+                let btn = document.getElementById('presetBtn');
+                if (!dropdown.contains(e.target) && !btn.contains(e.target)) {
+                    dropdown.classList.add('hidden');
+                }
+            });
+        };
+    </script>
+</body>
+</html>

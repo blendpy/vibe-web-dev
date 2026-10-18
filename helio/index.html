@@ -1,0 +1,850 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Helios Space Observatory - Solar System & Planetary Inspector</title>
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Google Fonts: Space Grotesk, JetBrains Mono, and Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@300;400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- FontAwesome Icons CDN -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+
+  <!-- Three.js Core & OrbitControls -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Space Grotesk"', 'Inter', 'sans-serif'],
+            mono: ['"JetBrains Mono"', 'monospace'],
+          },
+          colors: {
+            space: {
+              950: '#02040a',
+              900: '#060a14',
+              850: '#0b1222',
+              800: '#11192e',
+              700: '#1b2644',
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    * { box-sizing: border-box; user-select: none; }
+    body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background-color: #02040a; color: #f3f4f6; }
+
+    /* Custom Scrollbars */
+    ::-webkit-scrollbar { width: 4px; height: 4px; }
+    ::-webkit-scrollbar-track { background: rgba(6, 10, 20, 0.7); }
+    ::-webkit-scrollbar-thumb { background: rgba(56, 189, 248, 0.3); border-radius: 9999px; }
+    ::-webkit-scrollbar-thumb:hover { background: rgba(56, 189, 248, 0.55); }
+
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+    .glass-panel {
+      background: rgba(6, 11, 22, 0.85);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      box-shadow: 0 16px 40px -8px rgba(0, 0, 0, 0.82), 0 0 1px 1px rgba(255, 255, 255, 0.04) inset;
+    }
+
+    .glass-button {
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.09);
+      transition: all 0.16s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .glass-button:hover {
+      background: rgba(255, 255, 255, 0.09);
+      border-color: rgba(56, 189, 248, 0.45);
+      transform: translateY(-1px);
+    }
+    .glass-button:active { transform: translateY(0); }
+    .glass-button.active {
+      background: rgba(59, 130, 246, 0.35);
+      border-color: #60a5fa;
+      box-shadow: 0 0 12px rgba(59, 130, 246, 0.45);
+    }
+
+    .tab-btn, .cat-tab-btn { transition: all 0.15s ease-out; }
+    .tab-btn.active, .cat-tab-btn.active {
+      background: rgba(56, 189, 248, 0.18);
+      color: #38bdf8;
+      border-color: rgba(56, 189, 248, 0.5);
+      font-weight: 600;
+    }
+
+    .toggle-active {
+      background: rgba(56, 189, 248, 0.22) !important;
+      border-color: rgba(56, 189, 248, 0.6) !important;
+      color: #38bdf8 !important;
+    }
+    .btn-active-direction {
+      background: rgba(56, 189, 248, 0.2) !important;
+      border-color: rgba(56, 189, 248, 0.6) !important;
+      color: #38bdf8 !important;
+    }
+
+    input[type=range] { accent-color: #38bdf8; }
+    input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(1); cursor: pointer; }
+  </style>
+</head>
+<body class="relative w-screen h-screen overflow-hidden select-none bg-space-950 text-slate-100 font-sans">
+
+  <!-- ================= VIEWPORT 1: HELIOS 2D SYSTEM CANVAS ================= -->
+  <canvas id="observatory-canvas" class="absolute inset-0 z-0 cursor-grab active:cursor-grabbing w-full h-full block"></canvas>
+
+  <!-- ================= VIEWPORT 2: THREE.JS 3D PLANET INSPECTOR ================= -->
+  <div id="webgl-container" class="absolute inset-0 z-0 hidden w-full h-full"></div>
+
+  <!-- Interactive 2D Orbit Hover Tooltip -->
+  <div id="orbit-hover-hud" class="pointer-events-none fixed z-20 hidden transform -translate-x-1/2 -translate-y-full transition-opacity duration-150 pb-2">
+    <div class="glass-panel px-3 py-1.5 rounded-lg border border-cyan-500/35 flex items-center gap-2 text-xs font-mono shadow-2xl backdrop-blur-md">
+      <span id="hover-planet-indicator" class="w-2.5 h-2.5 rounded-full ring-2 ring-white/20"></span>
+      <div class="flex flex-col">
+        <span class="text-slate-200 font-semibold tracking-wide flex items-center gap-1.5">
+          <span id="hover-planet-name" class="text-cyan-300 uppercase">Orbit</span>
+          <span id="hover-planet-tag" class="text-[9px] px-1.5 py-0.2 rounded bg-cyan-950/70 border border-cyan-500/30 text-cyan-300">ORBIT</span>
+        </span>
+        <span class="text-[10px] text-slate-400 font-normal">Click to inspect • Double-click for 3D dive</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Interactive 3D Surface / Country Hover Tooltip -->
+  <div id="country-hover-tooltip" class="fixed pointer-events-none z-50 px-3.5 py-2 rounded-xl glass-panel text-xs shadow-2xl border border-amber-500/40 hidden flex flex-col gap-0.5 transition-opacity duration-75 max-w-[300px]">
+    <div class="flex items-center gap-2">
+      <span id="country-hover-flag" class="text-base leading-none"></span>
+      <i id="country-hover-default-icon" class="fa-solid fa-location-dot text-amber-400"></i>
+      <span id="country-hover-name" class="font-semibold text-slate-100 text-sm leading-tight truncate"></span>
+    </div>
+    <div id="country-hover-category" class="text-[11px] font-medium text-amber-400/90 leading-tight"></div>
+    <div id="country-hover-pop" class="text-[11px] text-slate-300 leading-snug font-normal"></div>
+  </div>
+
+
+  <!-- ================= TOP NAVIGATION: 3-ROW DOCK ================= -->
+  <header class="fixed top-2 sm:top-3 left-2 sm:left-4 right-2 sm:right-4 z-40 pointer-events-none flex flex-col gap-1.5">
+    
+    <!-- ROW 1: Brand / Return Button, Sun Pin, Category Selectors & Telemetry Controls -->
+    <div class="flex items-center justify-between gap-2 overflow-x-auto no-scrollbar py-0.5 w-full">
+      
+      <!-- Left Group -->
+      <div class="flex items-center gap-2 shrink-0">
+        
+        <!-- HELIOS Brand & Return Button Panel -->
+        <div class="pointer-events-auto glass-panel rounded-xl px-2.5 sm:px-3 py-1.5 flex items-center gap-2 shrink-0 shadow-lg">
+          <div class="relative flex items-center justify-center">
+            <span class="w-2.5 h-2.5 rounded-full bg-amber-400 shadow-[0_0_10px_#fbbf24]"></span>
+            <span class="absolute w-4 h-4 rounded-full border border-amber-400/40 animate-ping"></span>
+          </div>
+          <h1 class="text-xs sm:text-sm font-bold tracking-tight text-white flex items-center gap-1">
+            HELIOS <span class="text-[8px] sm:text-[9px] font-mono px-1 py-0.5 rounded bg-cyan-950/90 border border-cyan-500/40 text-cyan-300">OBSERVATORY</span>
+          </h1>
+
+          <!-- Return to Macro View Button (Revealed in 3D Planet Mode) -->
+          <button id="btn-return-system" class="hidden ml-1 px-2.5 py-1 rounded-lg text-xs font-mono font-medium text-cyan-300 bg-cyan-950/80 border border-cyan-500/50 hover:bg-cyan-900/60 transition-all flex items-center gap-1.5 shadow-sm">
+            <i class="fa-solid fa-arrow-left text-[10px]"></i>
+            <span>System</span>
+          </button>
+        </div>
+
+        <!-- Sun Focus & 5 Category Tabs -->
+        <div class="pointer-events-auto glass-panel rounded-xl p-1 flex items-center gap-1.5 shrink-0 shadow-lg">
+          <button id="btn-target-sun" data-body="Sun" class="body-nav-btn planet-pill px-2 py-0.5 rounded-lg text-xs font-mono font-medium flex items-center gap-1.5 text-amber-300 bg-amber-500/10 border border-amber-500/30 hover:bg-amber-500/20 hover:border-amber-400 transition-all shrink-0" title="Focus Sun">
+            <span class="w-2.5 h-2.5 rounded-full bg-amber-400 shadow-[0_0_8px_#fbbf24]"></span>
+            <span>Sun</span>
+          </button>
+
+          <div class="h-3.5 w-px bg-white/10 mx-0.5 shrink-0"></div>
+
+          <nav class="flex items-center gap-1" id="category-tabs">
+            <button data-cat="planets" class="tab-btn cat-tab-btn active px-2 sm:px-2.5 py-1 rounded-lg text-[11px] font-mono border border-transparent text-slate-300 hover:text-white">Planets</button>
+            <button data-cat="dwarfs" class="tab-btn cat-tab-btn px-2 sm:px-2.5 py-1 rounded-lg text-[11px] font-mono border border-transparent text-slate-400 hover:text-white">Dwarfs</button>
+            <button data-cat="asteroids" class="tab-btn cat-tab-btn px-2 sm:px-2.5 py-1 rounded-lg text-[11px] font-mono border border-transparent text-slate-400 hover:text-white">Asteroids</button>
+            <button data-cat="comets" class="tab-btn cat-tab-btn px-2 sm:px-2.5 py-1 rounded-lg text-[11px] font-mono border border-transparent text-slate-400 hover:text-white">Comets</button>
+            <button data-cat="kbos" class="tab-btn cat-tab-btn px-2 sm:px-2.5 py-1 rounded-lg text-[11px] font-mono border border-transparent text-slate-400 hover:text-white">KBOs</button>
+          </nav>
+        </div>
+      </div>
+
+      <!-- Right Action Deck: Scale, Nodes, Astronomical Clock & View Reset -->
+      <div class="pointer-events-auto glass-panel rounded-xl p-1 flex items-center gap-1 shrink-0 shadow-lg ml-auto">
+        <!-- Scale Selector (Helios 2D Mode) -->
+        <div id="helios-scale-controls" class="flex items-center gap-1">
+          <button id="scale-readable" class="scale-toggle active px-2 sm:px-2.5 py-1 text-[10px] sm:text-[11px] font-mono rounded-lg transition-all text-cyan-300 bg-cyan-950/80 border border-cyan-500/40 font-medium">Readable</button>
+          <button id="scale-true" class="scale-toggle px-2 sm:px-2.5 py-1 text-[10px] sm:text-[11px] font-mono rounded-lg text-slate-400 hover:text-slate-200 transition-all">True AU</button>
+          <div class="h-3.5 w-px bg-white/10 mx-0.5"></div>
+        </div>
+
+        <!-- Two-Tone Orbital Nodes Toggle -->
+        <button id="toggle-nodes-btn" class="glass-button px-2 sm:px-2.5 py-1 text-[10px] sm:text-[11px] font-mono rounded-lg transition-all text-slate-400 hover:text-cyan-300 flex items-center gap-1.5" title="Toggle Line of Nodes & Markers (☊ / ☋)">
+          <span class="text-cyan-400 font-bold">☊☋</span>
+          <span id="nodes-toggle-text">Nodes: OFF</span>
+        </button>
+
+        <button id="reset-view-btn" class="glass-button w-7 h-7 rounded-lg flex items-center justify-center text-slate-300 hover:text-cyan-400" title="Fit System View">
+          <i class="fa-solid fa-expand text-xs"></i>
+        </button>
+      </div>
+
+    </div>
+
+    <!-- ROW 2 & ROW 3: Member Strip, Moon Dock, & Dedicated Zoom Panel -->
+    <div class="flex items-start justify-between gap-2 w-full">
+      
+      <div class="flex flex-col gap-1.5 max-w-[820px]">
+        <!-- ROW 2: Member Dock (Populated dynamically) -->
+        <div class="pointer-events-auto glass-panel rounded-xl p-1 flex items-center justify-start shadow-xl">
+          <div id="member-dock" class="flex items-center gap-1 overflow-x-auto no-scrollbar whitespace-nowrap scroll-smooth flex-1 py-0.5 px-0.5">
+            <!-- Member buttons injected dynamically -->
+          </div>
+        </div>
+
+        <!-- ROW 3: Moon / Satellite Dock (Revealed when parent planet is selected) -->
+        <div id="moon-dock-container" class="hidden pointer-events-auto glass-panel rounded-xl p-1 items-center justify-start shadow-xl">
+          <div id="moon-dock" class="flex items-center gap-1 overflow-x-auto no-scrollbar whitespace-nowrap scroll-smooth flex-1 py-0.5 px-0.5">
+            <!-- Moons injected dynamically -->
+          </div>
+        </div>
+      </div>
+
+      <!-- Zoom & Recenter Panel (System View Mode) -->
+      <div id="macro-zoom-controls" class="pointer-events-auto glass-panel rounded-xl p-1 flex items-center gap-1 shrink-0 shadow-lg ml-auto">
+        <button id="btn-zoom-in" class="glass-button h-7 px-2.5 rounded-lg flex items-center justify-center text-slate-200 hover:text-cyan-300 font-mono text-[10px] sm:text-[11px] font-medium" title="Zoom In (+)">
+          <i class="fa-solid fa-plus text-[9px] sm:text-[10px] mr-1"></i> Zoom
+        </button>
+        <button id="btn-zoom-out" class="glass-button h-7 px-2.5 rounded-lg flex items-center justify-center text-slate-200 hover:text-cyan-300 font-mono text-[10px] sm:text-[11px] font-medium" title="Zoom Out (-)">
+          <i class="fa-solid fa-minus text-[9px] sm:text-[10px] mr-1"></i> Zoom
+        </button>
+        <button id="btn-target" class="glass-button h-7 px-2.5 rounded-lg flex items-center justify-center gap-1 text-slate-300 hover:text-amber-400 font-mono text-[10px] sm:text-[11px]" title="Recenter target on Sun">
+          <i class="fa-solid fa-crosshairs text-[10px]"></i> Target
+        </button>
+      </div>
+
+    </div>
+
+  </header>
+
+
+  <!-- ================= ORBITAL NODES LEGEND (System View) ================= -->
+  <aside id="nodes-legend" class="hidden fixed top-24 right-2 sm:right-4 z-30 pointer-events-auto glass-panel rounded-xl px-2.5 sm:px-3 py-2 flex flex-col gap-1.5 text-[10px] font-mono border border-white/10 shadow-xl">
+    <div class="flex items-center justify-between gap-3 text-slate-300 font-semibold border-b border-white/10 pb-1">
+      <span class="flex items-center gap-1 text-cyan-300 uppercase tracking-wide">
+        <i class="fa-solid fa-arrows-up-down text-[9px]"></i> 3D Ecliptic Nodes
+      </span>
+      <span class="text-[9px] text-slate-500">Z = 0 Plane</span>
+    </div>
+    <div class="flex items-center gap-2 text-slate-300">
+      <span class="w-5 h-0.5 bg-cyan-400 rounded-full inline-block"></span>
+      <span>Solid line: <strong>Above Ecliptic</strong> (<span class="text-cyan-300">Z &ge; 0</span>)</span>
+    </div>
+    <div class="flex items-center gap-2 text-slate-300">
+      <span class="w-5 border-t border-dashed border-slate-400 inline-block"></span>
+      <span>Dashed line: <strong>Below Ecliptic</strong> (<span class="text-amber-400">Z &lt; 0</span>)</span>
+    </div>
+    <div class="flex items-center gap-2 text-slate-300 pt-0.5 border-t border-white/5">
+      <span class="w-3.5 h-3.5 rounded-full bg-emerald-500/20 border border-emerald-400 text-emerald-300 flex items-center justify-center font-bold text-[9px]">☊</span>
+      <span><strong>Ascending Node</strong> (<span class="text-emerald-400">South &rarr; North</span>)</span>
+    </div>
+    <div class="flex items-center gap-2 text-slate-300">
+      <span class="w-3.5 h-3.5 rounded-full bg-amber-500/20 border border-amber-400 text-amber-300 flex items-center justify-center font-bold text-[9px]">☋</span>
+      <span><strong>Descending Node</strong> (<span class="text-amber-400">North &rarr; South</span>)</span>
+    </div>
+  </aside>
+
+
+  <!-- ================= LEFT DOCKED TASKBAR (3D Layers & Presets) ================= -->
+<div id="taskbar-wrapper" class="hidden fixed top-0 left-0 h-full z-50 flex pointer-events-auto transition-transform duration-300 ease-in-out -translate-x-[calc(100%-14px)] group hover:translate-x-0">
+    <aside id="taskbar-panel" class="w-80 h-full bg-slate-950/90 backdrop-blur-xl border-r border-slate-800/80 shadow-2xl flex flex-col p-4 overflow-y-auto no-scrollbar space-y-4">
+      <div class="flex items-center justify-between pb-3 border-b border-slate-800/80 shrink-0">
+        <div class="flex items-center gap-2">
+          <i class="fa-solid fa-sliders text-blue-400 text-sm"></i>
+          <span class="text-xs font-semibold tracking-wider uppercase text-slate-200">Inspector Deck</span>
+        </div>
+        <button id="btn-close-taskbar" title="Collapse Panel" class="text-slate-400 hover:text-slate-200 text-xs px-2 py-1 rounded-lg hover:bg-slate-800/60 transition-colors">
+          <i class="fa-solid fa-chevron-left"></i>
+        </button>
+      </div>
+
+
+
+
+<!-- 3-TAB BUTTON DECK -->
+      <div class="grid grid-cols-3 gap-1 p-1 rounded-xl bg-slate-900/80 border border-slate-800 shrink-0">
+        <button id="tab-btn-layers" class="glass-button active py-2 rounded-lg font-medium text-xs text-center transition-all flex items-center justify-center gap-1 text-slate-200">
+          <i class="fa-solid fa-layer-group text-[11px] text-blue-400"></i> Layers
+        </button>
+        <button id="tab-btn-earth" class="glass-button py-2 rounded-lg font-medium text-xs text-center transition-all flex items-center justify-center gap-1 text-slate-400">
+          <i class="fa-solid fa-earth-americas text-[11px] text-emerald-400"></i> Earth
+        </button>
+        <button id="tab-btn-presets" class="glass-button py-2 rounded-lg font-medium text-xs text-center transition-all flex items-center justify-center gap-1 text-slate-400">
+          <i class="fa-solid fa-compass text-[11px] text-amber-400"></i> Presets
+        </button>
+      </div>
+
+      <!-- TAB 1: LAYERS -->
+      <div id="tab-panel-layers" class="space-y-5 flex-1 overflow-y-auto pr-1">
+        <div>
+          <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">Base Earth Texture</label>
+          <div class="grid grid-cols-2 gap-2">
+            <button id="btn-tex-day" class="glass-button active p-2 rounded-xl text-center flex flex-col items-center gap-1"><span class="text-xs font-medium text-slate-200">Natural</span><span class="text-[10px] text-slate-400">Geography</span></button>
+            <button id="btn-tex-marble" class="glass-button p-2 rounded-xl text-center flex flex-col items-center gap-1"><span class="text-xs font-medium text-slate-200">Blue Marble</span><span class="text-[10px] text-slate-400">NASA High-Res</span></button>
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">Layer & Shading Controls</label>
+          <div class="space-y-2">
+            <label id="lbl-night-lights" class="flex items-center justify-between p-2 rounded-xl bg-slate-900/40 border border-slate-800 cursor-pointer hover:bg-slate-900/60 transition-colors">
+              <span class="text-xs text-slate-300 flex items-center gap-2"><i class="fa-solid fa-moon text-amber-400"></i> Night Side Lights</span>
+              <input type="checkbox" id="chk-night-lights" checked class="w-4 h-4 rounded text-blue-600 focus:ring-0 cursor-pointer">
+            </label>
+            <label id="lbl-specular" class="flex items-center justify-between p-2 rounded-xl bg-slate-900/40 border border-slate-800 cursor-pointer hover:bg-slate-900/60 transition-colors">
+              <span class="text-xs text-slate-300 flex items-center gap-2"><i class="fa-solid fa-water text-cyan-400"></i> Ocean Specular Mask</span>
+              <input type="checkbox" id="chk-specular" checked class="w-4 h-4 rounded text-blue-600 focus:ring-0 cursor-pointer">
+            </label>
+            <label class="flex items-center justify-between p-2 rounded-xl bg-slate-900/40 border border-slate-800 cursor-pointer hover:bg-slate-900/60 transition-colors">
+              <span class="text-xs text-slate-300 flex items-center gap-2"><i class="fa-solid fa-border-none text-purple-400"></i> Graticule Grid</span>
+              <input type="checkbox" id="chk-graticule" checked class="w-4 h-4 rounded text-blue-600 focus:ring-0 cursor-pointer">
+            </label>
+            <!-- Standardized Show Moon Orbits Checkbox -->
+            <label id="lbl-moon-orbits" class="flex items-center justify-between p-2 rounded-xl bg-slate-900/40 border border-slate-800 cursor-pointer hover:bg-slate-900/60 transition-colors">
+              <span class="text-xs text-slate-300 flex items-center gap-2">
+                <i class="fa-solid fa-satellite text-slate-400"></i> Show Moon Orbits
+              </span>
+              <input type="checkbox" id="chk-moon-orbits" checked class="w-4 h-4 rounded text-blue-600 focus:ring-0 cursor-pointer">
+            </label>
+
+            <label class="flex items-center justify-between p-2 rounded-xl bg-slate-900/40 border border-slate-800 cursor-pointer hover:bg-slate-900/60 transition-colors">
+              <span class="text-xs text-slate-300 flex items-center gap-2"><i class="fa-solid fa-sun text-amber-300"></i> Pin Celestial Zenith</span>
+              <input type="checkbox" id="chk-celestial" checked class="w-4 h-4 rounded text-blue-600 focus:ring-0 cursor-pointer">
+            </label>
+            <label class="flex items-center justify-between p-2 rounded-xl bg-slate-900/40 border border-slate-800 cursor-pointer hover:bg-slate-900/60 transition-colors">
+              <span class="text-xs text-slate-300 flex items-center gap-2"><i class="fa-solid fa-ring text-orange-400"></i> Pin Planet Positions</span>
+              <input type="checkbox" id="chk-planets" class="w-4 h-4 rounded text-blue-600 focus:ring-0 cursor-pointer">
+            </label>
+            <label id="lbl-clouds" class="flex items-center justify-between p-2 rounded-xl bg-slate-900/40 border border-slate-800 cursor-pointer hover:bg-slate-900/60 transition-colors">
+              <span class="text-xs text-slate-300 flex items-center gap-2"><i class="fa-solid fa-cloud text-sky-400"></i> Atmospheric Clouds</span>
+              <input type="checkbox" id="chk-clouds" checked class="w-4 h-4 rounded text-blue-600 focus:ring-0 cursor-pointer">
+            </label>
+
+            <!-- Standardized Planetary Interior Checkbox -->
+            <label id="lbl-interior" class="flex items-center justify-between p-2 rounded-xl bg-slate-900/40 border border-slate-800 cursor-pointer hover:bg-slate-900/60 transition-colors">
+              <span id="lbl-interior-text" class="text-xs text-slate-300 flex items-center gap-2">
+                <i class="fa-solid fa-layer-group text-emerald-400"></i> Planetary Interior
+              </span>
+              <input type="checkbox" id="chk-interior" class="w-4 h-4 rounded text-blue-600 focus:ring-0 cursor-pointer">
+            </label>
+
+            <label id="lbl-landing-sites" class="hidden items-center justify-between p-2 rounded-xl bg-slate-900/40 border border-slate-800 cursor-pointer hover:bg-slate-900/60 transition-colors">
+              <span id="lbl-landing-sites-text" class="text-xs text-slate-300 flex items-center gap-2">
+                <i class="fa-solid fa-shuttle-space text-amber-300"></i> Landing Sites
+              </span>
+              <input type="checkbox" id="chk-landing-sites" checked class="w-4 h-4 rounded text-blue-600 focus:ring-0 cursor-pointer">
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB 2: EARTH CARTOGRAPHY -->
+      <div id="tab-panel-earth" class="space-y-5 hidden flex-1 overflow-y-auto pr-1">
+        <div>
+          <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">Earth Cartography</label>
+          <div class="space-y-2">
+            <label class="flex items-center justify-between p-2 rounded-xl bg-slate-900/40 border border-slate-800 cursor-pointer hover:bg-slate-900/60 transition-colors">
+              <span class="text-xs text-slate-300 flex items-center gap-2"><i class="fa-solid fa-palette text-pink-400"></i> Country Color Filled</span>
+              <input type="checkbox" id="chk-country-7-colors" class="w-4 h-4 rounded text-blue-600 focus:ring-0 cursor-pointer">
+            </label>
+            <label class="flex items-center justify-between p-2 rounded-xl bg-slate-900/40 border border-slate-800 cursor-pointer hover:bg-slate-900/60 transition-colors">
+              <span class="text-xs text-slate-300 flex items-center gap-2"><i class="fa-solid fa-globe text-emerald-400"></i> Country Boundaries</span>
+              <input type="checkbox" id="chk-country-borders" class="w-4 h-4 rounded text-blue-600 focus:ring-0 cursor-pointer">
+            </label>
+            <label class="flex items-center justify-between p-2 rounded-xl bg-slate-900/40 border border-slate-800 cursor-pointer hover:bg-slate-900/60 transition-colors">
+              <span class="text-xs text-slate-300 flex items-center gap-2"><i class="fa-solid fa-map text-rose-400"></i> States & Provinces</span>
+              <input type="checkbox" id="chk-state-borders" class="w-4 h-4 rounded text-blue-600 focus:ring-0 cursor-pointer">
+            </label>
+            <label class="flex items-center justify-between p-2 rounded-xl bg-slate-900/40 border border-slate-800 cursor-pointer hover:bg-slate-900/60 transition-colors">
+              <span class="text-xs text-slate-300 flex items-center gap-2"><i class="fa-solid fa-monument text-amber-300"></i> Landmarks & Features</span>
+              <input type="checkbox" id="chk-landmarks" class="w-4 h-4 rounded text-blue-600 focus:ring-0 cursor-pointer">
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB 2: PRESETS -->
+      <div id="tab-panel-presets" class="space-y-5 hidden flex-1 overflow-y-auto pr-1">
+        <div>
+          <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">View Angles</label>
+          <div class="grid grid-cols-2 gap-2">
+            <button id="btn-preset-sun" class="glass-button px-3 py-2 rounded-xl text-xs font-medium flex items-center justify-center gap-1.5 text-slate-200"><i class="fa-solid fa-sun text-amber-400"></i> Sun-Facing</button>
+            <button id="btn-preset-dark" class="glass-button px-3 py-2 rounded-xl text-xs font-medium flex items-center justify-center gap-1.5 text-slate-200"><i class="fa-solid fa-moon text-indigo-300"></i> Dark Side</button>
+            <button id="btn-preset-north" class="glass-button px-3 py-2 rounded-xl text-xs font-medium flex items-center justify-center gap-1.5 text-slate-200"><i class="fa-solid fa-compass text-teal-400"></i> N. Pole</button>
+            <button id="btn-preset-south" class="glass-button px-3 py-2 rounded-xl text-xs font-medium flex items-center justify-center gap-1.5 text-slate-200"><i class="fa-solid fa-compass text-cyan-400"></i> S. Pole</button>
+            <button id="btn-preset-user" class="glass-button px-3 py-2 rounded-xl text-xs font-medium flex items-center justify-center gap-1.5 text-slate-200"><i class="fa-solid fa-location-crosshairs text-red-400"></i> My Location</button>
+            <button id="btn-preset-city" class="glass-button px-3 py-2 rounded-xl text-xs font-medium flex items-center justify-center gap-1.5 text-slate-200"><i class="fa-solid fa-city text-cyan-400"></i> Major City</button>
+          </div>
+        </div>
+
+        <div id="earth-only-eclipses">
+          <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">Solstice & Eclipse Trajectories</label>
+          <div class="grid grid-cols-2 gap-2">
+            <button id="btn-summer-solstice" class="glass-button px-2.5 py-2 rounded-xl text-xs font-medium text-amber-300 flex items-center justify-center gap-1.5"><i class="fa-solid fa-sun"></i> Summer Solstice</button>
+            <button id="btn-winter-solstice" class="glass-button px-2.5 py-2 rounded-xl text-xs font-medium text-blue-300 flex items-center justify-center gap-1.5"><i class="fa-solid fa-snowflake"></i> Winter Solstice</button>
+            <button id="btn-next-equinox" class="glass-button px-2.5 py-2 rounded-xl text-xs font-medium text-emerald-300 flex items-center justify-center gap-1.5"><i class="fa-solid fa-seedling"></i> Next Equinox</button>
+            <button id="btn-next-lunar-eclipse" class="glass-button px-2.5 py-2 rounded-xl text-xs font-medium text-rose-300 flex items-center justify-center gap-1.5"><i class="fa-solid fa-moon"></i> Lunar Eclipse</button>
+            <button id="btn-next-solar-eclipse" class="glass-button px-2.5 py-2 rounded-xl text-xs font-medium text-purple-300 flex items-center justify-center gap-1.5"><i class="fa-solid fa-cloud-sun"></i> Solar Eclipse</button>
+            <button id="btn-list-eclipses" class="glass-button px-2.5 py-2 rounded-xl text-xs font-medium text-teal-300 flex items-center justify-center gap-1.5"><i class="fa-solid fa-list-ul"></i> List Eclipses</button>
+            <button id="btn-full-moon" class="glass-button px-2.5 py-2 rounded-xl text-xs font-medium text-slate-100 flex items-center justify-center gap-1.5"><i class="fa-solid fa-circle text-slate-200"></i> Full Moon</button>
+            <button id="btn-new-moon" class="glass-button px-2.5 py-2 rounded-xl text-xs font-medium text-slate-300 flex items-center justify-center gap-1.5"><i class="fa-regular fa-circle text-slate-400"></i> New Moon</button>
+          </div>
+        </div>
+
+<!-- Batch Exporter Button -->
+<div class="mt-8 pt-4 border-t border-slate-700/50">
+
+<button id="btn-batch-export" class="w-full flex items-center justify-center gap-2 px-3 py-2 text-xs font-semibold uppercase tracking-wider text-cyan-300 bg-cyan-950/60 border border-cyan-500/30 rounded-lg hover:bg-cyan-900/80 hover:border-cyan-400/60 transition-all shadow-sm">
+
+    <i class="fa-solid fa-camera-retro"></i>
+    <span>OLD Export Comparison Cards</span>
+  </button>
+</div>
+
+<!-- DUPLICATE LOCAL DATE DISPLAY -->
+        <div class="mt-4 pt-3 border-t border-slate-800/80 flex items-baseline justify-between">
+          <span class="text-[10px] font-mono text-slate-400 uppercase tracking-wider">Simulated Date</span>
+          <span id="display-date-preset" class="text-xl sm:text-2xl font-bold font-mono text-white tracking-tight"></span>
+        </div>
+
+      </div>
+    </aside>
+
+    <div id="taskbar-handle" class="w-3.5 h-full flex flex-col items-center justify-center cursor-pointer bg-slate-900/60 hover:bg-blue-600/40 border-r border-slate-700/50 backdrop-blur-sm transition-colors">
+      <div class="w-1 h-8 rounded-full bg-slate-500/60 group-hover:bg-blue-400 transition-colors"></div>
+    </div>
+  </div>
+
+
+ <!-- ================= RIGHT TELEMETRY DRAWER (Helios Ephemeris) ================= -->
+  <aside id="telemetry-drawer" class="fixed top-0 right-0 h-full w-full sm:w-[380px] lg:w-[420px] glass-panel z-40 transform translate-x-full transition-transform duration-300 ease-out flex flex-col border-l border-white/10 shadow-2xl">
+    
+    <!-- Top Header Bar -->
+    <div class="p-4 border-b border-white/10 flex items-center justify-between">
+      <div id="drawer-zoom-trigger" class="flex items-center gap-3 cursor-pointer group select-none">
+        <div id="drawer-planet-avatar" class="w-8 h-8 rounded-full border border-white/30 flex items-center justify-center text-xs font-bold font-mono shadow-md group-hover:scale-110 group-hover:border-cyan-400 transition-all shrink-0"></div>
+
+        <div class="flex flex-col">
+          <div class="flex items-center gap-1.5">
+            <h2 id="drawer-planet-name" class="text-base sm:text-lg font-bold text-white tracking-wide group-hover:text-cyan-300 transition-colors">Earth</h2>
+          </div>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-2 shrink-0">
+        <button id="btn-lock-camera" class="glass-button px-2.5 py-1 rounded-lg text-xs font-mono text-cyan-300 flex items-center gap-1.5" title="Lock camera tracking">
+          <i class="fa-solid fa-video text-[10px]"></i>
+          <span id="lock-camera-label">Track</span>
+        </button>
+        <button id="btn-close-drawer" class="glass-button w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-white">
+          <i class="fa-solid fa-xmark text-sm"></i>
+        </button>
+      </div>
+    </div>
+
+    <!-- Infographic & View Switcher -->
+    <div id="right-panel-header" class="px-4">
+      <div class="mt-4 rounded-xl overflow-hidden shadow-lg border border-slate-700/50 bg-slate-900/50">
+        <img id="infographic-img" src="infographics/Sun.jpg" alt="Celestial Infographic" class="w-full h-auto object-contain transition-opacity duration-300" />
+
+        <button id="btn-view-toggle" class="w-full mt-3 py-2 bg-blue-600 hover:bg-blue-500 text-white text-sm font-semibold rounded-lg shadow-lg shadow-blue-900/20 border border-blue-400/50 transition-colors flex items-center justify-center gap-2">
+          <i class="fa-solid fa-cube"></i> Enter 3d Inspector
+        </button>
+      </div>
+    </div>
+
+    <!-- Telemetry Data Grid -->
+    <div class="flex-1 overflow-y-auto p-4 space-y-4 font-mono text-xs">
+      <div>
+        <h3 class="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+          <i class="fa-solid fa-satellite text-cyan-400"></i> Instantaneous J2000 Ephemeris
+        </h3>
+        <div class="grid grid-cols-2 gap-2">
+          <div class="bg-space-900/90 p-2.5 rounded-xl border border-white/5">
+            <span class="text-[10px] text-slate-400 block">Heliocentric Dist</span>
+            <span id="tel-helio-au" class="text-sm font-semibold text-white">1.000 AU</span>
+            <span id="tel-helio-km" class="text-[10px] text-slate-400 block font-normal">149,597,870 km</span>
+          </div>
+          <div class="bg-space-900/90 p-2.5 rounded-xl border border-white/5">
+            <span class="text-[10px] text-slate-400 block">Orbital Velocity</span>
+            <span id="tel-velocity" class="text-sm font-semibold text-cyan-300">29.78 km/s</span>
+            <span id="tel-velocity-mph" class="text-[10px] text-slate-400 block font-normal">66,616 mph</span>
+          </div>
+          <div class="bg-space-900/90 p-2.5 rounded-xl border border-white/5">
+            <span class="text-[10px] text-slate-400 block">Ecliptic Longitude</span>
+            <span id="tel-longitude" class="text-sm font-semibold text-white">14.2°</span>
+            <span class="text-[10px] text-slate-400 block font-normal">Heliocentric (&lambda;)</span>
+          </div>
+          <div class="bg-space-900/90 p-2.5 rounded-xl border border-white/5">
+            <span class="text-[10px] text-slate-400 block">Distance from Earth</span>
+            <span id="tel-earth-dist" class="text-sm font-semibold text-white">0.00 AU</span>
+            <span id="tel-light-time" class="text-[10px] text-slate-400 block font-normal">0.0 min light-time</span>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <h3 class="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+          <i class="fa-solid fa-arrows-up-down text-emerald-400"></i> 3D Ecliptic Elevation & Nodes
+        </h3>
+        <div class="bg-space-900/90 rounded-xl p-3 border border-white/5 space-y-2">
+          <div class="flex justify-between items-center py-0.5 border-b border-white/5">
+            <span class="text-slate-400">Current Z Elevation</span>
+            <span id="tel-z-elevation" class="text-white font-medium">+0.000 AU (Coplanar)</span>
+          </div>
+          <div class="flex justify-between items-center py-0.5 border-b border-white/5">
+            <span class="text-slate-400">Ecliptic Inclination (i)</span>
+            <span id="tel-inclination" class="text-white font-medium">0.00°</span>
+          </div>
+          <div class="flex justify-between items-center py-0.5 border-b border-white/5">
+            <span class="text-slate-400">Ascending Node (&Omega;) [☊]</span>
+            <span id="tel-asc-node" class="text-emerald-400 font-medium">0.00°</span>
+          </div>
+          <div class="flex justify-between items-center py-0.5 border-b border-white/5">
+            <span class="text-slate-400">Descending Node [☋]</span>
+            <span id="tel-desc-node" class="text-amber-400 font-medium">180.00°</span>
+          </div>
+          <div class="flex justify-between items-center py-0.5">
+            <span class="text-slate-400">Arg of Perihelion (&omega;)</span>
+            <span id="tel-perihelion-arg" class="text-white font-medium">102.94°</span>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <h3 class="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+          <i class="fa-solid fa-compass-drafting text-cyan-400"></i> Orbital Dimensions
+        </h3>
+        <div class="bg-space-900/90 rounded-xl p-3 border border-white/5 space-y-2">
+          <div class="flex justify-between items-center py-0.5 border-b border-white/5">
+            <span class="text-slate-400">Semi-Major Axis (a)</span>
+            <span id="tel-semi-major" class="text-white font-medium">1.000 AU</span>
+          </div>
+          <div class="flex justify-between items-center py-0.5 border-b border-white/5">
+            <span class="text-slate-400">Orbital Eccentricity (e)</span>
+            <span id="tel-eccentricity" class="text-white font-medium">0.0167</span>
+          </div>
+          <div class="flex justify-between items-center py-0.5 border-b border-white/5">
+            <span class="text-slate-400">Orbital Period</span>
+            <span id="tel-period" class="text-white font-medium">365.25 days</span>
+          </div>
+          <div class="flex justify-between items-center py-0.5">
+            <span class="text-slate-400">Mean Diameter</span>
+            <span id="tel-diameter" class="text-white font-medium">12,742 km</span>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <h3 class="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+          <i class="fa-solid fa-circle-info text-cyan-400"></i> Exploration & Overview
+        </h3>
+        <div class="bg-space-900/90 rounded-xl p-3 border border-white/5 text-slate-300 leading-relaxed font-sans text-xs">
+          <p id="tel-description">Earth is the third planet from the Sun and the only astronomical object known to harbor life.</p>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+
+
+  <!-- ================= ASTRONOMICAL DATE PICKER MODAL ================= -->
+  <div id="date-picker-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-sm hidden p-4">
+    <div class="glass-panel p-6 rounded-2xl w-full max-w-sm shadow-2xl border border-slate-700/80 space-y-4">
+      <div class="flex items-center justify-between border-b border-slate-700/60 pb-3">
+        <h3 class="font-bold text-sm text-slate-200 flex items-center gap-2"><i class="fa-regular fa-calendar-days text-blue-400"></i> Set Target Epoch</h3>
+        <button id="btn-close-date-modal" class="text-slate-400 hover:text-white text-sm p-1"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div>
+        <label class="block text-xs font-medium text-slate-400 mb-1">Select Custom Date</label>
+        <input type="date" id="input-custom-date" class="w-full bg-slate-900/80 border border-slate-700 rounded-xl p-2.5 text-xs text-slate-100 focus:outline-none focus:border-blue-500 font-mono">
+      </div>
+      <div class="flex flex-col gap-1.5">
+        <span class="text-[10px] font-mono text-slate-400 uppercase">Astronomical Presets</span>
+        <div class="grid grid-cols-2 gap-1.5">
+          <button data-epoch="1986-02-09T12:00:00" class="btn-preset text-left px-2.5 py-1.5 rounded-lg bg-white/5 hover:bg-cyan-500/10 border border-white/5 hover:border-cyan-500/30 text-[11px] font-mono text-slate-300">Halley 1986</button>
+          <button data-epoch="2019-01-01T05:33:00" class="btn-preset text-left px-2.5 py-1.5 rounded-lg bg-white/5 hover:bg-cyan-500/10 border border-white/5 hover:border-cyan-500/30 text-[11px] font-mono text-slate-300">Arrokoth Flyby</button>
+          <button data-epoch="2020-12-21T18:22:00" class="btn-preset text-left px-2.5 py-1.5 rounded-lg bg-white/5 hover:bg-cyan-500/10 border border-white/5 hover:border-cyan-500/30 text-[11px] font-mono text-slate-300">Great Conjunction</button>
+          <button data-epoch="2000-01-01T12:00:00" class="btn-preset text-left px-2.5 py-1.5 rounded-lg bg-white/5 hover:bg-cyan-500/10 border border-white/5 hover:border-cyan-500/30 text-[11px] font-mono text-slate-300">J2000 Epoch</button>
+        </div>
+      </div>
+      <div class="flex justify-end gap-2 pt-2">
+        <button id="btn-cancel-date" class="glass-button px-3.5 py-1.5 rounded-xl text-xs font-medium text-slate-300 hover:bg-slate-800">Cancel</button>
+        <button id="btn-apply-date" class="px-4 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-medium shadow-md shadow-blue-600/30 transition-colors">Apply</button>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ================= ECLIPSE DIRECTORY MODAL ================= -->
+  <div id="eclipse-list-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm hidden p-4">
+    <div class="glass-panel p-6 rounded-2xl w-[640px] max-w-[92vw] max-h-[85vh] flex flex-col shadow-2xl border border-slate-700/80 space-y-4 overflow-hidden">
+      <div class="flex items-center justify-between border-b border-slate-700/60 pb-3 shrink-0">
+        <h3 class="font-bold text-sm text-slate-200 flex items-center gap-2"><i class="fa-solid fa-list-ul text-purple-400"></i> Eclipse Directory</h3>
+        <button id="btn-close-eclipse-modal" class="text-slate-400 hover:text-white text-sm p-1"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs shrink-0">
+        <div>
+          <label class="block text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-1.5">Type</label>
+          <div class="grid grid-cols-2 gap-1 bg-slate-900/80 p-1 rounded-xl border border-slate-800">
+            <button id="btn-eclipse-cat-solar" class="py-1.5 rounded-lg font-medium transition-all bg-blue-600/50 text-white border border-blue-400/40">Solar</button>
+            <button id="btn-eclipse-cat-lunar" class="py-1.5 rounded-lg font-medium transition-all text-slate-400 hover:text-slate-200">Lunar</button>
+          </div>
+        </div>
+        <div>
+          <label class="block text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-1.5">Extent</label>
+          <div class="grid grid-cols-2 gap-1 bg-slate-900/80 p-1 rounded-xl border border-slate-800">
+            <button id="btn-eclipse-cov-full" class="py-1.5 rounded-lg font-medium transition-all bg-purple-600/50 text-white border border-purple-400/40">Total</button>
+            <button id="btn-eclipse-cov-partial" class="py-1.5 rounded-lg font-medium transition-all text-slate-400 hover:text-slate-200">Partial</button>
+          </div>
+        </div>
+      </div>
+      <div id="eclipse-list-container" class="flex-1 overflow-y-auto space-y-2 pr-1 text-xs min-h-0"></div>
+    </div>
+  </div>
+
+
+  <!-- ================= PLANETARY OVERVIEW TABLE MODAL ================= -->
+  <div id="planet-table-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm hidden p-4">
+    <div class="glass-panel p-6 rounded-2xl w-[960px] max-w-[95vw] max-h-[90vh] flex flex-col shadow-2xl border border-slate-700/80 space-y-4 overflow-hidden">
+      <div class="flex items-center justify-between border-b border-slate-700/60 pb-3 shrink-0">
+        <h3 class="font-bold text-sm text-slate-200 flex items-center gap-2">
+          <i class="fa-solid fa-table-list text-teal-400"></i> Solar System Planetary Roster
+        </h3>
+        <button id="btn-close-planet-modal" class="text-slate-400 hover:text-white text-sm p-1 cursor-pointer">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+      <div id="planet-table-container" class="flex-1 overflow-x-auto overflow-y-auto pr-1 text-xs"></div>
+    </div>
+  </div>
+
+
+  <!-- ================= MAJOR CITY SELECTOR MODAL ================= -->
+  <div id="city-list-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm hidden p-4">
+    <div class="glass-panel p-6 rounded-2xl w-[640px] max-w-[92vw] max-h-[90vh] flex flex-col shadow-2xl border border-slate-700/80 space-y-4 overflow-hidden">
+      <div class="flex items-center justify-between border-b border-slate-700/60 pb-3 shrink-0">
+        <h3 class="font-bold text-sm text-slate-200 flex items-center gap-2"><i class="fa-solid fa-city text-cyan-400"></i> Target Major City</h3>
+        <button id="btn-close-city-modal" class="text-slate-400 hover:text-white text-sm p-1"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="shrink-0">
+        <label class="block text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-1.5">Continent</label>
+        <div id="continent-toggle-container" class="grid grid-cols-3 sm:grid-cols-6 gap-1 bg-slate-900/80 p-1 rounded-xl border border-slate-800 text-xs"></div>
+      </div>
+      <div id="city-list-container" class="grid grid-cols-1 sm:grid-cols-2 gap-2 flex-1 overflow-y-auto pr-1 text-xs min-h-[200px]"></div>
+    </div>
+  </div>
+
+
+<!-- Bottom-Left Simulation Epoch Widget -->
+<div id="sim-control-panel" class="fixed bottom-4 left-4 z-50 w-96 max-w-[calc(100vw-2rem)] select-none rounded-xl border border-white/10 bg-slate-950/85 p-3 font-mono text-slate-300 shadow-2xl backdrop-blur-md">
+  
+  <!-- Row 1: Header with Pulse Indicator, FPS & LIVE Badge -->
+  <div class="flex items-center justify-between border-b border-white/10 pb-2">
+    <div class="flex items-center gap-2">
+      <span class="relative flex h-2 w-2">
+        <span id="clock-pulse-ping" class="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-75"></span>
+        <span id="clock-pulse-dot" class="relative inline-flex rounded-full h-2 w-2 bg-cyan-500"></span>
+      </span>
+      <span class="text-[10px] font-mono font-bold tracking-wider uppercase text-cyan-400">SIMULATED EPOCH (UTC)</span>
+    </div>
+    <div class="flex items-center gap-1.5">
+      <span id="sim-fps-val" class="text-[9px] font-mono text-slate-400 border border-white/5 px-1 py-0.2 rounded">30 FPS</span>
+      <span id="sim-status-badge" class="text-[9px] font-mono uppercase px-1.5 py-0.5 rounded bg-cyan-950/80 border border-cyan-500/30 text-cyan-300 font-medium">LIVE</span>
+    </div>
+  </div>
+
+  <!-- Row 2: Line 1 - Date with Weekday & DOY -->
+  <div class="flex items-baseline justify-between pt-1">
+    <span id="display-date" class="text-xl sm:text-2xl font-bold font-mono text-white tracking-tight">2026-10-09</span>
+    <span id="display-doy" class="text-[10px] font-mono text-slate-400 font-normal">Fri, DOY 282</span>
+  </div>
+
+  <!-- Row 2: Line 2 - Local Time (Primary) & UTC Time (Secondary) -->
+  <div class="flex items-center justify-between pb-2 border-b border-white/5">
+    <span id="display-local-time" class="text-sm sm:text-base font-semibold font-mono text-cyan-300 tracking-wider">12:00pm 00s <span class="text-[10px] text-slate-400 font-normal tracking-normal">Local</span></span>
+    <span id="display-time" class="text-[10px] font-mono text-slate-400">12:00:00 UTC</span>
+  </div>
+
+  <!-- Row 3: Playback Controls (Reverse, Play/Pause, Now, Calendar, Speed Selector) -->
+  <div class="flex items-center gap-1.5 pt-1.5 pb-2">
+    <!-- Reverse Play Button -->
+    <button id="btn-reverse" class="glass-button w-8 sm:w-9 h-8 rounded-lg flex items-center justify-center text-slate-300 hover:text-cyan-300 hover:border-cyan-400 border border-white/10 bg-slate-900/60" title="Reverse Play">
+      <i class="fa-solid fa-backward text-xs"></i>
+    </button>
+
+    <!-- Forward Play / Pause Button -->
+    <button id="btn-play-pause" class="glass-button w-8 sm:w-9 h-8 rounded-lg flex items-center justify-center text-cyan-300 hover:text-white hover:border-cyan-400 border border-white/10 bg-slate-900/60" title="Play / Pause">
+      <i id="play-pause-icon" class="fa-solid fa-pause text-xs"></i>
+    </button>
+
+    <!-- Reset to Now -->
+    <button id="btn-now" class="glass-button px-2.5 h-8 rounded-lg text-xs font-mono text-slate-300 hover:text-white flex items-center gap-1 hover:border-cyan-400 border border-white/10 bg-slate-900/60" title="Reset to Now">
+      <i class="fa-solid fa-rotate-left text-[10px]"></i>
+      <span>Now</span>
+    </button>
+
+    <!-- Calendar Date Picker -->
+    <div class="relative">
+      <button id="btn-calendar" class="glass-button w-8 h-8 rounded-lg flex items-center justify-center text-slate-300 hover:text-cyan-300 hover:border-cyan-400 border border-white/10 bg-slate-900/60" title="Pick Date">
+        <i class="fa-regular fa-calendar-days text-xs"></i>
+      </button>
+      <input type="date" id="calendar-date-input" class="pointer-events-none absolute left-0 top-0 h-full w-full opacity-0" />
+    </div>
+
+    <!-- Speed Selector Dropdown -->
+    <div class="relative flex-1 min-w-[95px]">
+      <select id="sim-speed-select" class="w-full h-8 pl-2 pr-5 rounded-lg bg-slate-900/90 border border-white/10 text-xs font-mono text-cyan-300 focus:outline-none focus:border-cyan-400 appearance-none cursor-pointer">
+        <option value="1" selected>1x (Real-time)</option>
+        <option value="3600">1 hr / sec</option>
+        <option value="86400">1 day / sec</option>
+        <option value="604800">7 days / sec</option>
+        <option value="2592000">30 days / sec</option>
+        <option value="31536000">1 year / sec</option>
+      </select>
+      <div class="absolute right-2 top-2.5 pointer-events-none text-slate-400 text-[10px]">
+        <i class="fa-solid fa-chevron-down"></i>
+      </div>
+    </div>
+  </div>
+
+  <!-- Row 4: Earth Time Slider (Blue) -->
+  <div id="row4-earth-slider-container" class="pt-2 border-t border-white/5">
+    <div class="flex items-center justify-between text-[10px] font-mono text-slate-400 mb-1">
+      <span class="tracking-wider text-blue-400 font-semibold">EARTH DAY PROGRESS</span>
+      <span id="earth-slider-label" class="text-slate-300">12h:00m:00s / 24h:00m:00s</span>
+    </div>
+    <input type="range" id="earth-time-slider" min="0" max="86400" step="1" value="43200" class="slider-blue w-full cursor-pointer" />
+  </div>
+
+  <!-- Row 5: Dynamic Row (Lunar Phase OR Planet Solar Day Status Bar) -->
+  <div id="row5-dynamic-container" class="mt-2.5 pt-2 border-t border-white/5 min-h-[46px]">
+    
+    <!-- 5A: Earth Active -> Lunar Phase Display -->
+    <div id="row5-lunar" class="flex items-center justify-between">
+      <div class="flex items-center gap-2.5">
+        <canvas id="moon-phase-canvas-widget" width="36" height="36" class="rounded-full border border-slate-700 bg-slate-900 shrink-0"></canvas>
+        <div>
+          <div id="moon-phase-name-widget" class="text-xs font-semibold text-white">Waxing Gibbous</div>
+          <div id="moon-phase-illum-widget" class="text-[10px] text-slate-400">82% Illumination • Waxing</div>
+        </div>
+      </div>
+      <span class="rounded bg-slate-800/80 px-1.5 py-0.5 text-[9px] font-bold tracking-wider text-slate-400">LUNAR</span>
+    </div>
+
+    <!-- 5B: Other Planet Active -> Planet Solar Day Status Bar (Orange) -->
+    <div id="row5-planet" class="hidden flex-col justify-center w-full">
+      <div class="flex items-center justify-between text-[10px] font-mono mb-1.5">
+        <span class="tracking-wider text-orange-400 font-semibold uppercase"><span id="planet-name-badge">MARS</span> SOLAR DAY <span id="planet-solar-pct" class="text-orange-200 ml-1">50%</span></span>
+        <span id="planet-solar-readout" class="text-orange-300 tabular-nums">05h:05m:05s / 10h:10m:10s</span>
+      </div>
+      <div class="relative w-full h-[5px] bg-white/10 rounded-full overflow-hidden shrink-0">
+        <div id="planet-day-bar" class="h-full bg-orange-400 rounded-full shadow-[0_0_8px_rgba(251,146,60,0.85)] transition-[width] duration-75" style="width: 50%;"></div>
+      </div>
+    </div>
+
+  </div>
+
+</div>
+
+
+
+
+<!-- ================= COMPREHENSIVE COMPATIBILITY SHIM ================= -->
+  <script>
+    (function() {
+      const nativeGetElementById = document.getElementById.bind(document);
+      
+      // Super-Dummy: Prevents crashes if old scripts read .value or call .getContext()
+      const dummyElem = document.createElement('div');
+      dummyElem.value = 0; 
+      dummyElem.getContext = function() { 
+        return { clearRect: ()=>{}, beginPath: ()=>{}, arc: ()=>{}, fill: ()=>{}, stroke: ()=>{}, save: ()=>{}, clip: ()=>{}, ellipse: ()=>{}, restore: ()=>{} }; 
+      };
+
+      const idMap = {
+        'category-members-dock': 'member-dock',
+        'btn-sun-focus': 'btn-target-sun',
+        'btn-close-modal': 'btn-close-date-modal',
+        'btn-apply-modal': 'btn-apply-date',
+        'modal-datetime-picker': 'input-custom-date',
+        'calendar-modal': 'date-picker-modal',
+        'chk-cutout': 'chk-interior'
+      };
+    })();
+  </script>
+
+  <!-- ================= CORE SIMULATION ENGINES ================= -->
+  <script src="js/bridge.js"></script>
+  <script src="js/timeController.js"></script>
+  <script src="js/globe_constellations"></script>
+  <script src="js/globe_comet.js"></script>
+
+  <script src="js/globe.js"></script>
+  <script src="js/globe_config.js"></script>
+  <script src="js/globe_shaders.js"></script>
+  <script src="js/globe_ui.js"></script>
+  <script src="js/globe_cutout.js"></script>
+  <script src="js/globe_orbits.js"></script>
+  <script src="js/globe_planets.js"></script>
+
+  <script src="js/solarsystem.js"></script>
+  <script src="js/solarsystem_data.js"></script>
+  <script src="js/solarsystem_physics.js"></script>
+  <script src="js/solarsystem_ui.js"></script>
+
+  <script src="js/infographic.js"></script>
+
+  <!-- ================= GLOBE DATA, CATALOGS & EXPLORATION ASSETS ================= -->
+  <script src="js/globe_data/eclipse.js"></script>
+
+  <script src="js/globe_data/political.js"></script>
+  <script src="js/globe_data/landmarks.js"></script>
+  <script src="js/globe_data/landers_lunar.js"></script>
+  <script src="js/globe_data/landers_mars.js"></script>
+  <script src="js/globe_data/landers_venus.js"></script>
+  <script src="js/globe_data/polygon_countries.geojson.js"></script>
+  <script src="js/globe_data/polygon_states_provinces.geojson.js"></script>
+
+  <script src="js/batch_exporter.js"></script>
+
+  <!-- Fallback kickstarter: guarantees 2D solar system runs on first load -->
+  <script>
+    window.addEventListener('DOMContentLoaded', () => {
+      setTimeout(() => {
+        if (typeof populateCategoryDock === 'function') {
+          populateCategoryDock('planets');
+        }
+        if (typeof render === 'function' && typeof animationFrameId !== 'undefined' && !animationFrameId) {
+          lastRenderTime = performance.now();
+          animationFrameId = requestAnimationFrame(render);
+        }
+      }, 50);
+    });
+  </script>
+</body>
+</html>

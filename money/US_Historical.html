@@ -1,0 +1,595 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Historical Tax Calculator (1913–2026)</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js for Visualizations -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Inter', 'sans-serif'] },
+                    colors: {
+                        brand: {
+                            50: '#f0fdf4', 100: '#dcfce7', 500: '#22c55e',
+                            600: '#16a34a', 700: '#15803d', 800: '#166534', 900: '#14532d',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        input[type=range] { accent-color: #16a34a; }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #f1f5f9; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 antialiased font-sans min-h-screen flex flex-col">
+
+    <header class="bg-slate-900 text-white sticky top-0 z-50 shadow-md">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="bg-amber-600 text-white p-2 rounded-lg flex items-center justify-center">
+                    <i class="fa-solid fa-clock-rotate-left text-xl"></i>
+                </div>
+                <div>
+                    <h1 class="text-lg font-bold tracking-tight">Compare Taxes by Era</h1>
+<p class="text-xs text-red-400 font-medium">(AI Generated - Use with caution)</p>
+                    <p class="text-xs text-slate-400">Category 5 Historical Engine (1913–2026)</p>
+                </div>
+            </div>
+            <div>
+                <button onclick="goBack()" id="backButton" class="hidden items-center space-x-2 bg-slate-800 hover:bg-slate-700 text-slate-200 px-3 py-2 rounded-lg text-sm font-medium transition-colors border border-slate-700 shadow-sm">
+                    <i class="fa-solid fa-arrow-left"></i>
+                    <span>Back</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-grow w-full space-y-8">
+        
+        <!-- Row 1: Controls & Chart -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+            
+            <!-- Left Controls Column -->
+            <div class="lg:col-span-4">
+                
+                <!-- Income Input Section -->
+                <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6 space-y-6 h-full flex flex-col justify-between">
+                    <div class="space-y-6">
+                        <h2 class="text-lg font-bold text-slate-900 border-b border-slate-100 pb-2">
+                            <i class="fa-solid fa-money-bill-wave text-brand-600 mr-2"></i> Financial Inputs
+                        </h2>
+                        
+                        <!-- Gross Income -->
+                        <div>
+                            <div class="flex items-center justify-between mb-2">
+                                <label for="grossIncomeInput" class="text-sm font-semibold text-slate-800">Gross Income (2026 $)</label>
+                                <div class="relative rounded-md shadow-sm">
+                                    <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
+                                        <span class="text-slate-500 sm:text-sm">$</span>
+                                    </div>
+                                    <input type="number" id="grossIncomeInput" value="100000" min="0" step="1000" oninput="syncIncome(this.value)" class="block w-32 rounded-md border-0 py-1.5 pl-7 pr-3 text-slate-900 font-bold ring-1 ring-inset ring-slate-300 focus:ring-2 focus:ring-inset focus:ring-brand-600 text-right sm:text-sm">
+                                </div>
+                            </div>
+                            <input type="range" id="grossIncomeSlider" min="0" max="1000000" step="5000" value="100000" oninput="syncIncome(this.value)" class="w-full h-2.5 bg-slate-200 rounded-lg appearance-none cursor-pointer">
+                        </div>
+
+                        <!-- Filing Status -->
+                        <div>
+                            <label class="block text-sm font-semibold text-slate-800 mb-3">Filing Status</label>
+                            <div class="grid grid-cols-2 gap-3">
+                                <label class="cursor-pointer">
+                                    <input type="radio" name="filingStatus" value="single" checked onchange="runEngine()" class="peer sr-only">
+                                    <div class="p-3 text-center rounded-lg border border-slate-200 peer-checked:border-brand-600 peer-checked:bg-brand-50 peer-checked:text-brand-700 hover:bg-slate-50 transition-all">
+                                        <div class="font-semibold text-sm">Single</div>
+                                    </div>
+                                </label>
+                                <label class="cursor-pointer">
+                                    <input type="radio" name="filingStatus" value="joint" onchange="runEngine()" class="peer sr-only">
+                                    <div class="p-3 text-center rounded-lg border border-slate-200 peer-checked:border-brand-600 peer-checked:bg-brand-50 peer-checked:text-brand-700 hover:bg-slate-50 transition-all">
+                                        <div class="font-semibold text-sm">Married Joint</div>
+                                    </div>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Toggles -->
+                    <div class="pt-4 border-t border-slate-100 space-y-4">
+                        <!-- Inflation Toggle -->
+                        <label class="flex items-start gap-3 cursor-pointer group">
+                            <div class="relative flex items-center mt-1">
+                                <input type="checkbox" id="inflationToggle" checked onchange="runEngine()" class="sr-only peer">
+                                <div class="w-10 h-5 bg-slate-200 rounded-full peer peer-checked:after:translate-x-full peer-checked:bg-amber-500 after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all"></div>
+                            </div>
+                            <div>
+                                <span class="text-sm font-semibold text-slate-800 block">Adjust for Inflation (CPI)</span>
+                                <span class="text-xs text-slate-500 leading-tight">Evaluates purchasing power equivalents across past eras.</span>
+                            </div>
+                        </label>
+
+                        <!-- US Debt % of GDP Toggle -->
+                        <label class="flex items-start gap-3 cursor-pointer group">
+                            <div class="relative flex items-center mt-1">
+                                <input type="checkbox" id="debtToggle" checked onchange="runEngine()" class="sr-only peer">
+                                <div class="w-10 h-5 bg-slate-200 rounded-full peer peer-checked:after:translate-x-full peer-checked:bg-red-500 after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all"></div>
+                            </div>
+                            <div>
+                                <span class="text-sm font-semibold text-slate-800 block">Include US Debt % of GDP</span>
+                                <span class="text-xs text-slate-500 leading-tight">Overlay national debt ratio (auto-rescales axis when removed).</span>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Visualization Column -->
+            <div class="lg:col-span-8">
+                <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm h-full flex flex-col">
+                    <h3 class="text-sm font-semibold text-slate-800 mb-4 flex items-center justify-between">
+                        <span id="chartTitleText">Tax Rates, Housing Burden & US Debt-to-GDP by Era</span>
+                        <span class="text-xs font-normal text-slate-500 bg-slate-100 px-2 py-1 rounded">1913 – 2026</span>
+                    </h3>
+                    <div class="w-full flex-grow relative min-h-[250px]">
+                        <canvas id="historicalChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Row 2: Era Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6" id="eraCardsContainer">
+            <!-- Era Cards Rendered via JS -->
+        </div>
+        
+        <!-- Row 3: Landmark Years Comparison Breakdown Table -->
+        <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+            <div class="px-6 py-4 border-b border-slate-200 bg-slate-50 flex items-center justify-between">
+                <h3 class="text-lg font-bold text-slate-900">Landmark Years Comparison Breakdown</h3>
+                <i class="fa-solid fa-table-list text-slate-400"></i>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left text-sm text-slate-600">
+                    <thead class="bg-slate-100 text-slate-700 text-xs uppercase font-semibold">
+                        <tr>
+                            <th class="px-6 py-3">Year / Era</th>
+                            <th class="px-6 py-3">Top Marginal Rate</th>
+                            <th class="px-6 py-3">Effective Tax Rate</th>
+                            <th class="px-6 py-3">Avg Housing % of Income</th>
+                            <th class="px-6 py-3 debt-col">US Debt % of GDP</th>
+                            <th class="px-6 py-3">Tax Owed (2026 $)</th>
+                        </tr>
+                    </thead>
+                    <tbody id="eraTableBody" class="divide-y divide-slate-200">
+                        <!-- Table Rows Rendered via JS -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        
+    </main>
+
+    <script>
+        // Comprehensive Landmark Tax Eras Engine with Housing % & US Debt-to-GDP %
+        const eras = [
+            { 
+                year: 1913, name: "Birth of Income Tax", desc: "16th Amendment ratified. Only top 1% paid income tax.",
+                cpiRatio: 0.0315, avgIncome: 800, housingRate: 20.0, debtToGDP: 7.8, exemption: { single: 3000, joint: 4000 }, topRate: "7%", 
+                brackets: [{ over: 0, rate: 0.01 }, { over: 20000, rate: 0.02 }, { over: 50000, rate: 0.03 }, { over: 75000, rate: 0.04 }, { over: 100000, rate: 0.05 }, { over: 250000, rate: 0.06 }, { over: 500000, rate: 0.07 }] 
+            },
+            { 
+                year: 1918, name: "Post-WWI High Surtax Era", desc: "Wartime surtaxes pushed max marginal rates to historic heights.",
+                cpiRatio: 0.0510, avgIncome: 1200, housingRate: 19.5, debtToGDP: 28.0, exemption: { single: 1000, joint: 2000 }, topRate: "73%", 
+                brackets: [{ over: 0, rate: 0.06 }, { over: 4000, rate: 0.12 }, { over: 6000, rate: 0.18 }, { over: 8000, rate: 0.24 }, { over: 10000, rate: 0.30 }, { over: 12000, rate: 0.36 }, { over: 14000, rate: 0.42 }, { over: 16000, rate: 0.48 }, { over: 18000, rate: 0.54 }, { over: 20000, rate: 0.60 }, { over: 50000, rate: 0.65 }, { over: 1000000, rate: 0.73 }] 
+            },
+            { 
+                year: 1925, name: "Mellon Tax Cut Era", desc: "Post-WWI normalization and aggressive tax rate reductions.",
+                cpiRatio: 0.0540, avgIncome: 1500, housingRate: 21.0, debtToGDP: 24.2, exemption: { single: 1500, joint: 3500 }, topRate: "25%", 
+                brackets: [{ over: 0, rate: 0.015 }, { over: 4000, rate: 0.03 }, { over: 8000, rate: 0.05 }, { over: 100000, rate: 0.25 }] 
+            },
+            { 
+                year: 1932, name: "Great Depression Act", desc: "Emergency revenue acts passed during the Depression.",
+                cpiRatio: 0.0460, avgIncome: 1200, housingRate: 25.0, debtToGDP: 33.3, exemption: { single: 1000, joint: 2500 }, topRate: "63%", 
+                brackets: [{ over: 0, rate: 0.04 }, { over: 4000, rate: 0.08 }, { over: 100000, rate: 0.63 }] 
+            },
+            { 
+                year: 1940, name: "Pre-WWII Defense Act", desc: "Defense surtaxes enacted as global conflict loomed.",
+                cpiRatio: 0.0480, avgIncome: 1700, housingRate: 22.0, debtToGDP: 49.3, exemption: { single: 800, joint: 2000 }, topRate: "81%", 
+                brackets: [{ over: 0, rate: 0.044 }, { over: 4000, rate: 0.066 }, { over: 100000, rate: 0.81 }] 
+            },
+            { 
+                year: 1944, name: "WWII Peak", desc: "Taxes skyrocketed to fund World War II.",
+                cpiRatio: 0.0560, avgIncome: 2500, housingRate: 18.0, debtToGDP: 90.9, exemption: { single: 500, joint: 1000 }, topRate: "94%", 
+                brackets: [{ over: 0, rate: 0.23 }, { over: 2000, rate: 0.25 }, { over: 4000, rate: 0.29 }, { over: 6000, rate: 0.33 }, { over: 8000, rate: 0.37 }, { over: 10000, rate: 0.41 }, { over: 26000, rate: 0.66 }, { over: 50000, rate: 0.81 }, { over: 100000, rate: 0.93 }, { over: 200000, rate: 0.94 }] 
+            },
+            { 
+                year: 1954, name: "Post-War Eisenhower Code", desc: "Comprehensive overhaul and codification of revenue laws.",
+                cpiRatio: 0.0830, avgIncome: 4200, housingRate: 20.0, debtToGDP: 69.3, exemption: { single: 600, joint: 1200 }, topRate: "91%", 
+                brackets: [{ over: 0, rate: 0.20 }, { over: 2000, rate: 0.22 }, { over: 4000, rate: 0.26 }, { over: 6000, rate: 0.30 }, { over: 8000, rate: 0.34 }, { over: 10000, rate: 0.38 }, { over: 12000, rate: 0.43 }, { over: 14000, rate: 0.47 }, { over: 16000, rate: 0.50 }, { over: 18000, rate: 0.53 }, { over: 20000, rate: 0.56 }, { over: 22000, rate: 0.59 }, { over: 26000, rate: 0.62 }, { over: 32000, rate: 0.65 }, { over: 38000, rate: 0.69 }, { over: 44000, rate: 0.72 }, { over: 50000, rate: 0.75 }, { over: 60000, rate: 0.78 }, { over: 70000, rate: 0.81 }, { over: 80000, rate: 0.84 }, { over: 90000, rate: 0.87 }, { over: 100000, rate: 0.89 }, { over: 200000, rate: 0.91 }] 
+            },
+            { 
+                year: 1964, name: "Kennedy-Johnson Tax Cut", desc: "Significant reduction across all brackets to stimulate growth.",
+                cpiRatio: 0.0980, avgIncome: 6000, housingRate: 21.5, debtToGDP: 46.2, exemption: { single: 600, joint: 1200 }, topRate: "77%", 
+                brackets: [{ over: 0, rate: 0.14 }, { over: 1000, rate: 0.15 }, { over: 2000, rate: 0.16 }, { over: 4000, rate: 0.18 }, { over: 6000, rate: 0.19 }, { over: 8000, rate: 0.22 }, { over: 10000, rate: 0.25 }, { over: 12000, rate: 0.28 }, { over: 14000, rate: 0.32 }, { over: 16000, rate: 0.36 }, { over: 18000, rate: 0.39 }, { over: 20000, rate: 0.42 }, { over: 22000, rate: 0.46 }, { over: 26000, rate: 0.50 }, { over: 32000, rate: 0.53 }, { over: 38000, rate: 0.56 }, { over: 44000, rate: 0.59 }, { over: 50000, rate: 0.62 }, { over: 60000, rate: 0.65 }, { over: 70000, rate: 0.68 }, { over: 80000, rate: 0.70 }, { over: 90000, rate: 0.72 }, { over: 100000, rate: 0.75 }, { over: 200000, rate: 0.77 }] 
+            },
+            { 
+                year: 1970, name: "Tax Reform Act of 1969", desc: "Introduced the Alternative Minimum Tax (AMT).",
+                cpiRatio: 0.1240, avgIncome: 9800, housingRate: 22.0, debtToGDP: 35.5, exemption: { single: 650, joint: 1300 }, topRate: "70%", 
+                brackets: [{ over: 0, rate: 0.14 }, { over: 500, rate: 0.15 }, { over: 1000, rate: 0.16 }, { over: 2000, rate: 0.17 }, { over: 3000, rate: 0.19 }, { over: 4000, rate: 0.21 }, { over: 6000, rate: 0.22 }, { over: 8000, rate: 0.25 }, { over: 10000, rate: 0.28 }, { over: 12000, rate: 0.32 }, { over: 14000, rate: 0.36 }, { over: 16000, rate: 0.38 }, { over: 18000, rate: 0.39 }, { over: 20000, rate: 0.42 }, { over: 22000, rate: 0.45 }, { over: 26000, rate: 0.48 }, { over: 32000, rate: 0.50 }, { over: 38000, rate: 0.53 }, { over: 44000, rate: 0.55 }, { over: 50000, rate: 0.58 }, { over: 60000, rate: 0.60 }, { over: 70000, rate: 0.62 }, { over: 80000, rate: 0.64 }, { over: 90000, rate: 0.68 }, { over: 100000, rate: 0.69 }, { over: 200000, rate: 0.70 }] 
+            },
+            { 
+                year: 1981, name: "Pre-Reagan Cuts (ERTA)", desc: "High inflation pushed earners into upper tax brackets.",
+                cpiRatio: 0.2890, avgIncome: 22390, housingRate: 24.0, debtToGDP: 31.0, exemption: { single: 1000, joint: 2000 }, topRate: "70%", 
+                brackets: [{ over: 0, rate: 0.14 }, { over: 3400, rate: 0.16 }, { over: 5500, rate: 0.18 }, { over: 7600, rate: 0.19 }, { over: 11900, rate: 0.21 }, { over: 16000, rate: 0.24 }, { over: 24600, rate: 0.32 }, { over: 35200, rate: 0.43 }, { over: 60000, rate: 0.54 }, { over: 215400, rate: 0.70 }] 
+            },
+            { 
+                year: 1986, name: "Tax Reform Act '86", desc: "Bipartisan overhaul simplified brackets down to two tiers.",
+                cpiRatio: 0.3760, avgIncome: 27230, housingRate: 26.5, debtToGDP: 46.3, exemption: { single: 3000, joint: 5000 }, topRate: "28%", 
+                brackets: [{ over: 0, rate: 0.15 }, { over: 28000, rate: 0.28 }] 
+            },
+            { 
+                year: 1993, name: "Clinton OBRA 1993", desc: "Introduced top marginal brackets of 36% and 39.6%.",
+                cpiRatio: 0.5150, avgIncome: 35000, housingRate: 28.0, debtToGDP: 63.4, exemption: { single: 3700, joint: 6500 }, topRate: "39.6%", 
+                brackets: [{ over: 0, rate: 0.15 }, { over: 22100, rate: 0.28 }, { over: 53500, rate: 0.31 }, { over: 115000, rate: 0.36 }, { over: 250000, rate: 0.396 }] 
+            },
+            { 
+                year: 2001, name: "Bush EGTRRA Tax Cuts", desc: "Economic Growth and Tax Relief Reconciliation Act.",
+                cpiRatio: 0.6800, avgIncome: 48000, housingRate: 29.5, debtToGDP: 54.5, exemption: { single: 4550, joint: 7600 }, topRate: "38.6%", 
+                brackets: [{ over: 0, rate: 0.10 }, { over: 6000, rate: 0.15 }, { over: 27950, rate: 0.275 }, { over: 67700, rate: 0.305 }, { over: 141200, rate: 0.355 }, { over: 307050, rate: 0.386 }] 
+            },
+            { 
+                year: 2013, name: "American Taxpayer Relief Act", desc: "Re-established 39.6% top tier.",
+                cpiRatio: 0.8750, avgIncome: 56000, housingRate: 31.0, debtToGDP: 99.0, exemption: { single: 10000, joint: 20000 }, topRate: "39.6%", 
+                brackets: [{ over: 0, rate: 0.10 }, { over: 8925, rate: 0.15 }, { over: 36250, rate: 0.25 }, { over: 87850, rate: 0.28 }, { over: 183250, rate: 0.33 }, { over: 398350, rate: 0.396 }] 
+            },
+            { 
+                year: 2018, name: "Trump TCJA Reform Act", desc: "Restructured brackets and doubled standard deduction.",
+                cpiRatio: 0.9500, avgIncome: 58000, housingRate: 32.5, debtToGDP: 103.9, exemption: { single: 12000, joint: 24000 }, topRate: "37%", 
+                brackets: [{ over: 0, rate: 0.10 }, { over: 9525, rate: 0.12 }, { over: 38700, rate: 0.22 }, { over: 82500, rate: 0.24 }, { over: 157500, rate: 0.32 }, { over: 200000, rate: 0.35 }, { over: 500000, rate: 0.37 }] 
+            },
+            { 
+                year: 2024, name: "Modern Era (TCJA)", desc: "Tax Cuts and Jobs Act active brackets.",
+                cpiRatio: 1.0000, avgIncome: 60000, housingRate: 34.0, debtToGDP: 120.2, exemption: { single: 14600, joint: 29200 }, topRate: "37%", 
+                brackets: [{ over: 0, rate: 0.10 }, { over: 11600, rate: 0.12 }, { over: 47150, rate: 0.22 }, { over: 100525, rate: 0.24 }, { over: 191950, rate: 0.32 }, { over: 243725, rate: 0.35 }, { over: 609350, rate: 0.37 }] 
+            },
+            { 
+                year: 2026, name: "Indexed Tax System", desc: "Current indexed federal income tax parameters for 2026.",
+                cpiRatio: 1.0660, avgIncome: 64000, housingRate: 35.0, debtToGDP: 124.0, exemption: { single: 16100, joint: 32200 }, topRate: "37%", 
+                brackets: [{ over: 0, rate: 0.10 }, { over: 11900, rate: 0.12 }, { over: 48475, rate: 0.22 }, { over: 103350, rate: 0.24 }, { over: 197300, rate: 0.32 }, { over: 250525, rate: 0.35 }, { over: 626350, rate: 0.37 }] 
+            }
+        ];
+
+        let myChart = null;
+
+        function syncIncome(val) {
+            document.getElementById('grossIncomeInput').value = val;
+            document.getElementById('grossIncomeSlider').value = val;
+            runEngine();
+        }
+
+        function calculateTaxForEra(income, status, era, useInflation) {
+            let adjustedGross = useInflation ? (income * era.cpiRatio) : income;
+            let deduction = status === 'single' ? era.exemption.single : era.exemption.joint;
+            let taxableIncome = Math.max(0, adjustedGross - deduction);
+            
+            let totalTax = 0;
+
+            for (let i = 0; i < era.brackets.length; i++) {
+                let currentLimit = era.brackets[i].over;
+                let nextLimit = (i + 1 < era.brackets.length) ? era.brackets[i+1].over : Infinity;
+                let rate = era.brackets[i].rate;
+
+                if (taxableIncome > currentLimit) {
+                    let taxableInThisBracket = Math.min(taxableIncome - currentLimit, nextLimit - currentLimit);
+                    totalTax += taxableInThisBracket * rate;
+                }
+            }
+
+            let taxInModernDollars = useInflation ? (totalTax / era.cpiRatio) : totalTax;
+            let effectiveRate = income > 0 ? (taxInModernDollars / income) * 100 : 0;
+
+            return {
+                adjustedIncome: adjustedGross,
+                taxable: taxableIncome,
+                taxPaid: taxInModernDollars,
+                effectiveRate: effectiveRate
+            };
+        }
+
+        function runEngine() {
+            const income = parseFloat(document.getElementById('grossIncomeInput').value) || 0;
+            const status = document.querySelector('input[name="filingStatus"]:checked').value;
+            const useInflation = document.getElementById('inflationToggle').checked;
+            const showDebt = document.getElementById('debtToggle').checked;
+
+            const results = eras.map(era => {
+                const userCalc = calculateTaxForEra(income, status, era, useInflation);
+                const avgCalc = calculateTaxForEra(era.avgIncome, status, era, false);
+                return { ...era, ...userCalc, avgEffectiveRate: avgCalc.effectiveRate };
+            });
+
+            // Update section title dynamically
+            const chartTitle = document.getElementById('chartTitleText');
+            if (chartTitle) {
+                chartTitle.innerText = showDebt 
+                    ? "Tax Rates, Housing Burden & US Debt-to-GDP by Era" 
+                    : "Tax Rates vs. Average Housing Burden by Era";
+            }
+
+            renderCards(results, useInflation, showDebt);
+            renderTable(results, useInflation, showDebt);
+            updateChart(results, showDebt);
+        }
+
+        function renderCards(results, useInflation, showDebt) {
+            const container = document.getElementById('eraCardsContainer');
+            container.innerHTML = '';
+
+            const featuredYears = [1913, 1944, 1986, 2024];
+            const displayResults = results.filter(res => featuredYears.includes(res.year));
+
+            displayResults.forEach(res => {
+                const formatter = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 });
+                const adjIncomeStr = useInflation && res.year !== 2024 && res.year !== 2026 ? `<div class="text-[10px] text-slate-500 mt-1">Calculated on ${formatter.format(res.adjustedIncome)} in ${res.year} $</div>` : '';
+
+                const debtCell = showDebt ? `
+                    <div>
+                        <div class="text-[9px] uppercase tracking-wide font-semibold text-slate-500">Debt / GDP</div>
+                        <div class="text-base font-black text-red-600">${res.debtToGDP.toFixed(1)}%</div>
+                    </div>
+                ` : '';
+
+                const gridColsClass = showDebt ? 'grid-cols-3' : 'grid-cols-2';
+
+                container.innerHTML += `
+                    <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
+                        <div class="flex justify-between items-start mb-2">
+                            <div>
+                                <div class="text-xs font-bold text-amber-600 mb-0.5">${res.year}</div>
+                                <h4 class="text-sm font-bold text-slate-900">${res.name}</h4>
+                            </div>
+                            <span class="bg-slate-100 text-slate-600 text-[10px] px-2 py-0.5 rounded font-semibold">Top Rate: ${res.topRate}</span>
+                        </div>
+                        <p class="text-[11px] text-slate-500 mb-4 h-8">${res.desc}</p>
+                        
+                        <div class="bg-slate-50 rounded-lg p-3 border border-slate-100 space-y-2">
+                            <div class="grid ${gridColsClass} gap-1 text-center">
+                                <div>
+                                    <div class="text-[9px] uppercase tracking-wide font-semibold text-slate-500">Effective Tax</div>
+                                    <div class="text-base font-black text-slate-800">${res.effectiveRate.toFixed(1)}%</div>
+                                </div>
+                                <div>
+                                    <div class="text-[9px] uppercase tracking-wide font-semibold text-slate-500">Avg Housing</div>
+                                    <div class="text-base font-black text-blue-600">${res.housingRate.toFixed(1)}%</div>
+                                </div>
+                                ${debtCell}
+                            </div>
+                            <div class="pt-2 border-t border-slate-200 flex justify-between items-center text-xs">
+                                <span class="text-slate-500 font-semibold">Tax Owed:</span>
+                                <span class="font-bold text-brand-600">${formatter.format(res.taxPaid)}</span>
+                            </div>
+                            ${adjIncomeStr}
+                        </div>
+                    </div>
+                `;
+            });
+        }
+        
+        function renderTable(results, useInflation, showDebt) {
+            const tbody = document.getElementById('eraTableBody');
+            tbody.innerHTML = '';
+            const formatter = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 });
+
+            // Toggle table header visibility for debt column
+            const debtCols = document.querySelectorAll('.debt-col');
+            debtCols.forEach(el => {
+                if (showDebt) el.classList.remove('hidden');
+                else el.classList.add('hidden');
+            });
+
+            results.forEach(res => {
+                const adjIncomeStr = useInflation && res.year !== 2024 && res.year !== 2026 ? `<br><span class="text-[10px] text-slate-400 font-normal">Calc on ${formatter.format(res.adjustedIncome)} in ${res.year} $</span>` : '';
+                const debtTd = showDebt ? `<td class="px-6 py-4 font-bold text-red-600 debt-col">${res.debtToGDP.toFixed(1)}%</td>` : '';
+
+                tbody.innerHTML += `
+                    <tr class="hover:bg-slate-50 transition-colors">
+                        <td class="px-6 py-4">
+                            <div class="font-bold text-slate-900">${res.year} - ${res.name}</div>
+                            <div class="text-xs text-slate-500">${res.desc}</div>
+                        </td>
+                        <td class="px-6 py-4 font-semibold text-slate-700">${res.topRate}</td>
+                        <td class="px-6 py-4 font-black text-slate-800">${res.effectiveRate.toFixed(1)}%</td>
+                        <td class="px-6 py-4 font-bold text-blue-600">${res.housingRate.toFixed(1)}%</td>
+                        ${debtTd}
+                        <td class="px-6 py-4 font-bold text-brand-600">
+                            ${formatter.format(res.taxPaid)}
+                            ${adjIncomeStr}
+                        </td>
+                    </tr>
+                `;
+            });
+        }
+
+        // Calculates dynamic upper bound for Y axis depending on visible datasets
+        function calculateDynamicYMax(chart) {
+            let maxVal = 0;
+            chart.data.datasets.forEach((ds, index) => {
+                if (chart.isDatasetVisible(index)) {
+                    const localMax = Math.max(...ds.data);
+                    if (localMax > maxVal) maxVal = localMax;
+                }
+            });
+            // Round up to nearest decade + padding for visual clarity
+            return maxVal > 0 ? Math.ceil((maxVal + 5) / 10) * 10 : 60;
+        }
+
+        function updateChart(results, showDebt) {
+            const ctx = document.getElementById('historicalChart').getContext('2d');
+            const labels = results.map(r => r.year.toString());
+            const dataRates = results.map(r => r.effectiveRate);
+            const dataHousingRates = results.map(r => r.housingRate);
+            const dataAvgRates = results.map(r => r.avgEffectiveRate);
+            const dataDebtToGDP = results.map(r => r.debtToGDP);
+
+            const datasets = [
+                {
+                    label: 'Your Effective Tax Rate',
+                    data: dataRates,
+                    borderColor: '#d97706',
+                    backgroundColor: 'rgba(217, 119, 6, 0.05)',
+                    borderWidth: 2,
+                    fill: true,
+                    tension: 0.3,
+                    pointBackgroundColor: '#fff',
+                    pointBorderColor: '#d97706',
+                    pointRadius: 4,
+                    pointHoverRadius: 6
+                },
+                {
+                    label: 'Avg Housing % of Income',
+                    data: dataHousingRates,
+                    borderColor: '#3b82f6',
+                    backgroundColor: 'rgba(59, 130, 246, 0.05)',
+                    borderWidth: 2,
+                    fill: true,
+                    tension: 0.3,
+                    pointBackgroundColor: '#fff',
+                    pointBorderColor: '#3b82f6',
+                    pointRadius: 4,
+                    pointHoverRadius: 6
+                },
+                {
+                    label: 'Average Earner Tax Rate',
+                    data: dataAvgRates,
+                    borderColor: '#16a34a',
+                    backgroundColor: 'transparent',
+                    borderDash: [5, 5],
+                    borderWidth: 2,
+                    fill: false,
+                    tension: 0.3,
+                    pointBackgroundColor: '#fff',
+                    pointBorderColor: '#16a34a',
+                    pointRadius: 4,
+                    pointHoverRadius: 6
+                }
+            ];
+
+            if (showDebt) {
+                datasets.push({
+                    label: 'US Debt % of GDP',
+                    data: dataDebtToGDP,
+                    borderColor: '#dc2626',
+                    backgroundColor: 'rgba(220, 38, 38, 0.05)',
+                    borderWidth: 2,
+                    fill: false,
+                    tension: 0.3,
+                    pointBackgroundColor: '#fff',
+                    pointBorderColor: '#dc2626',
+                    pointRadius: 4,
+                    pointHoverRadius: 6
+                });
+            }
+
+            if (myChart) {
+                myChart.data.labels = labels;
+                myChart.data.datasets = datasets;
+                
+                // Recalculate Y axis scale based on current visible datasets
+                let highestVal = 0;
+                datasets.forEach(ds => {
+                    const localMax = Math.max(...ds.data);
+                    if (localMax > highestVal) highestVal = localMax;
+                });
+                myChart.options.scales.y.max = Math.ceil((highestVal + 5) / 10) * 10;
+                
+                myChart.update();
+            } else {
+                let initialMax = 0;
+                datasets.forEach(ds => {
+                    const localMax = Math.max(...ds.data);
+                    if (localMax > initialMax) initialMax = localMax;
+                });
+
+                myChart = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: labels,
+                        datasets: datasets
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { 
+                            legend: { 
+                                display: true,
+                                position: 'top',
+                                onClick: function(e, legendItem, legend) {
+                                    const index = legendItem.datasetIndex;
+                                    const ci = legend.chart;
+                                    if (ci.isDatasetVisible(index)) {
+                                        ci.hide(index);
+                                        legendItem.hidden = true;
+                                    } else {
+                                        ci.show(index);
+                                        legendItem.hidden = false;
+                                    }
+                                    
+                                    // Dynamically rescale percentages when any legend item is hidden or shown
+                                    ci.options.scales.y.max = calculateDynamicYMax(ci);
+                                    ci.update();
+                                },
+                                labels: {
+                                    usePointStyle: true,
+                                    boxWidth: 8,
+                                    font: { size: 12, family: "'Inter', sans-serif" }
+                                }
+                            } 
+                        },
+                        scales: {
+                            y: { 
+                                beginAtZero: true, 
+                                max: Math.ceil((initialMax + 5) / 10) * 10,
+                                ticks: { callback: function(value) { return value + "%" } } 
+                            },
+                            x: { grid: { display: false } }
+                        }
+                    }
+                });
+            }
+        }
+
+        function goBack() {
+            if (window.history.length > 1) {
+                window.history.back();
+            } else {
+                window.location.href = 'index.html';
+            }
+        }
+
+        // Initialize on load
+        window.onload = function() {
+            runEngine();
+            if (window.history.length > 1) {
+                const btn = document.getElementById('backButton');
+                if (btn) {
+                    btn.classList.remove('hidden');
+                    btn.classList.add('flex');
+                }
+            }
+        };
+    </script>
+</body>
+</html>
