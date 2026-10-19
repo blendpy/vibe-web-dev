@@ -2203,4 +2203,47 @@ window.addEventListener('DOMContentLoaded', () => {
   if (typeof setupEventListeners === 'function') setupEventListeners(); 
   if (typeof setupHeliosNavEvents === 'function') setupHeliosNavEvents(); 
   initFromUrlParams();
+
+      // Pin Taskbar Logic
+      const taskbarWrapper = document.getElementById('taskbar-wrapper');
+      const btnPinTaskbar = document.getElementById('btn-pin-taskbar');
+      const pinIcon = document.getElementById('pin-icon');
+      const dockRowsContainer = document.getElementById('dock-rows-container');
+      const topCategoryDock = document.getElementById('top-category-dock');
+      let isTaskbarPinned = false;
+
+      if (btnPinTaskbar && taskbarWrapper) {
+        btnPinTaskbar.addEventListener('click', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          isTaskbarPinned = !isTaskbarPinned;
+          
+          if (isTaskbarPinned) {
+            // Force the panel to stay open using inline styles
+            taskbarWrapper.style.setProperty('transform', 'translateX(0)', 'important');
+            
+            // Hide the category tabs, planet dock, and moon dock smoothly
+            if (dockRowsContainer) dockRowsContainer.classList.add('opacity-0', 'pointer-events-none');
+            if (topCategoryDock) topCategoryDock.classList.add('opacity-0', 'pointer-events-none');
+            
+            // Visual updates for the pin
+            btnPinTaskbar.classList.add('text-cyan-400');
+            btnPinTaskbar.classList.remove('text-slate-400');
+            pinIcon.classList.add('-rotate-45'); 
+          } else {
+            // Remove inline style so it reverts back to standard hover
+            taskbarWrapper.style.removeProperty('transform');
+            
+            // Reveal the docks
+            if (dockRowsContainer) dockRowsContainer.classList.remove('opacity-0', 'pointer-events-none');
+            if (topCategoryDock) topCategoryDock.classList.remove('opacity-0', 'pointer-events-none');
+            
+            // Visual updates for the pin
+            btnPinTaskbar.classList.remove('text-cyan-400');
+            btnPinTaskbar.classList.add('text-slate-400');
+            pinIcon.classList.remove('-rotate-45');
+          }
+        });
+      }
+
 });
