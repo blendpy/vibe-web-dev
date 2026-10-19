@@ -137,6 +137,14 @@
                         <span>Policy Presets</span>
                         <i class="fa-solid fa-chevron-down text-[10px] ml-0.5"></i>
                     </button>
+
+                    <!-- Infographic Thumbnail Box (183% wider than tall) -->
+                    <button id="info-thumb" class="w-[73px] h-10 rounded-lg overflow-hidden border border-slate-700 hover:border-sky-500 transition shadow-sm focus:outline-none flex-shrink-0 relative group ml-1 bg-slate-800">
+                        <img src="infographics/US_Federal_Budget_Simulator.jpg" class="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition" alt="Infographic Preview">
+                        <div class="absolute inset-0 bg-sky-500/20 opacity-0 group-hover:opacity-100 transition flex items-center justify-center">
+                            <i class="fa-solid fa-expand text-white text-xs drop-shadow"></i>
+                        </div>
+                    </button>
                 </div>
             </div>
         </div>
@@ -762,6 +770,15 @@
 
     </main>
 
+    <!-- Infographic Full Screen Overlay -->
+    <div id="info-overlay" class="fixed top-16 left-0 w-full h-[calc(100vh-4rem)] z-[100] bg-slate-950/95 hidden flex-col items-center justify-center p-4 sm:p-8 backdrop-blur-md transition-opacity duration-300 opacity-0 cursor-pointer no-print pointer-events-none">
+        <img src="infographics/US_Federal_Budget_Simulator.jpg" class="max-w-full max-h-full object-contain rounded-xl shadow-2xl border border-slate-700" alt="Full Infographic">
+        <div class="absolute top-6 right-6 text-slate-200 text-sm bg-slate-800/80 px-4 py-2 rounded-full backdrop-blur flex items-center gap-2 border border-slate-700 shadow-lg">
+            <i class="fa-solid fa-circle-info text-sky-400"></i>
+            <span id="info-status-text">Hovering (Click to Lock)</span>
+        </div>
+    </div>
+
     <!-- Export Summary Modal -->
     <div id="exportModal" class="hidden fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
         <div class="bg-slate-900 border border-slate-700 rounded-2xl max-w-2xl w-full p-6 space-y-4 max-h-[90vh] overflow-y-auto">
@@ -770,7 +787,7 @@
                     <i class="fa-solid fa-file-invoice text-sky-400"></i>
                     <span>Federal Budget Reform Summary</span>
                 </h3>
-                <button onclick="closeExportModal()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
+                <button onclick="closeExportModal()" class="text-slate-400 hover:white"><i class="fa-solid fa-xmark text-lg"></i></button>
             </div>
 
             <div id="exportModalContent" class="space-y-4 text-xs font-mono text-slate-300 bg-slate-950 p-4 rounded-xl border border-slate-800">
@@ -807,96 +824,85 @@
 
     <script>
         // Revenue Policy Metadata & Detailed Analysis Content
-
-
-
-// Updated REVENUE_POLICY_DETAILS with 9 valid Federal Revenue Reforms
-const REVENUE_POLICY_DETAILS = {
-    irs_funding: {
-        title: "1. Boost IRS Funding by $80B",
-        yield: 240, // Net annual tax gap recovery $240B/yr ($400B gross - $80B allocation)
-        tag: "+$240 Billion / yr",
-        economic: "Recovers uncollected tax revenues by targeting illegal tax evasion, offshore accounts, and complex corporate tax shelters without raising statutory rates on compliant citizens.",
-        feasibility: "High operational feasibility over 5-10 years. Requires modernized IT systems, specialized forensic accountants, and long-term hiring commitments.",
-        socioeconomic: "Highly progressive tax enforcement equity. Addresses the estimated $600B+ annual US tax gap. Main criticism centers on concerns over small business audit oversight."
-    },
-    church_tax: {
-        title: "2. Tax Churches as Corporations",
-        yield: 8,
-        tag: "+$8 Billion / yr",
-        economic: "Levies the standard 21% corporate tax rate on non-charitable revenues and commercial investment holdings of religious organizations.",
-        feasibility: "Moderate administrative complexity. Demands clear accounting segregation between purely charitable/religious operations and commercial revenue streams.",
-        socioeconomic: "Faces intense constitutional scrutiny under the First Amendment (Establishment and Free Exercise Clauses). Opponents argue it breaches church-state separation and burdens local community programs."
-    },
-    inheritance_tax: {
-        title: "3. Direct Inheritance Taxation",
-        yield: 30,
-        tag: "+$30 Billion / yr",
-        economic: "Replaces stepped-up basis loopholes with a direct tax on high-value asset transfers and inheritances upon receipt.",
-        feasibility: "Moderate feasibility. Leverages existing probate and IRS gift/estate reporting mechanisms.",
-        socioeconomic: "Mitigates intergenerational wealth concentration and promotes equal opportunity. Opponents raise concerns regarding liquidity hurdles for multi-generational family farms and closely-held businesses."
-    },
-    unrealized_gains: {
-        title: "4. Tax Stocks with Unrealized Gains",
-        yield: 40,
-        tag: "+$40 Billion / yr",
-        economic: "Levies annual mark-to-market taxes on unrealized capital gains in publicly traded securities for ultra-high-net-worth individual portfolios.",
-        feasibility: "High administrative complexity. Requires annual valuation protocols and refund/deduction mechanisms during market downturns.",
-        socioeconomic: "Prevents buy-borrow-die tax avoidance strategies. Concerns include potential market volatility, forced stock liquidations, and constitutional challenges under the 16th Amendment Direct Tax clause."
-    },
-    keep_tariffs: {
-        title: "5. Maintain 2026 Import Tariffs",
-        yield: 200,
-        tag: "+$200 Billion / yr",
-        economic: "Generates $200B annually in tariff duties across foreign goods, electronics, steel, and manufactured imports.",
-        feasibility: "Very high administrative feasibility; already implemented via U.S. Customs and Border Protection (CBP).",
-        socioeconomic: "Protects domestic manufacturing sectors, but acts as an indirect consumption tax on domestic consumers. Risks supply chain inflation and retaliatory foreign tariffs."
-    },
-    vat_tax: {
-        title: "6. Broad-Based 5% Federal VAT",
-        yield: 300,
-        tag: "+$300 Billion / yr",
-        economic: "Imposes a standard 5% national Value-Added Tax (VAT) collected at each stage of production and distribution, excluding basic necessities like groceries and healthcare.",
-        feasibility: "High long-term feasibility; widely utilized across developed nations, though requires establishing new federal sales tracking architecture.",
-        socioeconomic: "Highly stable and broad-based revenue stream. Broad exemptions for essential goods help mitigate the inherently regressive nature of consumption taxes."
-    },
-    top_bracket_50: {
-        title: "7. Increase Top Tax Bracket to 50%",
-        yield: 160,
-        tag: "+$160 Billion / yr",
-        economic: "Increases the marginal individual income tax rate on earnings above $609,350 from 37% to 50%. Auto-updates top bracket input to 50%.",
-        feasibility: "Very high feasibility using existing IRS marginal bracket infrastructure.",
-        socioeconomic: "Restores tax progressivity levels comparable to pre-1986 tax law. Critics contend it could disincentivize top executive capital allocation and encourage tax avoidance structures."
-    },
-    financial_transaction_tax: {
-        title: "8. 0.1% Financial Transaction Tax",
-        yield: 80,
-        tag: "+$80 Billion / yr",
-        economic: "Levies a modest 0.1% fee on trades of equities, bonds, and derivatives to generate revenue while curtailing speculative high-frequency trading.",
-        feasibility: "High administrative feasibility; easily collected via clearing houses and electronic trading platforms.",
-        socioeconomic: "Mainly affects institutional trading firms and high-volume investors. Critics warn it could lower market liquidity and impact retail retirement portfolio returns."
-    },
-    carbon_fee: {
-        title: "9. National Carbon Fee ($50/ton)",
-        yield: 150,
-        tag: "+$150 Billion / yr",
-        economic: "Imposes a $50 per metric ton tax on the carbon content of fossil fuels at the point of extraction or import.",
-        feasibility: "High feasibility; monitored at the upstream fuel production, refinery, and pipeline level.",
-        socioeconomic: "Provides a market-based incentive to reduce emissions and accelerate green energy infrastructure. May increase consumer utility and transport costs unless paired with rebate dividends."
-    }
-};
-
-
-
-
-
-
+        const REVENUE_POLICY_DETAILS = {
+            irs_funding: {
+                title: "1. Boost IRS Funding by $80B",
+                yield: 240,
+                tag: "+$240 Billion / yr",
+                economic: "Recovers uncollected tax revenues by targeting illegal tax evasion, offshore accounts, and complex corporate tax shelters without raising statutory rates on compliant citizens.",
+                feasibility: "High operational feasibility over 5-10 years. Requires modernized IT systems, specialized forensic accountants, and long-term hiring commitments.",
+                socioeconomic: "Highly progressive tax enforcement equity. Addresses the estimated $600B+ annual US tax gap. Main criticism centers on concerns over small business audit oversight."
+            },
+            church_tax: {
+                title: "2. Tax Churches as Corporations",
+                yield: 8,
+                tag: "+$8 Billion / yr",
+                economic: "Levies the standard 21% corporate tax rate on non-charitable revenues and commercial investment holdings of religious organizations.",
+                feasibility: "Moderate administrative complexity. Demands clear accounting segregation between purely charitable/religious operations and commercial revenue streams.",
+                socioeconomic: "Faces intense constitutional scrutiny under the First Amendment (Establishment and Free Exercise Clauses). Opponents argue it breaches church-state separation and burdens local community programs."
+            },
+            inheritance_tax: {
+                title: "3. Direct Inheritance Taxation",
+                yield: 30,
+                tag: "+$30 Billion / yr",
+                economic: "Replaces stepped-up basis loopholes with a direct tax on high-value asset transfers and inheritances upon receipt.",
+                feasibility: "Moderate feasibility. Leverages existing probate and IRS gift/estate reporting mechanisms.",
+                socioeconomic: "Mitigates intergenerational wealth concentration and promotes equal opportunity. Opponents raise concerns regarding liquidity hurdles for multi-generational family farms and closely-held businesses."
+            },
+            unrealized_gains: {
+                title: "4. Tax Stocks with Unrealized Gains",
+                yield: 40,
+                tag: "+$40 Billion / yr",
+                economic: "Levies annual mark-to-market taxes on unrealized capital gains in publicly traded securities for ultra-high-net-worth individual portfolios.",
+                feasibility: "High administrative complexity. Requires annual valuation protocols and refund/deduction mechanisms during market downturns.",
+                socioeconomic: "Prevents buy-borrow-die tax avoidance strategies. Concerns include potential market volatility, forced stock liquidations, and constitutional challenges under the 16th Amendment Direct Tax clause."
+            },
+            keep_tariffs: {
+                title: "5. Maintain 2026 Import Tariffs",
+                yield: 200,
+                tag: "+$200 Billion / yr",
+                economic: "Generates $200B annually in tariff duties across foreign goods, electronics, steel, and manufactured imports.",
+                feasibility: "Very high administrative feasibility; already implemented via U.S. Customs and Border Protection (CBP).",
+                socioeconomic: "Protects domestic manufacturing sectors, but acts as an indirect consumption tax on domestic consumers. Risks supply chain inflation and retaliatory foreign tariffs."
+            },
+            vat_tax: {
+                title: "6. Broad-Based 5% Federal VAT",
+                yield: 300,
+                tag: "+$300 Billion / yr",
+                economic: "Imposes a standard 5% national Value-Added Tax (VAT) collected at each stage of production and distribution, excluding basic necessities like groceries and healthcare.",
+                feasibility: "High long-term feasibility; widely utilized across developed nations, though requires establishing new federal sales tracking architecture.",
+                socioeconomic: "Highly stable and broad-based revenue stream. Broad exemptions for essential goods help mitigate the inherently regressive nature of consumption taxes."
+            },
+            top_bracket_50: {
+                title: "7. Increase Top Tax Bracket to 50%",
+                yield: 160,
+                tag: "+$160 Billion / yr",
+                economic: "Increases the marginal individual income tax rate on earnings above $609,350 from 37% to 50%. Auto-updates top bracket input to 50%.",
+                feasibility: "Very high feasibility using existing IRS marginal bracket infrastructure.",
+                socioeconomic: "Restores tax progressivity levels comparable to pre-1986 tax law. Critics contend it could disincentivize top executive capital allocation and encourage tax avoidance structures."
+            },
+            financial_transaction_tax: {
+                title: "8. 0.1% Financial Transaction Tax",
+                yield: 80,
+                tag: "+$80 Billion / yr",
+                economic: "Levies a modest 0.1% fee on trades of equities, bonds, and derivatives to generate revenue while curtailing speculative high-frequency trading.",
+                feasibility: "High administrative feasibility; easily collected via clearing houses and electronic trading platforms.",
+                socioeconomic: "Mainly affects institutional trading firms and high-volume investors. Critics warn it could lower market liquidity and impact retail retirement portfolio returns."
+            },
+            carbon_fee: {
+                title: "9. National Carbon Fee ($50/ton)",
+                yield: 150,
+                tag: "+$150 Billion / yr",
+                economic: "Imposes a $50 per metric ton tax on the carbon content of fossil fuels at the point of extraction or import.",
+                feasibility: "High feasibility; monitored at the upstream fuel production, refinery, and pipeline level.",
+                socioeconomic: "Provides a market-based incentive to reduce emissions and accelerate green energy infrastructure. May increase consumer utility and transport costs unless paired with rebate dividends."
+            }
+        };
 
         // BASELINE U.S. FEDERAL BUDGET DATA (FY 2026)
-        const BASE_DEBT = 38500.0; // $38.5 Trillion in Billions
-        const BASE_INTEREST_RATE = 3.5; // 3.5%
+        const BASE_DEBT = 38500.0;
+        const BASE_INTEREST_RATE = 3.5;
         
-        // Baseline Revenue Sources ($ Billions)
         const BASE_REVENUE_SOURCES = {
             incomeTax: { name: "Individual Income Tax", value: 2700.0, icon: "fa-user-large", color: "#38bdf8" },
             payrollTax: { name: "Payroll Tax (SS & Medicare)", value: 1750.0, icon: "fa-users", color: "#10b981" },
@@ -907,7 +913,6 @@ const REVENUE_POLICY_DETAILS = {
             exciseTax: { name: "Excise & Luxury Taxes", value: 200.0, icon: "fa-receipt", color: "#f43f5e" }
         };
 
-        // Baseline 7 Income Tax Brackets
         const BASE_INCOME_BRACKETS = [
             { id: 1, rate: 10.0, threshold: 0, shareWeight: 0.08, name: "10% Bracket ($0 - $11.6k)" },
             { id: 2, rate: 12.0, threshold: 11600, shareWeight: 0.18, name: "12% Bracket ($11.6k - $47.1k)" },
@@ -918,7 +923,6 @@ const REVENUE_POLICY_DETAILS = {
             { id: 7, rate: 37.0, threshold: 609350, shareWeight: 0.08, name: "37% Bracket (Over $609.3k)" }
         ];
 
-        // Baseline Spending Agencies ($ Billions) - Total Non-Interest = $6,052.5B
         const BASE_AGENCIES = {
             socialSecurity: { name: "Social Security Administration", value: 1550.0, category: "Mandatory", icon: "fa-hand-holding-heart", color: "#10b981", desc: "Retirement, disability and survivor benefits" },
             medicareHhs: { name: "HHS (Medicare & Medicaid)", value: 1700.0, category: "Mandatory", icon: "fa-hospital-user", color: "#06b6d4", desc: "Healthcare coverage for seniors and low-income families" },
@@ -935,10 +939,9 @@ const REVENUE_POLICY_DETAILS = {
             otherAgencies: { name: "Other Agencies & Mandatory", value: 817.5, category: "Mandatory", icon: "fa-boxes-stacked", color: "#94a3b8", desc: "Judicial branch, postal service, federal pensions, interior" }
         };
 
-        // DYNAMIC APP STATE
         let currentState = {
             brackets: JSON.parse(JSON.stringify(BASE_INCOME_BRACKETS)),
-            incomeMultiplier: 100, // %
+            incomeMultiplier: 100,
             payrollRate: 15.3,
             corporateRate: 21.0,
             tariffRate: 3.0,
@@ -949,21 +952,18 @@ const REVENUE_POLICY_DETAILS = {
             agencies: JSON.parse(JSON.stringify(BASE_AGENCIES)),
             interestRate: 3.5,
             
-            // Calculated dynamic values
             totalRevenue: 5600.0,
             agencySpending: 6052.5,
             netInterest: 1347.5,
             totalSpending: 7400.0,
             netBalance: -1800.0,
             
-            // Chart references
             revenueChart: null,
             spendingChart: null,
             projectionChart: null,
             surplusChart: null
         };
 
-        // Render 9 Policy Panels to the bottom section
         function renderPolicyPanels() {
             const container = document.getElementById('policyPanelsContainer');
             if (!container) return;
@@ -1002,9 +1002,7 @@ const REVENUE_POLICY_DETAILS = {
             });
         }
 
-        // Recalculate complete federal budget figures
         function recalculateBudget() {
-            // 1. Calculate Income Tax Revenue
             let baseIncomeTax = BASE_REVENUE_SOURCES.incomeTax.value;
             let bracketWeightedFactor = 0;
             
@@ -1015,11 +1013,8 @@ const REVENUE_POLICY_DETAILS = {
             });
 
             let incomeTaxRev = baseIncomeTax * bracketWeightedFactor * (currentState.incomeMultiplier / 100);
-
-            // 2. Calculate Other Revenues
             let payrollRev = BASE_REVENUE_SOURCES.payrollTax.value * (currentState.payrollRate / 15.3);
             
-            // Corporate tax elasticity factor
             let corpRatio = currentState.corporateRate / 21.0;
             let corpElasticity = corpRatio > 1.5 ? 0.95 : 1.0;
             let corporateRev = BASE_REVENUE_SOURCES.corporateTax.value * corpRatio * corpElasticity;
@@ -1041,21 +1036,16 @@ const REVENUE_POLICY_DETAILS = {
 
             currentState.totalRevenue = Object.values(currentState.currentRevenueBreakdown).reduce((a, b) => a + b, 0);
 
-            // 3. Calculate Spending
             let totalAgencySpend = 0;
             for (let key in currentState.agencies) {
                 totalAgencySpend += currentState.agencies[key].value;
             }
             currentState.agencySpending = totalAgencySpend;
 
-            // 4. Calculate Net Interest on Debt (Year 0)
             currentState.netInterest = BASE_DEBT * (currentState.interestRate / 100);
-
-            // 5. Total Spending & Net Deficit / Surplus
             currentState.totalSpending = currentState.agencySpending + currentState.netInterest;
             currentState.netBalance = currentState.totalRevenue - currentState.totalSpending;
 
-            // Update UI Views
             updateKPIs();
             updateRevenueView();
             updateSpendingView();
@@ -1063,19 +1053,16 @@ const REVENUE_POLICY_DETAILS = {
         }
 
         function updateKPIs() {
-            // Revenue KPI
             document.getElementById('kpiRevenue').textContent = formatTrillion(currentState.totalRevenue);
             let revDelta = currentState.totalRevenue - 5600.0;
             document.getElementById('kpiRevDelta').textContent = formatDeltaBillions(revDelta);
             document.getElementById('kpiRevDelta').className = `text-xs font-semibold font-mono-num ${revDelta >= 0 ? 'text-emerald-400' : 'text-rose-400'}`;
 
-            // Spending KPI
             document.getElementById('kpiSpending').textContent = formatTrillion(currentState.totalSpending);
             let spendDelta = currentState.totalSpending - 7400.0;
             document.getElementById('kpiSpendDelta').textContent = formatDeltaBillions(spendDelta);
             document.getElementById('kpiSpendDelta').className = `text-xs font-semibold font-mono-num ${spendDelta <= 0 ? 'text-emerald-400' : 'text-rose-400'}`;
 
-            // Net Balance KPI
             let balCard = document.getElementById('kpiBalanceCard');
             let balVal = document.getElementById('kpiBalance');
             let balLabel = document.getElementById('kpiBalanceLabel');
@@ -1097,17 +1084,14 @@ const REVENUE_POLICY_DETAILS = {
                 balIcon.className = "fa-solid fa-triangle-exclamation text-rose-400";
             }
 
-            // Net Interest KPI
             document.getElementById('kpiInterest').textContent = `${formatTrillion(currentState.netInterest)} Int.`;
             document.getElementById('kpiInterestRateDisplay').textContent = `${currentState.interestRate.toFixed(1)}%`;
 
-            // Overview Net Interest Summary
             document.getElementById('overviewNetInterest').textContent = `$${currentState.netInterest.toFixed(1)} Billion`;
             let interestShare = (currentState.netInterest / currentState.totalSpending) * 100;
             document.getElementById('overviewInterestShare').textContent = `${interestShare.toFixed(1)}%`;
             document.getElementById('interestShareBar').style.width = `${Math.min(interestShare, 100)}%`;
 
-            // Update Insights Text
             if (currentState.netBalance >= 0) {
                 document.getElementById('insightBox3').className = "bg-slate-950/60 border border-emerald-800 rounded-lg p-3";
                 document.getElementById('insightInterestEffect').innerHTML = `<span class="text-emerald-400 font-semibold">Budget Surplus achieved!</span> Debt will decline annually, rapidly reducing net interest burdens.`;
@@ -1125,10 +1109,8 @@ const REVENUE_POLICY_DETAILS = {
             deltaElem.textContent = `${formatDeltaBillions(delta)} (${pct >= 0 ? '+' : ''}${pct.toFixed(1)}%)`;
             deltaElem.className = `text-sm font-bold font-mono-num ${delta >= 0 ? 'text-emerald-400' : 'text-rose-400'}`;
 
-            // Multiplier text
             document.getElementById('incomeTaxMultiplierVal').textContent = `${currentState.incomeMultiplier}%`;
 
-            // Render Brackets Table
             let tbody = document.getElementById('bracketsTableBody');
             tbody.innerHTML = '';
 
@@ -1154,7 +1136,6 @@ const REVENUE_POLICY_DETAILS = {
                 tbody.appendChild(tr);
             });
 
-            // Update Sliders Text Display
             document.getElementById('val-payrollTax').textContent = `${currentState.payrollRate.toFixed(1)}%`;
             document.getElementById('val-corporateTax').textContent = `${currentState.corporateRate.toFixed(1)}%`;
             document.getElementById('val-tariffs').textContent = `${currentState.tariffRate.toFixed(1)}%`;
@@ -1162,7 +1143,6 @@ const REVENUE_POLICY_DETAILS = {
             document.getElementById('val-estateTax').textContent = `${currentState.estateRate.toFixed(1)}%`;
             document.getElementById('val-exciseTax').textContent = `${currentState.exciseMultiplier.toFixed(1)}x`;
 
-            // Update Overview Breakdown List
             let revList = document.getElementById('overviewRevenueList');
             revList.innerHTML = '';
             for (let key in BASE_REVENUE_SOURCES) {
@@ -1229,7 +1209,6 @@ const REVENUE_POLICY_DETAILS = {
             document.getElementById('interestRateVal').textContent = `${currentState.interestRate.toFixed(1)}%`;
             document.getElementById('netInterestDisplay').textContent = `$${currentState.netInterest.toFixed(1)} Billion`;
 
-            // Render Agency Sliders Grid
             let container = document.getElementById('agencyListContainer');
             container.innerHTML = '';
 
@@ -1272,11 +1251,9 @@ const REVENUE_POLICY_DETAILS = {
                 container.appendChild(card);
             }
 
-            // Update Overview Spending Quick List
             let spendList = document.getElementById('overviewSpendingList');
             spendList.innerHTML = '';
 
-            // Add Net Interest item first
             let netIntShare = ((currentState.netInterest / currentState.totalSpending) * 100).toFixed(1);
             let intDiv = document.createElement('div');
             intDiv.className = "flex items-center justify-between py-1.5 font-semibold text-amber-300";
@@ -1292,7 +1269,6 @@ const REVENUE_POLICY_DETAILS = {
             `;
             spendList.appendChild(intDiv);
 
-            // Add Top Agencies
             for (let key in currentState.agencies) {
                 let ag = currentState.agencies[key];
                 let share = ((ag.value / currentState.totalSpending) * 100).toFixed(1);
@@ -1346,7 +1322,7 @@ const REVENUE_POLICY_DETAILS = {
             let yearlyProjections = [];
             let baselineProjections = [];
 
-            let currentDebt = BASE_DEBT; // $38,500B
+            let currentDebt = BASE_DEBT;
             let baselineDebt = BASE_DEBT;
 
             let nonInterestSpending = currentState.agencySpending;
@@ -1358,7 +1334,6 @@ const REVENUE_POLICY_DETAILS = {
             let totalInterestPaidCustom = 0;
             let totalInterestPaidBaseline = 0;
 
-            // Baseline assumptions: 3% baseline growth per year in deficit
             let baseRevenue = 5600.0;
             let baseNonInterestSpend = 6052.5;
 
@@ -1369,7 +1344,6 @@ const REVENUE_POLICY_DETAILS = {
                     continue;
                 }
 
-                // 1. Custom Trajectory Calculation
                 let interestPayment = Math.max(0, currentDebt * r);
                 totalInterestPaidCustom += interestPayment;
 
@@ -1380,14 +1354,13 @@ const REVENUE_POLICY_DETAILS = {
                     currentDebt = currentDebt - netSurplusYear;
                     if (currentDebt <= 0 && payoffYear === null) {
                         payoffYear = t;
-                        // Calculate exact month
                         let prevDebt = currentDebt + netSurplusYear;
                         let monthlyPayoff = netSurplusYear / 12;
                         payoffMonth = Math.ceil(prevDebt / monthlyPayoff);
-                        currentDebt = 0; // Debt paid off!
+                        currentDebt = 0;
                     }
                 } else {
-                    currentDebt = 0; // Surplus builds national wealth or reserve
+                    currentDebt = 0;
                 }
 
                 yearlyProjections.push({
@@ -1397,7 +1370,6 @@ const REVENUE_POLICY_DETAILS = {
                     interest: interestPayment
                 });
 
-                // 2. Baseline Trajectory Calculation
                 let baseInterest = baselineDebt * 0.035;
                 totalInterestPaidBaseline += baseInterest;
                 let baseDeficit = (baseNonInterestSpend * Math.pow(1.02, t)) + baseInterest - (baseRevenue * Math.pow(1.02, t));
@@ -1410,7 +1382,6 @@ const REVENUE_POLICY_DETAILS = {
                 });
             }
 
-            // Update Projection KPIs & Cards
             let payoffTimeElem = document.getElementById('projPayoffTime');
             let payoffDateElem = document.getElementById('projPayoffDate');
             let payoffBadge = document.getElementById('projPayoffBadge');
@@ -1442,7 +1413,6 @@ const REVENUE_POLICY_DETAILS = {
                 document.getElementById('kpiPayoffSubtext').textContent = "Requires annual budget surplus";
             }
 
-            // 10 & 30 Year Debt Cards
             let debt10 = yearlyProjections[10].debt;
             let debt30 = yearlyProjections[30].debt;
 
@@ -1456,7 +1426,6 @@ const REVENUE_POLICY_DETAILS = {
             let delta30 = debt30 - BASE_DEBT;
             document.getElementById('projDebt30YrDelta').textContent = `${delta30 >= 0 ? '+' : ''}${formatTrillion(delta30)} from current`;
 
-            // Interest Saved Card
             let interestSaved = Math.max(0, totalInterestPaidBaseline - totalInterestPaidCustom);
             document.getElementById('projInterestSaved').textContent = formatTrillion(interestSaved);
 
@@ -1550,10 +1519,9 @@ const REVENUE_POLICY_DETAILS = {
 
         function renderProjectionCharts(customProjections, baselineProjections) {
             let labels = customProjections.map(p => p.year);
-            let customDebtData = customProjections.map(p => p.debt / 1000); // In Trillions
+            let customDebtData = customProjections.map(p => p.debt / 1000);
             let baselineDebtData = baselineProjections.map(p => p.debt / 1000);
 
-            // Chart 1: Debt Trajectory
             let ctx1 = document.getElementById('projectionChart').getContext('2d');
             if (currentState.projectionChart) currentState.projectionChart.destroy();
 
@@ -1610,7 +1578,6 @@ const REVENUE_POLICY_DETAILS = {
                 }
             });
 
-            // Chart 2: Annual Surplus / Deficit Trajectory
             let ctx2 = document.getElementById('surplusChart').getContext('2d');
             if (currentState.surplusChart) currentState.surplusChart.destroy();
 
@@ -1669,13 +1636,11 @@ const REVENUE_POLICY_DETAILS = {
                 showToast("Reset budget to baseline FY2026 status!");
             }
             else if (presetKey === 'balanced') {
-                // Balanced budget preset
-                currentState.incomeMultiplier = 110; // +10% revenue
+                currentState.incomeMultiplier = 110;
                 currentState.corporateRate = 25.0;
                 currentState.tariffRate = 8.0;
                 currentState.capitalGainsRate = 24.0;
 
-                // Adjust spending downwards slightly across agencies
                 for (let key in currentState.agencies) {
                     if (key !== 'socialSecurity' && key !== 'medicareHhs') {
                         currentState.agencies[key].value = Math.round(BASE_AGENCIES[key].value * 0.88 * 10) / 10;
@@ -1684,8 +1649,7 @@ const REVENUE_POLICY_DETAILS = {
                 showToast("Applied Balanced Budget Policy Scenario!");
             }
             else if (presetKey === 'debt15') {
-                // 15-Year Debt Payoff
-                currentState.incomeMultiplier = 135; // Significant tax reform
+                currentState.incomeMultiplier = 135;
                 currentState.corporateRate = 28.0;
                 currentState.payrollRate = 17.0;
                 currentState.capitalGainsRate = 28.0;
@@ -1698,7 +1662,6 @@ const REVENUE_POLICY_DETAILS = {
                 showToast("Applied 15-Year Debt Elimination Plan!");
             }
             else if (presetKey === 'lowtax') {
-                // Low Tax Scenario
                 currentState.incomeMultiplier = 85;
                 currentState.corporateRate = 15.0;
                 currentState.capitalGainsRate = 15.0;
@@ -1710,7 +1673,6 @@ const REVENUE_POLICY_DETAILS = {
                 showToast("Applied Low-Tax & Fiscal Restraint Preset!");
             }
             else if (presetKey === 'social') {
-                // Social Safety Net & Science
                 currentState.incomeMultiplier = 125;
                 currentState.corporateRate = 30.0;
                 currentState.capitalGainsRate = 32.0;
@@ -1724,7 +1686,6 @@ const REVENUE_POLICY_DETAILS = {
                 showToast("Applied Social Safety Net & Science Expansion!");
             }
 
-            // Sync range inputs with state
             document.getElementById('incomeTaxMultiplier').value = currentState.incomeMultiplier;
             document.getElementById('slider-payrollTax').value = currentState.payrollRate;
             document.getElementById('slider-corporateTax').value = currentState.corporateRate;
@@ -1819,7 +1780,6 @@ Generated via US Federal Budget & Debt Elimination Engine
             showToast("Summary copied to clipboard!");
         }
 
-        // FORMATTING HELPERS
         function formatTrillion(valInBillions) {
             let t = valInBillions / 1000;
             return `$${t.toFixed(2)} T`;
@@ -1832,7 +1792,6 @@ Generated via US Federal Budget & Debt Elimination Engine
 
         let simulatedDebt = 38500000000000;
         function updateDebtClockTicker() {
-            // Deficit per second = annual deficit / (365 * 86400)
             let annualDeficitInDollars = Math.abs(currentState.netBalance) * 1000000000;
             let perSecond = annualDeficitInDollars / 31536000;
 
@@ -1854,6 +1813,54 @@ Generated via US Federal Budget & Debt Elimination Engine
             recalculateBudget();
             renderPolicyPanels();
             setInterval(updateDebtClockTicker, 100);
+
+            // Infographic Overlay Logic
+            const infoThumb = document.getElementById('info-thumb');
+            const infoOverlay = document.getElementById('info-overlay');
+            const infoStatusText = document.getElementById('info-status-text');
+            let isInfoLocked = false;
+
+            function showInfo() {
+                infoOverlay.classList.remove('hidden');
+                setTimeout(() => {
+                    infoOverlay.classList.remove('opacity-0');
+                    infoOverlay.classList.remove('pointer-events-none');
+                }, 10);
+            }
+
+            function hideInfo() {
+                if (isInfoLocked) return;
+                infoOverlay.classList.add('opacity-0');
+                infoOverlay.classList.add('pointer-events-none');
+                setTimeout(() => {
+                    if (!isInfoLocked) infoOverlay.classList.add('hidden');
+                }, 300);
+            }
+
+            if (infoThumb && infoOverlay) {
+                infoThumb.addEventListener('mouseenter', showInfo);
+                infoThumb.addEventListener('mouseleave', hideInfo);
+
+                infoThumb.addEventListener('click', (e) => {
+                    isInfoLocked = !isInfoLocked;
+                    if (isInfoLocked) {
+                        infoStatusText.innerText = "Locked (Click anywhere to close)";
+                        infoStatusText.previousElementSibling.className = "fa-solid fa-lock text-emerald-400";
+                        showInfo();
+                    } else {
+                        infoStatusText.innerText = "Hovering (Click to Lock)";
+                        infoStatusText.previousElementSibling.className = "fa-solid fa-circle-info text-sky-400";
+                        hideInfo();
+                    }
+                });
+
+                infoOverlay.addEventListener('click', () => {
+                    isInfoLocked = false;
+                    infoStatusText.innerText = "Hovering (Click to Lock)";
+                    infoStatusText.previousElementSibling.className = "fa-solid fa-circle-info text-sky-400";
+                    hideInfo();
+                });
+            }
 
             // Close preset dropdown on outside click
             window.addEventListener('click', function(e) {

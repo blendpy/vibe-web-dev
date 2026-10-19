@@ -634,12 +634,20 @@ function setupEventListeners() {
   if (tabBtnLayers) tabBtnLayers.addEventListener('click', () => switchSidebarTab('layers'));
   // if (tabBtnEarth) tabBtnEarth.addEventListener('click', () => switchSidebarTab('earth'));
   // Switch sidebar panel to Earth AND switch the 3D globe to Earth
+  
+  // Switch sidebar panel to Earth AND switch the 3D globe to Earth
   if (tabBtnEarth) tabBtnEarth.addEventListener('click', () => {
     switchSidebarTab('earth');
-    if (typeof setPlanet === 'function') {
-      setPlanet('earth');
+    // If in 2D Solar System mode, wake the 3D globe targeting Earth
+    if (typeof isGlobeActive !== 'undefined' && !isGlobeActive) {
+      if (typeof wakeGlobe === 'function') wakeGlobe('earth');
+    } 
+    // If already in 3D mode, just transition the camera to Earth
+    else {
+      if (typeof setPlanet === 'function') setPlanet('earth');
     }
   });
+
 
   if (tabBtnPresets) tabBtnPresets.addEventListener('click', () => switchSidebarTab('presets'));
 

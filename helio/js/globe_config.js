@@ -3,10 +3,8 @@
 // =============================================================
 
 const TEXTURE_URLS_FULL = {
-  blueMarble: 'img/earth-blue-marble.jpg',  // 2k
-  dayOLD:'img/earth-day.jpg',
-  dayNEW:   'img/solarsystemscope 8k earth-day.jpg',
-  day:   'img/solarsystemscope 8k earth-day-lightblue.jpg',
+  blueMarble: 'img/earth-blue-marble.jpg',  //=2k
+  day:   'img/earth-day-solarsystemscope-8k-light-blue.jpg',  //=8K
   dark:  'img/earth-dark.png',
   night: 'img/earth-night.jpg',
   water: 'img/earth-water.png'

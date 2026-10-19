@@ -270,7 +270,7 @@
 
 
   <!-- ================= LEFT DOCKED TASKBAR (3D Layers & Presets) ================= -->
-<div id="taskbar-wrapper" class="hidden fixed top-0 left-0 h-full z-50 flex pointer-events-auto transition-transform duration-300 ease-in-out -translate-x-[calc(100%-14px)] group hover:translate-x-0">
+  <div id="taskbar-wrapper" class="fixed top-0 left-0 h-full z-50 flex pointer-events-auto transition-transform duration-300 ease-in-out -translate-x-[calc(100%-14px)] group hover:translate-x-0">
     <aside id="taskbar-panel" class="w-80 h-full bg-slate-950/90 backdrop-blur-xl border-r border-slate-800/80 shadow-2xl flex flex-col p-4 overflow-y-auto no-scrollbar space-y-4">
       <div class="flex items-center justify-between pb-3 border-b border-slate-800/80 shrink-0">
         <div class="flex items-center gap-2">
@@ -300,14 +300,6 @@
 
       <!-- TAB 1: LAYERS -->
       <div id="tab-panel-layers" class="space-y-5 flex-1 overflow-y-auto pr-1">
-        <div>
-          <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">Base Earth Texture</label>
-          <div class="grid grid-cols-2 gap-2">
-            <button id="btn-tex-day" class="glass-button active p-2 rounded-xl text-center flex flex-col items-center gap-1"><span class="text-xs font-medium text-slate-200">Natural</span><span class="text-[10px] text-slate-400">Geography</span></button>
-            <button id="btn-tex-marble" class="glass-button p-2 rounded-xl text-center flex flex-col items-center gap-1"><span class="text-xs font-medium text-slate-200">Blue Marble</span><span class="text-[10px] text-slate-400">NASA High-Res</span></button>
-          </div>
-        </div>
-
         <div>
           <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">Layer & Shading Controls</label>
           <div class="space-y-2">
@@ -362,8 +354,15 @@
         </div>
       </div>
 
-      <!-- TAB 2: EARTH CARTOGRAPHY -->
+      <!-- TAB 2: EARTH CARTOGRAPHY & TEXTURES -->
       <div id="tab-panel-earth" class="space-y-5 hidden flex-1 overflow-y-auto pr-1">
+        <div>
+          <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">Base Earth Texture</label>
+          <div class="grid grid-cols-2 gap-2 mb-4">
+            <button id="btn-tex-day" class="glass-button active p-2 rounded-xl text-center flex flex-col items-center gap-1"><span class="text-xs font-medium text-slate-200">Natural</span><span class="text-[10px] text-slate-400">Geography</span></button>
+            <button id="btn-tex-marble" class="glass-button p-2 rounded-xl text-center flex flex-col items-center gap-1"><span class="text-xs font-medium text-slate-200">Blue Marble</span><span class="text-[10px] text-slate-400">NASA High-Res</span></button>
+          </div>
+        </div>
         <div>
           <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">Earth Cartography</label>
           <div class="space-y-2">
@@ -386,7 +385,6 @@
           </div>
         </div>
       </div>
-
       <!-- TAB 2: PRESETS -->
       <div id="tab-panel-presets" class="space-y-5 hidden flex-1 overflow-y-auto pr-1">
         <div>

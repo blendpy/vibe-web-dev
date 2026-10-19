@@ -259,7 +259,7 @@ function updateLandmarksVisibility() {
     }
   } 
   // 2. Moon Landing Sites
-  else if (currentPlanet === 'Moon') {
+  else if (currentPlanet === 'moon') {
     if (landmarksMeshGroup) landmarksMeshGroup.visible = false;
     if (typeof marsLandersGroup !== 'undefined' && marsLandersGroup) marsLandersGroup.visible = false;
     if (typeof venusLandersGroup !== 'undefined' && venusLandersGroup) venusLandersGroup.visible = false;
@@ -275,7 +275,7 @@ function updateLandmarksVisibility() {
     }
   }
   // 3. Mars Landing Sites
-  else if (currentPlanet === 'Mars') {
+  else if (currentPlanet === 'mars') {
     if (landmarksMeshGroup) landmarksMeshGroup.visible = false;
     if (typeof lunarLandersGroup !== 'undefined' && lunarLandersGroup) lunarLandersGroup.visible = false;
     if (typeof venusLandersGroup !== 'undefined' && venusLandersGroup) venusLandersGroup.visible = false;
@@ -291,7 +291,7 @@ function updateLandmarksVisibility() {
     }
   }
   // 4. Venus Landing Sites (Venera & Vega)
-  else if (currentPlanet === 'Venus') {
+  else if (currentPlanet === 'venus') {
     if (landmarksMeshGroup) landmarksMeshGroup.visible = false;
     if (typeof lunarLandersGroup !== 'undefined' && lunarLandersGroup) lunarLandersGroup.visible = false;
     if (typeof marsLandersGroup !== 'undefined' && marsLandersGroup) marsLandersGroup.visible = false;
@@ -597,7 +597,7 @@ function handleCountryHover(event) {
     }
 
     // --- LUNAR LANDING SITES HOVER (Moon) ---
-    if (currentPlanet === 'Moon' && typeof findNearbyLunarLander === 'function' && isLandingSitesChecked) {
+    if (currentPlanet === 'moon' && typeof findNearbyLunarLander === 'function' && isLandingSitesChecked) {
       const nearbyLander = findNearbyLunarLander(lat, lng, 3.5);
       if (nearbyLander) {
         if (hoveredFeature) { hoveredFeature = null; drawCountryHighlight(null); }
@@ -622,7 +622,7 @@ function handleCountryHover(event) {
     // --- EARTH PIN HOVER (When viewing Moon, Mars, Venus, etc.) ---
     if (!isEarth && earthPinGroup && earthPinGroup.visible && celestialActive) {
       let eLat = 0, eLon = 0;
-      if (currentPlanet === 'Moon') {
+      if (currentPlanet === 'moon') {
         const nowMs = currentSimTime.getTime();
         const jd2000 = Date.UTC(2000, 0, 1, 12, 0, 0);
         const d = (nowMs - jd2000) / 86400000;
@@ -658,7 +658,7 @@ function handleCountryHover(event) {
     }
 
     // --- MARS LANDING SITES HOVER (Mars) ---
-    if (currentPlanet === 'Mars' && typeof findNearbyMarsLander === 'function' && isLandingSitesChecked) {
+    if (currentPlanet === 'mars' && typeof findNearbyMarsLander === 'function' && isLandingSitesChecked) {
       const nearbyLander = findNearbyMarsLander(lat, lng, 3.5);
       if (nearbyLander) {
         if (hoveredFeature) { hoveredFeature = null; drawCountryHighlight(null); }
@@ -681,7 +681,7 @@ function handleCountryHover(event) {
     }
 
     // --- VENUS LANDING SITES HOVER (Venus) ---
-    if (currentPlanet === 'Venus' && typeof findNearbyVenusLander === 'function' && isLandingSitesChecked) {
+    if (currentPlanet === 'venus' && typeof findNearbyVenusLander === 'function' && isLandingSitesChecked) {
       const nearbyLander = findNearbyVenusLander(lat, lng, 3.5);
       if (nearbyLander) {
         if (hoveredFeature) { hoveredFeature = null; drawCountryHighlight(null); }
