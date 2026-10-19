@@ -3,11 +3,11 @@
 // =============================================================
 
 const TEXTURE_URLS_FULL = {
-  blueMarble: 'img/earth-blue-marble.jpg',  //=2k
-  day:   'img/earth-day-solarsystemscope-8k-light-blue.jpg',  //=8K
-  dark:  'img/earth-dark.png',
-  night: 'img/earth-night.jpg',
-  water: 'img/earth-water.png'
+  blueMarble: 'texture/planets/earth-blue-marble.jpg',  //=2k
+  day:   'texture/planets/earth-day-light-blue.jpg',  //=8K
+  dark:  'texture/planets/earth-dark.png',
+  night: 'texture/planets/earth-night.jpg',
+  water: 'texture/planets/earth-water.png'
 };
 
 const TEXTURE_URLS_FALLBACK = {
