@@ -35,7 +35,7 @@
         ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
     </style>
 </head>
-<body class="bg-slate-50 text-slate-800 antialiased font-sans min-h-screen flex flex-col">
+<body class="bg-slate-50 text-slate-800 antialiased font-sans min-h-screen flex flex-col relative z-10">
 
     <!-- Header -->
     <header class="bg-slate-900 text-white sticky top-0 z-50 shadow-md">
@@ -46,21 +46,29 @@
                 </div>
                 <div>
                     <h1 class="text-lg font-bold tracking-tight">Social Security Strategy Engine</h1>
-<p class="text-xs text-red-400 font-medium">(AI Generated - Use with caution)</p>
+                    <p class="text-xs text-red-400 font-medium">(AI Generated - Use with caution)</p>
                     <p class="text-xs text-slate-400">Claiming Age, Breakeven Analysis & Lifetime Benefit Calculator</p>
                 </div>
             </div>
-            <div>
+            <div class="flex items-center space-x-2">
                 <button onclick="goBack()" id="backButton" class="hidden items-center space-x-2 bg-slate-800 hover:bg-slate-700 text-slate-200 px-3 py-2 rounded-lg text-sm font-medium transition-colors border border-slate-700 shadow-sm">
                     <i class="fa-solid fa-arrow-left"></i>
                     <span>Back</span>
+                </button>
+
+                <!-- Infographic Thumbnail Box -->
+                <button id="info-thumb" class="w-[73px] h-10 rounded-lg overflow-hidden border border-slate-700 hover:border-blue-500 transition shadow-sm focus:outline-none flex-shrink-0 relative group ml-1 bg-slate-800">
+                    <img src="infographics/US_Social_Security.jpg" class="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition" alt="Infographic Preview">
+                    <div class="absolute inset-0 bg-blue-500/20 opacity-0 group-hover:opacity-100 transition flex items-center justify-center">
+                        <i class="fa-solid fa-expand text-white text-xs drop-shadow"></i>
+                    </div>
                 </button>
             </div>
         </div>
     </header>
 
     <!-- Main Content -->
-    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-grow w-full space-y-8">
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-grow w-full space-y-8 relative z-10">
         
         <!-- Row 1: Controls & Interactive Chart -->
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
@@ -150,10 +158,10 @@
             <!-- Right Visualization Column -->
             <div class="lg:col-span-8">
                 <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm h-full flex flex-col">
-<h3 class="text-sm font-semibold text-slate-800 mb-4 flex items-center justify-between">
-    <span id="chartTitleText">Cumulative Lifetime Benefits by Claiming Age</span>
-    <span id="chartAgeRangeBadge" class="text-xs font-normal text-slate-500 bg-slate-100 px-2 py-1 rounded">Ages 62 – 85</span>
-</h3>
+                    <h3 class="text-sm font-semibold text-slate-800 mb-4 flex items-center justify-between">
+                        <span id="chartTitleText">Cumulative Lifetime Benefits by Claiming Age</span>
+                        <span id="chartAgeRangeBadge" class="text-xs font-normal text-slate-500 bg-slate-100 px-2 py-1 rounded">Ages 62 – 85</span>
+                    </h3>
                     <div class="w-full flex-grow relative min-h-[280px]">
                         <canvas id="ssChart"></canvas>
                     </div>
@@ -231,6 +239,15 @@
         </div>
 
     </main>
+
+    <!-- Infographic Full Screen Overlay -->
+    <div id="info-overlay" class="fixed top-[64px] left-0 w-full h-[calc(100vh-114px)] z-40 bg-slate-900/95 hidden flex-col items-center justify-center p-4 sm:p-8 backdrop-blur-md transition-opacity duration-300 opacity-0 cursor-pointer pointer-events-none">
+        <img src="infographics/US_Social_Security.jpg" class="max-w-full max-h-full object-contain rounded-xl shadow-2xl border border-slate-700" alt="Full Infographic">
+        <div class="absolute top-6 right-6 text-slate-200 text-sm bg-slate-800/80 px-4 py-2 rounded-full backdrop-blur flex items-center gap-2 border border-slate-700 shadow-lg">
+            <i class="fa-solid fa-circle-info text-blue-400"></i>
+            <span id="info-status-text">Hovering (Click to Lock)</span>
+        </div>
+    </div>
 
     <script>
         // Social Security Age & Benefit Multipliers relative to FRA (Age 67 = 100%)
@@ -616,6 +633,52 @@ function updateChart(pia, targetAge, useCola, householdMultiplier, useInvest) {
                     btn.classList.remove('hidden');
                     btn.classList.add('flex');
                 }
+            }
+
+            // Infographic Overlay Logic
+            const infoThumb = document.getElementById('info-thumb');
+            const infoOverlay = document.getElementById('info-overlay');
+            const infoStatusText = document.getElementById('info-status-text');
+            let isInfoLocked = false;
+
+            function showInfo() {
+                infoOverlay.classList.remove('hidden');
+                setTimeout(() => {
+                    infoOverlay.classList.remove('opacity-0', 'pointer-events-none');
+                }, 10);
+            }
+
+            function hideInfo() {
+                if (isInfoLocked) return;
+                infoOverlay.classList.add('opacity-0', 'pointer-events-none');
+                setTimeout(() => {
+                    if (!isInfoLocked) infoOverlay.classList.add('hidden');
+                }, 300);
+            }
+
+            if (infoThumb && infoOverlay) {
+                infoThumb.addEventListener('mouseenter', showInfo);
+                infoThumb.addEventListener('mouseleave', hideInfo);
+
+                infoThumb.addEventListener('click', (e) => {
+                    isInfoLocked = !isInfoLocked;
+                    if (isInfoLocked) {
+                        infoStatusText.innerText = "Locked (Click anywhere to close)";
+                        infoStatusText.previousElementSibling.className = "fa-solid fa-lock text-blue-400";
+                        showInfo();
+                    } else {
+                        infoStatusText.innerText = "Hovering (Click to Lock)";
+                        infoStatusText.previousElementSibling.className = "fa-solid fa-circle-info text-blue-400";
+                        hideInfo();
+                    }
+                });
+
+                infoOverlay.addEventListener('click', () => {
+                    isInfoLocked = false;
+                    infoStatusText.innerText = "Hovering (Click to Lock)";
+                    infoStatusText.previousElementSibling.className = "fa-solid fa-circle-info text-blue-400";
+                    hideInfo();
+                });
             }
         };
     </script>

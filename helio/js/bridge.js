@@ -93,7 +93,7 @@ const HeliosBridge = {
     if (typeof controls !== 'undefined' && controls) controls.enabled = false;
 
     document.getElementById('webgl-container')?.classList.add('hidden');
-    document.getElementById('taskbar-wrapper')?.classList.add('hidden');
+    // document.getElementById('taskbar-wrapper')?.classList.add('hidden');
     document.getElementById('observatory-canvas')?.classList.remove('hidden');
 
     // Release the hard-lock on the 2D tooltip

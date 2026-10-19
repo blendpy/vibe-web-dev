@@ -1123,10 +1123,41 @@ function updateConstellationVisibility(visible) {
       gmst = (diffHours / (dyn.solarDayHours || 24.0)) * 360;
     }
 
-    constellationsGroup.rotation.y = -gmst * (Math.PI / 180);
+    // --- NEW TILT LOGIC: Align North Star based on Planet's Actual Pole ---
+    // Right Ascension (RA) and Declination (Dec) of planetary north poles in degrees
+    const PLANET_POLES = {
+      mercury: { ra: 281.01, dec: 61.41 },
+      venus:   { ra: 272.76, dec: 67.16 },
+      earth:   { ra: 0.0,    dec: 90.0 }, 
+      moon:    { ra: 266.86, dec: 65.64 },
+      mars:    { ra: 317.68, dec: 52.88 },
+      jupiter: { ra: 268.05, dec: 64.49 },
+      saturn:  { ra: 40.58,  dec: 83.53 },
+      uranus:  { ra: 257.31, dec: -15.17 },
+      neptune: { ra: 299.36, dec: 42.95 },
+      pluto:   { ra: 132.99, dec: -6.16 }
+    };
+    
+    const pole = PLANET_POLES[pName] || { ra: 0, dec: 90 };
+    
+    // Find where the planet's North Pole sits on the standard celestial sphere
+    const poleVec = latLonToVector3(pole.dec, pole.ra, 1.0).normalize();
+    
+    // 1. Quaternion to tilt the sphere so that the pole coordinate aligns with the 3D world's Y-axis (North)
+    const tiltQuat = new THREE.Quaternion().setFromUnitVectors(poleVec, new THREE.Vector3(0, 1, 0));
+    
+    // 2. Quaternion for the daily rotation of the planet
+    const dailyRot = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), -gmst * (Math.PI / 180));
+    
+    // Combine rotations: Tilt the star sphere first, then spin it around the new local North pole
+    constellationsGroup.quaternion.copy(dailyRot).multiply(tiltQuat);
+
+    // Synchronize the procedural background starfield points to match the exact same rotation
+    if (typeof starfieldPoints !== 'undefined' && starfieldPoints) {
+        starfieldPoints.quaternion.copy(constellationsGroup.quaternion);
+    }
   }
 }
-
 window.initConstellations = initConstellations;
 window.updateConstellationVisibility = updateConstellationVisibility;
 
@@ -1815,11 +1846,11 @@ function updateSunPosition() {
     }
   }
 
-  if (starfieldPoints) {
-    const siderealDayMs = 86164090.5;
-    const starAngle = ((currentSimTime.getTime() % siderealDayMs) / siderealDayMs) * Math.PI * 2;
-    starfieldPoints.rotation.y = -starAngle;
-  }
+  //if (starfieldPoints) {   // handled in: updateConstellationVisibility
+  //  const siderealDayMs = 86164090.5;
+  //  const starAngle = ((currentSimTime.getTime() % siderealDayMs) / siderealDayMs) * Math.PI * 2;
+  //  starfieldPoints.rotation.y = -starAngle;
+  //}
 
   if (isMoon && earthSkyMesh && earthSkyMaterial) {
     const nowMs = currentSimTime.getTime();
@@ -1990,6 +2021,20 @@ function initFromUrlParams() {
   if (targetTime && !isNaN(targetTime.getTime())) {
     currentSimTime = targetTime;
     isRealtimeSync = false; 
+
+    // --- NEW: Force the global engines to use the URL time! ---
+    if (typeof state !== 'undefined') {
+      state.epochMs = currentSimTime.getTime();
+    }
+    if (window.timeController) {
+      window.timeController.currentDate = currentSimTime;
+      window.timeController.isLiveSync = false;
+      if (typeof window.timeController.updateUI === 'function') {
+        window.timeController.updateUI(true);
+      }
+    }
+    // -----------------------------------------------------------
+
     if (typeof updateRealtimeSyncUI === 'function') updateRealtimeSyncUI();
     if (typeof updateHeliosClock === 'function') updateHeliosClock(currentSimTime);
     if (typeof updateSunPosition === 'function') updateSunPosition();
@@ -2007,8 +2052,18 @@ function initFromUrlParams() {
     });
   }
 
-  if (targetName && typeof setPlanet === 'function') {
-    setPlanet(targetName, true);
+  // WAKE THE 3D GLOBE INSTEAD OF JUST SETTING THE PLANET
+  if (targetName) {
+    // --- NEW: Sync state once on load to prevent the 2-click bug ---
+    if (typeof HeliosBridge !== 'undefined') {
+      HeliosBridge.mode = 'INSPECTOR_VIEW';
+    }
+    
+    if (typeof wakeGlobe === 'function') {
+      wakeGlobe(targetName);
+    } else if (typeof setPlanet === 'function') {
+      setPlanet(targetName, true);
+    }
   }
 }
 
@@ -2089,9 +2144,24 @@ window.wakeGlobe = function(targetPlanet) {
   const container = document.getElementById('webgl-container');
   if (container) container.classList.remove('hidden');
 
+  // --- NEW: DISABLE 2D SOLAR SYSTEM HOVERS ---
+  const obsCanvas = document.getElementById('observatory-canvas');
+  if (obsCanvas) obsCanvas.style.pointerEvents = 'none';
+  const orbitHud = document.getElementById('orbit-hover-hud');
+  if (orbitHud) orbitHud.style.setProperty('display', 'none', 'important');
+
   if (controls) controls.enabled = true;
   lastFrameTime = performance.now();
   setPlanet(targetPlanet, true);
+
+  // Sync View Toggle Button Text
+  const btnViewToggle = document.getElementById('btn-view-toggle');
+  if (btnViewToggle) {
+    btnViewToggle.innerHTML = '<i class="fa-solid fa-arrow-left"></i> Enter Solar System View';
+    btnViewToggle.classList.replace('bg-blue-600', 'bg-slate-700');
+    btnViewToggle.classList.replace('hover:bg-blue-500', 'hover:bg-slate-600');
+    btnViewToggle.classList.replace('border-blue-400/50', 'border-slate-500/50');
+  }
 
   if (globeAnimId) cancelAnimationFrame(globeAnimId);
   globeAnimId = requestAnimationFrame(globeLoop);
@@ -2109,10 +2179,28 @@ window.sleepGlobe = function() {
 
   const container = document.getElementById('webgl-container');
   if (container) container.classList.add('hidden');
+
+  // --- NEW: RESTORE 2D SOLAR SYSTEM HOVERS ---
+  const obsCanvas = document.getElementById('observatory-canvas');
+  if (obsCanvas) obsCanvas.style.pointerEvents = 'auto';
+  const orbitHud = document.getElementById('orbit-hover-hud');
+  if (orbitHud) orbitHud.style.removeProperty('display');
+
+  // Reset View Toggle Button Text
+  const btnViewToggle = document.getElementById('btn-view-toggle');
+  if (btnViewToggle) {
+    btnViewToggle.innerHTML = '<i class="fa-solid fa-cube"></i> Enter 3d Inspector';
+    btnViewToggle.classList.replace('bg-slate-700', 'bg-blue-600');
+    btnViewToggle.classList.replace('hover:bg-slate-600', 'hover:bg-blue-500');
+    btnViewToggle.classList.replace('border-slate-500/50', 'border-blue-400/50');
+  }
 };
+
+
 
 window.addEventListener('DOMContentLoaded', () => {
   initScene(); 
   if (typeof setupEventListeners === 'function') setupEventListeners(); 
   if (typeof setupHeliosNavEvents === 'function') setupHeliosNavEvents(); 
+  initFromUrlParams();
 });

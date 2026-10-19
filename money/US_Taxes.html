@@ -30,10 +30,10 @@
     </script>
 </head>
 <body class="bg-slate-900 text-slate-100 min-h-screen font-sans antialiased p-4 md:p-8">
-    <div class="max-w-7xl mx-auto space-y-6">
+    <div class="max-w-7xl mx-auto space-y-6 relative z-10">
         
         <!-- Header & Year Selector -->
-        <header class="flex flex-col md:flex-row md:items-center justify-between gap-1 bg-slate-800/60 py-1.5 px-5 rounded-xl border border-slate-700/60 backdrop-blur-sm">
+        <header class="flex flex-col md:flex-row md:items-center justify-between gap-2 bg-slate-800/60 py-1.5 px-5 rounded-xl border border-slate-700/60 backdrop-blur-sm relative z-50">
             <div>
                 <div class="flex items-center gap-3">
                     <h1 class="text-lg font-bold tracking-tight">Estimated US Federal Tax</h1>
@@ -55,11 +55,19 @@
                     Social Sec.
                 </a>
                 <button onclick="resetCalculator()" class="ml-1 text-xs font-medium text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 px-2.5 py-2 rounded-lg transition-all" title="Reset all inputs">Reset</button>
+
+                <!-- Infographic Thumbnail Box -->
+                <button id="info-thumb" class="w-[73px] h-10 rounded-lg overflow-hidden border border-slate-700 hover:border-brand-500 transition shadow-sm focus:outline-none flex-shrink-0 relative group ml-1 bg-slate-800">
+                    <img src="infographics/US_Taxes.jpg" class="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition" alt="Infographic Preview">
+                    <div class="absolute inset-0 bg-brand-500/20 opacity-0 group-hover:opacity-100 transition flex items-center justify-center">
+                        <i class="fa-solid fa-expand text-white text-xs drop-shadow"></i>
+                    </div>
+                </button>
             </div>
         </header>
 
         <!-- Main Content Area -->
-        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 relative z-10">
             
             <!-- Input Panel (Left Column) -->
             <main class="lg:col-span-7 space-y-6">
@@ -487,6 +495,16 @@
                 </div>
             </aside>
 
+        </div>
+    </div>
+
+
+    <!-- Infographic Full Screen Overlay      16px -->
+    <div id="info-overlay" class="fixed top-[114px] left-0 w-full h-[calc(100vh-114px)] z-40 bg-slate-900/95 hidden flex-col items-center justify-center p-4 sm:p-8 backdrop-blur-md transition-opacity duration-300 opacity-0 cursor-pointer pointer-events-none">
+        <img src="infographics/US_Taxes.jpg" class="max-w-full max-h-full object-contain rounded-xl shadow-2xl border border-slate-700" alt="Full Infographic">
+        <div class="absolute top-6 right-6 text-slate-200 text-sm bg-slate-800/80 px-4 py-2 rounded-full backdrop-blur flex items-center gap-2 border border-slate-700 shadow-lg">
+            <i class="fa-solid fa-circle-info text-brand-400"></i>
+            <span id="info-status-text">Hovering (Click to Lock)</span>
         </div>
     </div>
 
@@ -1243,8 +1261,7 @@
                     container.innerHTML += `
                         <div class="space-y-1">
                             <div class="flex justify-between text-[11px] font-medium text-slate-300">
-                                <span>${(b.rate * 100).toFixed(0)}% Bracket ($${b.min.toLocaleString()} - ${b.max === Infinity ? '∞' : '$' + b.max.toLocaleString()})</span>
-                                <span class="font-bold text-amber-400">$${bracketTax.toLocaleString(undefined, {maximumFractionDigits: 0})}</span>
+                                <span>${(b.rate * 100).toFixed(0)}\% Bracket ($${b.min.toLocaleString()} -${b.max === Infinity ? '∞' : '$' + b.max.toLocaleString()})</span> <span class="font-bold text-amber-400">$${bracketTax.toLocaleString(undefined, {maximumFractionDigits: 0})}</span>
                             </div>
                             <div class="w-full bg-slate-900 rounded-full h-1.5 overflow-hidden">
                                 <div class="bg-amber-500 h-full transition-all duration-300" style="width: ${percentFilled}%"></div>
@@ -1389,11 +1406,7 @@
                         </div>
                         <div class="p-1.5 bg-slate-900/60 rounded-lg border border-slate-800">
                             <span class="block text-[10px] text-slate-400">Loan Interest</span>
-                            <span class="font-bold text-red-400">$${loanInterest.toLocaleString(undefined, {maximumFractionDigits: 0})}</span>
-                        </div>
-                        <div class="p-1.5 bg-slate-900/60 rounded-lg border border-slate-800">
-                            <span class="block text-[10px] text-slate-400">Estimated Federal Tax</span>
-                            <span class="font-bold text-amber-400">$${tax.toLocaleString(undefined, {maximumFractionDigits: 0})}</span>
+                            <span class="font-bold text-red-400">$${loanInterest.toLocaleString(undefined, {maximumFractionDigits: 0})}</span> </div> <div class="p-1.5 bg-slate-900/60 rounded-lg border border-slate-800"> <span class="block text-[10px] text-slate-400">Estimated Federal Tax</span> <span class="font-bold text-amber-400">$${tax.toLocaleString(undefined, {maximumFractionDigits: 0})}</span>
                         </div>
                         <div class="p-1.5 bg-emerald-500/10 border border-emerald-500/20 rounded-lg flex items-center justify-between text-left">
                             <div>
@@ -1416,20 +1429,12 @@
                     legendContainer.innerHTML = `
                         <div class="p-2 bg-slate-900/60 rounded-lg border border-slate-800">
                             <span class="block text-[10px] text-slate-400">Deductions</span>
-                            <span class="font-bold text-blue-400">$${deductions.toLocaleString(undefined, {maximumFractionDigits: 0})}</span>
-                        </div>
-                        <div class="p-2 bg-slate-900/60 rounded-lg border border-slate-800">
-                            <span class="block text-[10px] text-slate-400">Estimated Federal Tax</span>
-                            <span class="font-bold text-amber-400">$${tax.toLocaleString(undefined, {maximumFractionDigits: 0})}</span>
+                            <span class="font-bold text-blue-400">$${deductions.toLocaleString(undefined, {maximumFractionDigits: 0})}</span> </div> <div class="p-2 bg-slate-900/60 rounded-lg border border-slate-800"> <span class="block text-[10px] text-slate-400">Estimated Federal Tax</span> <span class="font-bold text-amber-400">$${tax.toLocaleString(undefined, {maximumFractionDigits: 0})}</span>
                         </div>
                         <div class="p-2 bg-emerald-500/10 border border-emerald-500/20 rounded-lg flex items-center justify-between text-left">
                             <div>
                                 <span id="takeHomeLegendTitle" class="text-[9px] uppercase font-bold tracking-wider text-emerald-400 block">Est. Take-Home Pay</span>
-                                <span id="stat-take-home" class="text-sm font-black text-emerald-300">$${takeHome.toLocaleString(undefined, {maximumFractionDigits: 0})}</span>
-                            </div>
-                            <div class="text-right ml-2">
-                                <span id="takeHomeSubLabel" class="text-[9px] text-slate-400 block">Monthly</span>
-                                <span id="stat-monthly-takehome" class="text-xs font-bold text-slate-200">$${(takeHome / 12).toLocaleString(undefined, {maximumFractionDigits: 0})}</span>
+                                <span id="stat-take-home" class="text-sm font-black text-emerald-300">$${takeHome.toLocaleString(undefined, {maximumFractionDigits: 0})}</span> </div> <div class="text-right ml-2"> <span id="takeHomeSubLabel" class="text-[9px] text-slate-400 block">Monthly</span> <span id="stat-monthly-takehome" class="text-xs font-bold text-slate-200">$${(takeHome / 12).toLocaleString(undefined, {maximumFractionDigits: 0})}</span>
                             </div>
                         </div>
                     `;
@@ -1950,6 +1955,54 @@ function showNotification(msg) {
             loadState();
             calculateTax();
         });
+
+
+// Infographic Overlay Logic
+            const infoThumb = document.getElementById('info-thumb');
+            const infoOverlay = document.getElementById('info-overlay');
+            const infoStatusText = document.getElementById('info-status-text');
+            let isInfoLocked = false;
+
+            function showInfo() {
+                infoOverlay.classList.remove('hidden');
+                setTimeout(() => {
+                    infoOverlay.classList.remove('opacity-0', 'pointer-events-none');
+                }, 10);
+            }
+
+            function hideInfo() {
+                if (isInfoLocked) return;
+                infoOverlay.classList.add('opacity-0', 'pointer-events-none');
+                setTimeout(() => {
+                    if (!isInfoLocked) infoOverlay.classList.add('hidden');
+                }, 300);
+            }
+
+            if (infoThumb && infoOverlay) {
+                infoThumb.addEventListener('mouseenter', showInfo);
+                infoThumb.addEventListener('mouseleave', hideInfo);
+
+                infoThumb.addEventListener('click', (e) => {
+                    isInfoLocked = !isInfoLocked;
+                    if (isInfoLocked) {
+                        infoStatusText.innerText = "Locked (Click anywhere to close)";
+                        infoStatusText.previousElementSibling.className = "fa-solid fa-lock text-brand-400";
+                        showInfo();
+                    } else {
+                        infoStatusText.innerText = "Hovering (Click to Lock)";
+                        infoStatusText.previousElementSibling.className = "fa-solid fa-circle-info text-brand-400";
+                        hideInfo();
+                    }
+                });
+
+                infoOverlay.addEventListener('click', () => {
+                    isInfoLocked = false;
+                    infoStatusText.innerText = "Hovering (Click to Lock)";
+                    infoStatusText.previousElementSibling.className = "fa-solid fa-circle-info text-brand-400";
+                    hideInfo();
+                });
+            }
+
     </script>
 </body>
 </html>
