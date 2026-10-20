@@ -952,7 +952,69 @@ function createLakesMesh(geoJsonData, globeRadius = 5.0) {
   return new THREE.Mesh(colorGeometry, colorMaterial);
 }
 
-function createRiversMesh(geoJsonData, globeRadius = 5.0, opacity = 0.7) {
+
+function createRiversMesh_RASTER(geoJsonData, globeRadius = 5.0, opacity = 0.7, lineWidth = 2) {
+  const canvas = document.createElement('canvas');
+  canvas.width = 4096; canvas.height = 2048; // 4K resolution
+  const ctx = canvas.getContext('2d');
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  
+  // River styling
+  ctx.strokeStyle = '#3b82f6'; 
+  ctx.lineWidth = lineWidth; // Set width in pixels on the canvas
+  ctx.lineJoin = 'round';
+  ctx.lineCap = 'round';
+
+  function lonToX(lon) { return ((lon + 180) / 360) * canvas.width; }
+  function latToY(lat) { return ((90 - lat) / 180) * canvas.height; }
+
+  if (geoJsonData && geoJsonData.features) {
+    ctx.beginPath();
+    geoJsonData.features.forEach((feature) => {
+      const geom = feature.geometry;
+      if (!geom) return;
+      
+      let lines = [];
+      if (geom.type === 'LineString') lines = [geom.coordinates];
+      else if (geom.type === 'MultiLineString') lines = geom.coordinates;
+      
+      lines.forEach((line) => {
+        if (!line || line.length === 0) return;
+        ctx.moveTo(lonToX(line[0][0]), latToY(line[0][1]));
+        for (let i = 1; i < line.length; i++) {
+          const prevLon = line[i - 1][0];
+          const currLon = line[i][0];
+          // Prevent artifacts wrapping across the prime meridian
+          if (Math.abs(currLon - prevLon) < 180) {
+            ctx.lineTo(lonToX(currLon), latToY(line[i][1]));
+          } else {
+            ctx.moveTo(lonToX(currLon), latToY(line[i][1]));
+          }
+        }
+      });
+    });
+    ctx.stroke();
+  }
+  
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.needsUpdate = true;
+  
+  // Placed slightly above the lakes layer
+  const riverGeometry = new THREE.SphereGeometry(globeRadius * 1.002, 64, 64);
+  const riverMaterial = new THREE.MeshBasicMaterial({ 
+    map: texture, 
+    transparent: true, 
+    opacity: opacity, 
+    depthWrite: false 
+  });
+  
+  const mesh = new THREE.Mesh(riverGeometry, riverMaterial);
+  mesh.renderOrder = 3;
+  return mesh;
+}
+
+
+function createRiversMesh_VECTOR(geoJsonData, globeRadius = 5.0, opacity = 0.7, linewidth_notused = 0.0) {
   // Placed slightly above the lakes and landmasses
   const borderRadius = globeRadius * 1.0028; 
   const positions = [];
@@ -1012,12 +1074,12 @@ function updateWaterVisibility() {
       if (waterLakesMesh && typeof globeGroup !== 'undefined') globeGroup.add(waterLakesMesh);
     }
     if (!waterRiversMesh && typeof waterRiversGeoData !== 'undefined') {
-      waterRiversMesh = createRiversMesh(waterRiversGeoData, 5.0, 0.7);
+      waterRiversMesh = createRiversMesh_VECTOR(waterRiversGeoData, 5.0, 0.7, 1.5);  // 2.5 river pixel width
       if (waterRiversMesh && typeof globeGroup !== 'undefined') globeGroup.add(waterRiversMesh);
     }
     if (!waterMinorRiversMesh && typeof waterMinorRiversGeoData !== 'undefined') {
       // Minor rivers receive a lower opacity for visual hierarchy
-      waterMinorRiversMesh = createRiversMesh(waterMinorRiversGeoData, 5.0, 0.35);
+      waterMinorRiversMesh = createRiversMesh_VECTOR(waterMinorRiversGeoData, 5.0, 0.35, 1.0); // minor river pixel width 5.0, 0.4, 1.0);
       if (waterMinorRiversMesh && typeof globeGroup !== 'undefined') globeGroup.add(waterMinorRiversMesh);
     }
 

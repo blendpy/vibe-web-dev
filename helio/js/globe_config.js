@@ -5,7 +5,7 @@
 const TEXTURE_URLS_FULL = { // Images stored at 2k because 4k and 8k take a couple seconds to load.
   blueMarble: 'texture/planets/earth-blue-marble 4096x2048.jpg', 
   day:        'texture/planets/earth-elevation 5400x2700.jpg',  // file:///home/billx/Downloads/HYP/HYP_HR_SR_W.README.html
-  dark:       'texture/planets/earth-dark.png',
+  // dark:       'texture/planets/earth-dark.png',  // NOT USED
   night:      'texture/planets/earth-night.jpg',
   water:      'texture/planets/earth-water.png'
 };
@@ -13,7 +13,7 @@ const TEXTURE_URLS_FULL = { // Images stored at 2k because 4k and 8k take a coup
 const TEXTURE_URLS_FALLBACK = {
   blueMarble: 'https://cdn.jsdelivr.net/gh/vasturiano/three-globe@master/example/img/earth-blue-marble.jpg',
   day: 'https://cdn.jsdelivr.net/gh/vasturiano/three-globe@master/example/img/earth-day.jpg',
-  dark: 'https://cdn.jsdelivr.net/gh/vasturiano/three-globe@master/example/img/earth-dark.png',
+  // dark: 'https://cdn.jsdelivr.net/gh/vasturiano/three-globe@master/example/img/earth-dark.png',
   night: 'https://cdn.jsdelivr.net/gh/vasturiano/three-globe@master/example/img/earth-night.jpg',
   water: 'https://cdn.jsdelivr.net/gh/vasturiano/three-globe@master/example/img/earth-water.png'
 };
