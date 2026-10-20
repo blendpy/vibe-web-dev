@@ -729,6 +729,8 @@ function setupEventListeners() {
   document.getElementById('chk-night-lights')?.addEventListener('change', (e) => { if (typeof earthMaterial !== 'undefined') earthMaterial.uniforms.uEnableNightLights.value = e.target.checked; updateNightLighting(); });
   document.getElementById('chk-specular')?.addEventListener('change', (e) => { if (typeof earthMaterial !== 'undefined') earthMaterial.uniforms.uEnableSpecular.value = e.target.checked; });
   
+
+
   document.getElementById('chk-graticule')?.addEventListener('change', (e) => {
     if (typeof graticuleGroup !== 'undefined') graticuleGroup.visible = e.target.checked;
     updateCelestialEquatorVisibility();

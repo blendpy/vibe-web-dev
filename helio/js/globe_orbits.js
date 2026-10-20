@@ -412,6 +412,7 @@ function applyPlanetState(planetName) {
     if (typeof updateCountryColorsVisibility === 'function') updateCountryColorsVisibility();
     if (typeof updateLandmarksVisibility === 'function') updateLandmarksVisibility();
   }
+  if (typeof updateWaterVisibility === 'function') updateWaterVisibility();
 
   // --- PLANETARY INTERIOR AVAILABILITY GUARD ---
   const hasInterior = (typeof PLANETARY_INTERIORS !== 'undefined') && !!PLANETARY_INTERIORS[currentPlanet];
