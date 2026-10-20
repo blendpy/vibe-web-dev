@@ -117,7 +117,7 @@
             <span>⚙️</span>
             <span>Settings</span>
         </button>
-<!-- Source Button -->
+        <!-- Source Button -->
         <a href="https://github.com/adrienverge/PhotoCollage" target="_blank" rel="noopener noreferrer" class="px-3 py-1.5 rounded-lg bg-white hover:bg-slate-50 active:bg-slate-100 text-slate-700 border border-slate-300 text-xs sm:text-sm font-medium shadow-sm transition flex items-center gap-1.5" title="View original PhotoCollage Python repository on GitHub
 This HTML version was AI generated from the python source code.">
             <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24" aria-hidden="true">
@@ -125,8 +125,6 @@ This HTML version was AI generated from the python source code.">
             </svg>
             <span>Source</span>
         </a>
-
-
     </header>
 
     <!-- ======================================================================= -->
@@ -311,13 +309,21 @@ This HTML version was AI generated from the python source code.">
                     Poster will be rendered at full resolution: <strong id="lblSaveDims">800 × 600</strong> pixels.
                 </div>
             </div>
-            <div class="px-6 py-3.5 bg-slate-50 border-t border-slate-200 flex items-center justify-end gap-2.5">
+            
+            <!-- Modal Footer (Cancel / Save Project / Download Poster) -->
+            <div class="px-6 py-3.5 bg-slate-50 border-t border-slate-200 flex flex-wrap items-center justify-between gap-2.5">
                 <button id="btnSaveCancel" class="px-4 py-2 rounded-lg border border-slate-300 bg-white hover:bg-slate-100 text-slate-700 text-xs sm:text-sm font-medium transition">
                     Cancel
                 </button>
-                <button id="btnSaveConfirm" class="px-5 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs sm:text-sm font-medium shadow-sm transition">
-                    Download Poster
-                </button>
+                <div class="flex items-center gap-2.5">
+                    <button id="btnSaveProject" class="px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-xs sm:text-sm font-medium shadow-sm transition flex items-center gap-1.5" title="Save session as a standalone HTML file that reopens with images and layout intact">
+                        <span>📦</span>
+                        <span>Save Project as HTML</span>
+                    </button>
+                    <button id="btnSaveConfirm" class="px-5 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs sm:text-sm font-medium shadow-sm transition">
+                        Download Poster
+                    </button>
+                </div>
             </div>
         </div>
     </div>
