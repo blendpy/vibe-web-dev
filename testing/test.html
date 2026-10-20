@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dynamic Global Map Explorer</title>
+    
+    <!-- Stable Leaflet mapping CSS -->
+    <link rel="stylesheet" href="https://unpkg.com" />
+    
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: #f4f6f9;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .search-container {
+            background: white;
+            padding: 15px 25px;
+            border-radius: 30px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+            margin-bottom: 20px;
+            display: flex;
+            gap: 10px;
+            width: 100%;
+            max-width: 500px;
+        }
+        input {
+            flex: 1;
+            border: 1px solid #ddd;
+            padding: 10px 15px;
+            border-radius: 20px;
+            font-size: 1rem;
+            outline: none;
+        }
+        button {
+            background-color: #1a73e8;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 20px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        #map {
+            width: 100%;
+            max-width: 900px;
+            height: 550px;
+            border-radius: 12px;
+            box-shadow: 0 6px 18px rgba(0,0,0,0.1);
+            border: 1px solid #ccc;
+            background-color: #e5e3df;
+        }
+        .error-msg {
+            color: #d93025;
+            font-size: 0.9rem;
+            margin-bottom: 10px;
+            display: none;
+            background: #ffebee;
+            padding: 8px 15px;
+            border-radius: 6px;
+        }
+    </style>
+</head>
+<body>
+
+    <h2>🌍 Global Map Canvas Explorer</h2>
+    <p>Type any city or coordinate layout on Earth below.</p>
+
+    <div class="search-container">
+        <input type="text" id="location-input" placeholder="Try 'Paris', 'Tokyo', or 'Raleigh'..." value="Raleigh">
+        <button onclick="searchLocation()">Search</button>
+    </div>
+    <div id="error-box" class="error-msg"></div>
+
+    <div id="map"></div>
+
+<!-- Leaflet Engine Core Scripts -->
+<script src="https://unpkg.com"></script>
+
+<script>
+    // 1. Initialize map view
+    const map = L.map('map').setView([35.7796, -78.6382], 12);
+    let currentMarker = null;
+
+    // 2. Use a robust, alternative tile delivery network (Wikimedia/CartoDB Maps)
+    // This server allows open access for local development without strict origin validation
+    L.tileLayer('https://{s}://{z}/{x}/{y}{r}.png', {
+        maxZoom: 19,
+        attribution: '&copy; OpenStreetMap contributors &copy; CARTO'
+    }).addTo(map);
+
+    // Initial pin drop
+    currentMarker = L.marker([35.7796, -78.6382]).addTo(map).bindPopup("<b>Raleigh, NC</b>").openPopup();
+
+    // 3. Robust Geocoder function with multi-server failover
+    async function searchLocation() {
+        const query = document.getElementById('location-input').value.trim();
+        const errorBox = document.getElementById('error-box');
+        
+        if (!query) return;
+
+        // Reset error visibility
+        errorBox.style.display = 'none';
+
+        // Shortcut: If user types "latitude, longitude" numbers directly (e.g. 40.7128, -74.0060)
+        const coordMatch = query.match(/^([-+]?\d+\.\d+),\s*([-+]?\d+\.\d+)\$/);
+        if (coordMatch) {
+            const lat = parseFloat(coordMatch[1]);
+            const lon = parseFloat(coordMatch[2]);
+            updateMap(lat, lon, `Coordinates: ${lat}, ${lon}`);
+            return;
+        }
+
+        try {
+            // Using an alternative open data endpoint that bypasses strict user-agent block policies
+            const response = await fetch(`https://maps.co{encodeURIComponent(query)}`);
+            const data = await response.json();
+
+            if (data && data.length > 0) {
+                const lat = parseFloat(data[0].lat);
+                const lon = parseFloat(data[0].lon);
+                updateMap(lat, lon, data[0].display_name || query);
+            } else {
+                throw new Error("No results found on primary database server.");
+            }
+        } catch (err) {
+            console.warn("Primary lookup blocked, initializing local dictionary fallback...", err);
+            
+            // Backup Local Dictionary if your machine completely loses contact with the mapping server
+            const cities = {
+                "london": [51.5074, -0.1278],
+                "paris": [48.8566, 2.3522],
+                "tokyo": [35.6762, 139.6503],
+                "new york": [40.7128, -74.0060],
+                "raleigh": [35.7796, -78.6382]
+            };
+
+            const lookup = query.toLowerCase();
+            if (cities[lookup]) {
+                updateMap(cities[lookup][0], cities[lookup][1], `Offline Lookup: ${query}`);
+            } else {
+                errorBox.innerText = "Network check failed. Type explicit grid numbers (e.g., '35.77, -78.63') or try a major city name.";
+                errorBox.style.display = 'block';
+            }
+        }
+    }
+
+    function updateMap(lat, lon, labelText) {
+        map.setView([lat, lon], 12);
+        if (currentMarker) { map.removeLayer(currentMarker); }
+        currentMarker = L.marker([lat, lon]).addTo(map).bindPopup(`<b>${labelText}</b>`).openPopup();
+    }
+
+    document.getElementById('location-input').addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') { searchLocation(); }
+    });
+</script>
+
+</body>
+</html>
+
