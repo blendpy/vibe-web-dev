@@ -2,12 +2,12 @@
 // GLOBE_CONFIG.JS - Data Dictionary & Ephemeris Configurations
 // =============================================================
 
-const TEXTURE_URLS_FULL = {
-  blueMarble: 'texture/planets/earth-blue-marble.jpg',  //=2k
-  day:   'texture/planets/earth-day-light-blue.jpg',  //=8K
-  dark:  'texture/planets/earth-dark.png',
-  night: 'texture/planets/earth-night.jpg',
-  water: 'texture/planets/earth-water.png'
+const TEXTURE_URLS_FULL = { // Images stored at 2k because 4k and 8k take a couple seconds to load.
+  blueMarble: 'texture/planets/earth-blue-marble 4096x2048.jpg', 
+  day:        'texture/planets/earth-elevation 5400x2700.jpg',  // file:///home/billx/Downloads/HYP/HYP_HR_SR_W.README.html
+  dark:       'texture/planets/earth-dark.png',
+  night:      'texture/planets/earth-night.jpg',
+  water:      'texture/planets/earth-water.png'
 };
 
 const TEXTURE_URLS_FALLBACK = {

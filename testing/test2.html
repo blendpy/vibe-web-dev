@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HTML5 Global Canvas Grid</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: #1e1e24;
+            color: #f4f6f9;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        h2 { margin-bottom: 5px; color: #4dadf7; }
+        .dashboard {
+            background: #2b2b36;
+            padding: 12px 25px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border: 1px solid #3f3f52;
+            text-align: center;
+            font-family: monospace;
+            font-size: 1.1rem;
+        }
+        .map-viewport {
+            position: relative;
+            cursor: crosshair;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            border-radius: 6px;
+            overflow: hidden;
+            border: 2px solid #4dadf7;
+        }
+        /* High-res Equirectangular projection base image */
+        #world-img {
+            display: block;
+            width: 900px;
+            height: 450px;
+            user-select: none;
+            -webkit-user-drag: none;
+        }
+        /* Custom dynamic HTML5 coordinate crosshair pin */
+        .pin {
+            position: absolute;
+            width: 14px;
+            height: 14px;
+            background: #ff6b6b;
+            border: 2px solid white;
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            box-shadow: 0 0 10px #ff6b6b;
+            pointer-events: none;
+            transition: top 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275), left 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        .hint { color: #aaa; font-size: 0.9rem; margin-top: 10px; }
+    </style>
+</head>
+<body>
+
+    <h2>🗺️ Local Coordinate Grid Canvas</h2>
+    <p>Click absolutely anywhere on the world map canvas layout below to plot your positioning vectors.</p>
+
+    <!-- Vector Information Dashboard -->
+    <div class="dashboard">
+        Active Tracking -> <span id="coord-display">Latitude: 0.00° | Longitude: 0.00°</span>
+    </div>
+
+    <!-- The Map Viewport Layer -->
+    <div class="map-viewport" id="map-container" onclick="dropPin(event)">
+        <img id="world-img" src="https://wikimedia.org" alt="Global Grid Canvas">
+        <div class="pin" id="map-pin" style="top: 50%; left: 50%;"></div>
+    </div>
+
+    <div class="hint">Calculated using zero cross-origin frames, offline APIs, or remote lookups.</div>
+
+<script>
+    function dropPin(event) {
+        const container = document.getElementById('map-container');
+        const pin = document.getElementById('map-pin');
+        const display = document.getElementById('coord-display');
+
+        // Fetch exact dimensions of the image canvas bounding box
+        const rect = container.getBoundingClientRect();
+        
+        // Isolate the exact relative click coordinate inside the bounding boundaries
+        const x = event.clientX - rect.left; 
+        const y = event.clientY - rect.top;  
+
+        // Update the relative visual CSS offsets of our pinpoint tracker
+        pin.style.left = `${(x / rect.width) * 100}%`;
+        pin.style.top = `${(y / rect.height) * 100}%`;
+
+        /* 
+           MATHEMATICAL GRID MAPPING ENGINE:
+           Maps standard pixel arrays onto a globally true Equirectangular Projection grid.
+           - X ranges from 0 to Width -> Maps to Longitude (-180° to +180°)
+           - Y ranges from 0 to Height -> Maps to Latitude (+90° to -90°)
+        */
+        const longitude = ((x / rect.width) * 360) - 180;
+        const latitude = 90 - ((y / rect.height) * 180);
+
+        // Print the localized coordinate readings straight to the UI array
+        display.innerHTML = `Latitude: ${latitude.toFixed(2)}° | Longitude: ${longitude.toFixed(2)}°`;
+    }
+</script>
+
+</body>
+</html>
+

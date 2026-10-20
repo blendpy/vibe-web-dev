@@ -723,6 +723,7 @@ function setupEventListeners() {
     setActiveTextureButton(this); if (typeof earthMaterial !== 'undefined') earthMaterial.uniforms.uIsBlueMarble.value = false; if(typeof loadTextureToShader === 'function') loadTextureToShader(typeof TEXTURE_URLS_FULL !== 'undefined' ? TEXTURE_URLS_FULL.day : '');
   });
   
+  document.getElementById('chk-lakes-rivers')?.addEventListener('change', () => { if (typeof updateWaterVisibility === 'function') updateWaterVisibility(); }); 
   document.getElementById('chk-country-borders')?.addEventListener('change', () => { if(typeof updateCountryBordersVisibility === 'function') updateCountryBordersVisibility(); clearHoverIfNeeded(); });
   document.getElementById('chk-country-7-colors')?.addEventListener('change', () => { if(typeof updateCountryColorsVisibility === 'function') updateCountryColorsVisibility(); clearHoverIfNeeded(); });
   document.getElementById('chk-night-lights')?.addEventListener('change', (e) => { if (typeof earthMaterial !== 'undefined') earthMaterial.uniforms.uEnableNightLights.value = e.target.checked; updateNightLighting(); });
