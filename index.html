@@ -157,6 +157,53 @@
                     </div>
                 </div>
             </div>
+
+            <!-- Image Processing Card -->
+            <div class="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden flex flex-col h-full shadow-lg">
+                
+                <!-- Clickable Image Header -->
+                <a href="./image/photocollage.html" class="relative block p-6 flex flex-col justify-end aspect-video group cursor-pointer overflow-hidden border-b border-slate-800">
+                    <!-- Background Image -->
+                    <div class="absolute inset-0 z-0 bg-slate-950">
+                        <img id="image-preview-img" src="./image/infographics/photocollage.png" alt="Image Processing Preview" class="w-full h-full object-cover opacity-50 transition-opacity duration-300 group-hover:opacity-80">
+                        <!-- Gradient Overlay -->
+                        <div class="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/70 to-slate-900/20"></div>
+                    </div>
+
+                    <!-- Bottom Text Content -->
+                    <div class="relative z-10 mt-auto pt-4">
+                        <h3 class="text-2xl font-bold text-white drop-shadow-lg mb-2">Image Processing</h3>
+                        <p class="text-slate-200 text-sm font-medium drop-shadow-md leading-relaxed">Interactive photo layout studios, grid generators, and browser-based media tools.</p>
+                    </div>
+                </a>
+                
+                <!-- Card Body & Links -->
+                <div class="p-6 pt-5 flex flex-row items-center justify-between flex-grow bg-slate-900/90 gap-4">
+                    <!-- Left Side: Links -->
+                    <div class="flex-grow">
+                        <ul id="image-link-list" class="space-y-2.5 text-sm">
+                            <li>
+                                <a href="./image/photocollage.html" data-img="./image/infographics/photocollage.png" class="image-link text-indigo-400 hover:text-indigo-300 hover:underline flex items-center gap-1.5 transition-colors">
+                                    <span class="text-xs">🔹</span> PhotoCollage Grid Studio
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                    
+                    <!-- Right Side: Tech Stack & Badge -->
+                    <div class="flex flex-col items-end justify-center gap-1.5 text-xs text-slate-500 border-l border-slate-800/80 pl-4 py-1 text-right">
+                        <span>HTML5 Canvas</span>
+                        <span>Layout Algorithms</span>
+                        <span>Tailwind CSS</span>
+                        
+                        <!-- Separator Line -->
+                        <div class="w-full h-px bg-slate-800/80 my-1"></div>
+                        
+                        <!-- Creative Studio Badge -->
+                        <span class="text-[10px] sm:text-xs font-semibold text-amber-200 bg-amber-900/60 px-2 py-1 rounded border border-amber-500/40 whitespace-nowrap">Creative Studio</span>
+                    </div>
+                </div>
+            </div>
             
         </div>
     </main>
@@ -211,6 +258,29 @@
                 moneyLinkList.addEventListener('mouseleave', () => {
                     if (moneyPreviewImg.getAttribute('src') !== defaultMoneyImgSrc) {
                         moneyPreviewImg.setAttribute('src', defaultMoneyImgSrc);
+                    }
+                });
+            }
+
+            // --- Image Processing Image Swap ---
+            const imagePreviewImg = document.getElementById('image-preview-img');
+            const imageLinks = document.querySelectorAll('.image-link');
+            const imageLinkList = document.getElementById('image-link-list');
+            const defaultImageImgSrc = './image/infographics/photocollage.png';
+            
+            imageLinks.forEach(link => {
+                link.addEventListener('mouseenter', (e) => {
+                    const newImgSrc = e.currentTarget.getAttribute('data-img');
+                    if (newImgSrc && imagePreviewImg.getAttribute('src') !== newImgSrc) {
+                        imagePreviewImg.setAttribute('src', newImgSrc);
+                    }
+                });
+            });
+
+            if (imageLinkList) {
+                imageLinkList.addEventListener('mouseleave', () => {
+                    if (imagePreviewImg.getAttribute('src') !== defaultImageImgSrc) {
+                        imagePreviewImg.setAttribute('src', defaultImageImgSrc);
                     }
                 });
             }

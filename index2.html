@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vibe Web Dev Projects</title>
+    <!-- Tailwind CSS Play CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col justify-between font-sans">
+    
+    <!-- Header -->
+    <header class="w-full py-8 px-6 border-b border-slate-800 bg-slate-900/50 backdrop-blur">
+        <div class="max-w-4xl mx-auto flex items-center justify-between">
+            <h1 class="text-2xl font-bold tracking-tight text-white flex items-center gap-2">
+                <span class="text-indigo-400">⚡</span> Vibe Web Dev
+            </h1>
+            <span class="text-xs px-3 py-1 bg-indigo-500/10 border border-indigo-500/20 text-indigo-300 rounded-full">GitHub Portfolio</span>
+        </div>
+    </header>
+
+    <!-- Main Content Grid -->
+    <main class="max-w-4xl w-full mx-auto px-6 py-12 flex-grow">
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            
+            <!-- Helio Project Card -->
+            <div class="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden flex flex-col h-full shadow-lg">
+                
+                <!-- Clickable Image Header -->
+                <a href="./helio/index.html" class="relative block p-6 flex flex-col justify-end aspect-video group cursor-pointer overflow-hidden border-b border-slate-800">
+                    <!-- Background Image -->
+                    <div class="absolute inset-0 z-0 bg-slate-950">
+                        <img id="helio-preview-img" src="./helio/infographics/planets/planets.jpg" alt="Helio Preview" class="w-full h-full object-cover opacity-50 transition-opacity duration-300 group-hover:opacity-80">
+                        <!-- Gradient Overlay -->
+                        <div class="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/70 to-slate-900/20"></div>
+                    </div>
+
+                    <!-- Bottom Text Content -->
+                    <div class="relative z-10 mt-auto pt-4">
+                        <h3 class="text-2xl font-bold text-white drop-shadow-lg mb-2">Helio Solar System</h3>
+                        <p class="text-slate-200 text-sm font-medium drop-shadow-md leading-relaxed">Interactive 3D heliocentric solar system visualization featuring planetary orbits, comets, and eclipses.</p>
+                    </div>
+                </a>
+                
+                <!-- Card Body & Links -->
+                <div class="p-6 pt-5 flex flex-row items-center justify-between flex-grow bg-slate-900/90 gap-4">
+                    <!-- Left Side: Links -->
+                    <div class="flex-grow">
+                        <ul id="helio-link-list" class="space-y-2.5 text-sm">
+                            <li>
+                                <a href="./helio/index.html" data-img="./helio/infographics/planets/planets.jpg" class="helio-link text-indigo-400 hover:text-indigo-300 hover:underline flex items-center gap-1.5 transition-colors">
+                                    <span class="text-xs">🔹</span> Solar System View
+                                </a>
+                            </li>
+                            <li>
+                                <a href="./helio/index.html?planet=Earth&date=2027-08-02&time=10:07:00" data-img="./helio/infographics/moons/moons.jpg" class="helio-link text-indigo-400 hover:text-indigo-300 hover:underline flex items-center gap-1.5 transition-colors">
+                                    <span class="text-xs">🔹</span> 2027 Solar Eclipse View
+                                </a>
+                            </li>
+                            <li>
+                                <a href="./helio/index.html?planet=Earth" data-img="./helio/infographics/planets/earth.jpg" class="helio-link text-indigo-400 hover:text-indigo-300 hover:underline flex items-center gap-1.5 transition-colors">
+                                    <span class="text-xs">🔹</span> Earth 3D View
+                                </a>
+                            </li>
+                            <li>
+                                <a href="./helio/index.html?planet=Moon" data-img="./helio/infographics/moons/earth moon.jpg" class="helio-link text-indigo-400 hover:text-indigo-300 hover:underline flex items-center gap-1.5 transition-colors">
+                                    <span class="text-xs">🔹</span> Moon 3D View
+                                </a>
+                            </li>
+                            <li>
+                                <a href="./helio/index.html?planet=Saturn" data-img="./helio/infographics/planets/saturn.jpg" class="helio-link text-indigo-400 hover:text-indigo-300 hover:underline flex items-center gap-1.5 transition-colors">
+                                    <span class="text-xs">🔹</span> Saturn 3D View
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                    
+                    <!-- Right Side: Tech Stack & Badge -->
+                    <div class="flex flex-col items-end justify-center gap-1.5 text-xs text-slate-500 border-l border-slate-800/80 pl-4 py-1 text-right">
+                        <span>Three.js</span>
+                        <span>WebGL</span>
+                        <span>Tailwind CSS</span>
+                        
+                        <!-- Separator Line -->
+                        <div class="w-full h-px bg-slate-800/80 my-1"></div>
+                        
+                        <!-- Simulations Badge -->
+                        <span class="text-[10px] sm:text-xs font-semibold text-indigo-200 bg-indigo-900/60 px-2 py-1 rounded border border-indigo-500/40 whitespace-nowrap">Simulations</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Money & Tax Tools Card -->
+            <div class="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden flex flex-col h-full shadow-lg">
+                
+                <!-- Clickable Image Header -->
+                <a href="./money/US_Mortgage_Amortization_Schedule.html" class="relative block p-6 flex flex-col justify-end aspect-video group cursor-pointer overflow-hidden border-b border-slate-800">
+                    <!-- Background Image -->
+                    <div class="absolute inset-0 z-0 bg-slate-950">
+                        <img id="money-preview-img" src="./money/infographics/US_Mortgage_Amortization_Schedule.jpg" alt="Money Preview" class="w-full h-full object-cover opacity-50 transition-opacity duration-300 group-hover:opacity-80">
+                        <!-- Gradient Overlay -->
+                        <div class="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/70 to-slate-900/20"></div>
+                    </div>
+
+                    <!-- Bottom Text Content -->
+                    <div class="relative z-10 mt-auto pt-4">
+                        <h3 class="text-2xl font-bold text-white drop-shadow-lg mb-2">Money & Tax Tools</h3>
+                        <p class="text-slate-200 text-sm font-medium drop-shadow-md leading-relaxed">Financial calculators, historical tax brackets, and budgetary simulators.</p>
+                    </div>
+                </a>
+                
+                <!-- Card Body & Links -->
+                <div class="p-6 pt-5 flex flex-row items-center justify-between flex-grow bg-slate-900/90 gap-4">
+                    <!-- Left Side: Links -->
+                    <div class="flex-grow">
+                        <ul id="money-link-list" class="space-y-2.5 text-sm">
+                            <li>
+                                <a href="./money/US_Mortgage_Amortization_Schedule.html" data-img="./money/infographics/US_Mortgage_Amortization_Schedule.jpg" class="money-link text-indigo-400 hover:text-indigo-300 hover:underline flex items-center gap-1.5 transition-colors">
+                                    <span class="text-xs">🔹</span> Mortgage Amortization
+                                </a>
+                            </li>
+                            <li>
+                                <a href="./money/US_Federal_Budget_Simulator.html" data-img="./money/infographics/US_Federal_Budget_Simulator.jpg" class="money-link text-indigo-400 hover:text-indigo-300 hover:underline flex items-center gap-1.5 transition-colors">
+                                    <span class="text-xs">🔹</span> Federal Budget Simulator
+                                </a>
+                            </li>
+                            <li>
+                                <a href="./money/US_Taxes.html" data-img="./money/infographics/US_Taxes.jpg" class="money-link text-indigo-400 hover:text-indigo-300 hover:underline flex items-center gap-1.5 transition-colors">
+                                    <span class="text-xs">🔹</span> US Federal Tax Calculator
+                                </a>
+                            </li>
+                            <li>
+                                <a href="./money/US_Historical.html" data-img="./money/infographics/US_Historical.jpg" class="money-link text-indigo-400 hover:text-indigo-300 hover:underline flex items-center gap-1.5 transition-colors">
+                                    <span class="text-xs">🔹</span> Historical Taxes Comparison
+                                </a>
+                            </li>
+                            <li>
+                                <a href="./money/US_Social_Security.html" data-img="./money/infographics/US_Social_Security.jpg" class="money-link text-indigo-400 hover:text-indigo-300 hover:underline flex items-center gap-1.5 transition-colors">
+                                    <span class="text-xs">🔹</span> Social Security Calculator
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                    
+                    <!-- Right Side: Tech Stack & Badge -->
+                    <div class="flex flex-col items-end justify-center gap-1.5 text-xs text-slate-500 border-l border-slate-800/80 pl-4 py-1 text-right">
+                        <span>Chart.js</span>
+                        <span>Financial Modeling</span>
+                        <span>Tailwind CSS</span>
+                        
+                        <!-- Separator Line -->
+                        <div class="w-full h-px bg-slate-800/80 my-1"></div>
+                        
+                        <!-- Tool Suite Badge -->
+                        <span class="text-[10px] sm:text-xs font-semibold text-emerald-200 bg-emerald-900/60 px-2 py-1 rounded border border-emerald-500/40 whitespace-nowrap">Tool Suite</span>
+                    </div>
+                </div>
+            </div>
+            
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="w-full py-6 px-6 border-t border-slate-900 text-center text-xs text-slate-600">
+        Hosted on GitHub Pages • blendpy/vibe-web-dev
+    </footer>
+
+    <!-- Interactive Image Swap Script -->
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // --- Helio Project Image Swap ---
+            const helioPreviewImg = document.getElementById('helio-preview-img');
+            const helioLinks = document.querySelectorAll('.helio-link');
+            const helioLinkList = document.getElementById('helio-link-list');
+            const defaultHelioImgSrc = './helio/infographics/planets/planets.jpg';
+            
+            helioLinks.forEach(link => {
+                link.addEventListener('mouseenter', (e) => {
+                    const newImgSrc = e.currentTarget.getAttribute('data-img');
+                    if (newImgSrc && helioPreviewImg.getAttribute('src') !== newImgSrc) {
+                        helioPreviewImg.setAttribute('src', newImgSrc);
+                    }
+                });
+            });
+
+            if (helioLinkList) {
+                helioLinkList.addEventListener('mouseleave', () => {
+                    if (helioPreviewImg.getAttribute('src') !== defaultHelioImgSrc) {
+                        helioPreviewImg.setAttribute('src', defaultHelioImgSrc);
+                    }
+                });
+            }
+
+            // --- Money & Tax Tools Image Swap ---
+            const moneyPreviewImg = document.getElementById('money-preview-img');
+            const moneyLinks = document.querySelectorAll('.money-link');
+            const moneyLinkList = document.getElementById('money-link-list');
+            const defaultMoneyImgSrc = './money/infographics/US_Mortgage_Amortization_Schedule.jpg';
+            
+            moneyLinks.forEach(link => {
+                link.addEventListener('mouseenter', (e) => {
+                    const newImgSrc = e.currentTarget.getAttribute('data-img');
+                    if (newImgSrc && moneyPreviewImg.getAttribute('src') !== newImgSrc) {
+                        moneyPreviewImg.setAttribute('src', newImgSrc);
+                    }
+                });
+            });
+
+            if (moneyLinkList) {
+                moneyLinkList.addEventListener('mouseleave', () => {
+                    if (moneyPreviewImg.getAttribute('src') !== defaultMoneyImgSrc) {
+                        moneyPreviewImg.setAttribute('src', defaultMoneyImgSrc);
+                    }
+                });
+            }
+        });
+    </script>
+</body>
+</html>
