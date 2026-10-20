@@ -1,13 +1,11 @@
-    <!-- ======================================================================= -->
-    <!-- APPLICATION JAVASCRIPT (Exact Port of Phases 1, 2, and 3)               -->
-    <!-- ======================================================================= -->
-        "use strict";
+"use strict";
 
         // ======================================================================
         // UTILITY: Toast Notifications (No alert() or confirm())
         // ======================================================================
         function showToast(message, type = "info") {
             const container = document.getElementById("toastContainer");
+            if (!container) return;
             const toast = document.createElement("div");
             const colors = {
                 info: "bg-slate-800 text-white border-slate-700",
@@ -937,9 +935,6 @@
 
                 this.initBindings();
                 this.resizeCanvasToContainer();
-
-                // Load initial demo photos so user can immediately interact with the collage
-                this.loadDemoPhotos();
             }
 
             // ==================================================================
@@ -1067,6 +1062,14 @@
                 document.getElementById("btnSaveConfirm").addEventListener("click", () => {
                     this.executeSavePoster();
                 });
+                
+                // Safe check for the new project save button
+                const btnSaveProject = document.getElementById("btnSaveProject");
+                if (btnSaveProject) {
+                    btnSaveProject.addEventListener("click", () => {
+                        this.executeSaveProjectHtml();
+                    });
+                }
             }
 
             resizeCanvasToContainer() {
@@ -2330,9 +2333,153 @@
                     }
                 }, 60);
             }
+
+            // ==================================================================
+            // SAVE PROJECT AS STANDALONE HTML SESSION
+            // ==================================================================
+            executeSaveProjectHtml() {
+                if (!this.history.length || this.history_index < 0) return;
+                document.getElementById("saveModal").classList.add("hidden");
+
+                this.showComputingDialog(true, "Packaging project session into HTML...");
+                this.updateComputingDialog(0.2);
+
+                setTimeout(() => {
+                    try {
+                        const elementToDataUrl = (el) => {
+                            if (!el) return null;
+                            if (el.src && el.src.startsWith("data:")) return el.src;
+                            const cvs = document.createElement("canvas");
+                            cvs.width = el.naturalWidth || el.width || 800;
+                            cvs.height = el.naturalHeight || el.height || 600;
+                            const ctx = cvs.getContext("2d");
+                            ctx.drawImage(el, 0, 0);
+                            return cvs.toDataURL("image/jpeg", 0.92);
+                        };
+
+                        const serializedHistory = this.history.map(uc => {
+                            return {
+                                photolist: uc.photolist.map(p => ({
+                                    filename: p.filename,
+                                    w: p.w,
+                                    h: p.h,
+                                    orientation: p.orientation,
+                                    offset_w: p.offset_w,
+                                    offset_h: p.offset_h,
+                                    isVideo: p.isVideo,
+                                    dataUrl: elementToDataUrl(p.imgElement)
+                                }))
+                            };
+                        });
+
+                        const sessionData = {
+                            opts: this.opts,
+                            history_index: this.history_index,
+                            history: serializedHistory
+                        };
+
+                        this.updateComputingDialog(0.7);
+
+                        const htmlClone = document.documentElement.outerHTML;
+                        let cleanHtml = htmlClone.replace(/<script id="saved-session-payload">[\s\S]*?<\/script>/gi, "");
+
+                        const payloadScript = `\n<script id="saved-session-payload">\nwindow.SAVED_SESSION_DATA = ${JSON.stringify(sessionData)};\n<\/script>`;
+                        cleanHtml = cleanHtml.replace(/<\/body>/i, payloadScript + "\n</body>");
+
+                        const blob = new Blob([cleanHtml], { type: "text/html;charset=utf-8" });
+                        const url = URL.createObjectURL(blob);
+                        const rawName = (document.getElementById("saveFilename").value || "photocollage-project").trim();
+                        const filename = `${rawName.replace(/\.(html|htm)$/i, "")}.html`;
+
+                        const a = document.createElement("a");
+                        a.href = url;
+                        a.download = filename;
+                        document.body.appendChild(a);
+                        a.click();
+                        a.remove();
+                        setTimeout(() => URL.revokeObjectURL(url), 5000);
+
+                        this.showComputingDialog(false);
+                        showToast(`Project successfully saved as "${filename}"!`, "success");
+                    } catch (err) {
+                        this.showComputingDialog(false);
+                        showToast(`Failed to save project HTML: ${err.message}`, "error");
+                    }
+                }, 80);
+            }
         }
 
-        // Start application on window load
+        // ==================================================================
+        // APPLICATION BOOTSTRAPPER (Supports Fresh Start or Restoring Saved Session)
+        // ==================================================================
         window.onload = function () {
-            window.photoCollageApp = new PhotoCollageApp();
+            const app = new PhotoCollageApp();
+            window.photoCollageApp = app;
+
+            if (window.SAVED_SESSION_DATA) {
+                app.showComputingDialog(true, "Restoring saved project session...");
+                app.updateComputingDialog(0.3);
+
+                setTimeout(() => {
+                    try {
+                        const data = window.SAVED_SESSION_DATA;
+                        app.opts = Object.assign(app.opts, data.opts);
+                        app.history_index = data.history_index;
+
+                        let loadedImagesCount = 0;
+                        let totalImagesCount = 0;
+                        data.history.forEach(h => totalImagesCount += h.photolist.length);
+
+                        if (totalImagesCount === 0) {
+                            app.showComputingDialog(false);
+                            app.render_preview(false);
+                            return;
+                        }
+
+                        app.history = data.history.map(hState => {
+                            const reconstructedList = hState.photolist.map(pData => {
+                                const img = new Image();
+                                const p = new Photo(pData.filename, pData.w, pData.h, pData.orientation, img, pData.isVideo);
+                                p.offset_w = pData.offset_w;
+                                p.offset_h = pData.offset_h;
+
+                                img.onload = () => {
+                                    loadedImagesCount++;
+                                    if (loadedImagesCount === totalImagesCount) {
+                                        app.showComputingDialog(false);
+                                        app.render_preview(false);
+                                        showToast("Restored saved project successfully!", "success");
+                                    }
+                                };
+                                img.onerror = () => {
+                                    loadedImagesCount++;
+                                    if (loadedImagesCount === totalImagesCount) {
+                                        app.showComputingDialog(false);
+                                        app.render_preview(false);
+                                    }
+                                };
+                                img.src = pData.dataUrl;
+                                return p;
+                            });
+
+                            const uc = new UserCollage(reconstructedList);
+                            uc.make_page(app.opts);
+                            return uc;
+                        });
+
+                        setTimeout(() => {
+                            app.showComputingDialog(false);
+                            if (app.history.length > 0) {
+                                app.render_preview(false);
+                            }
+                        }, 400);
+                    } catch (err) {
+                        app.showComputingDialog(false);
+                        showToast(`Error restoring session: ${err.message}`, "error");
+                        app.loadDemoPhotos();
+                    }
+                }, 100);
+            } else {
+                app.loadDemoPhotos();
+            }
         };
