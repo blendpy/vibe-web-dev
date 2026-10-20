@@ -911,44 +911,4 @@ window.wakeSolarSystem = function() {
   }
 };
 
-// Ensure this runs after the DOM and the WebGL renderer are ready
-document.addEventListener('DOMContentLoaded', () => {
-  const webglContainer = document.getElementById('webgl-container'); // Or whatever holds your canvas
-  
-  if (webglContainer) {
-    const raycaster = new THREE.Raycaster();
-    const mouse = new THREE.Vector2();
-
-    webglContainer.addEventListener('dblclick', (event) => {
-      // Ensure global camera and scene variables exist before proceeding
-      if (typeof camera === 'undefined' || typeof scene === 'undefined') return;
-      
-      // Calculate mouse position relative to the canvas
-      const rect = webglContainer.getBoundingClientRect();
-      mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
-      mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
-
-      // Shoot ray from camera
-      raycaster.setFromCamera(mouse, camera);
-
-      // Intersect against all objects in the scene
-      const intersects = raycaster.intersectObjects(scene.children, true);
-
-      if (intersects.length > 0) {
-        // Find the first intersected object that has a valid name assigned
-        const clickedMesh = intersects.find(hit => hit.object && hit.object.name);
-        
-        if (clickedMesh) {
-          const targetName = clickedMesh.object.name;
-          
-          // Route the clicked 3D object to the infographic panel
-          updateInfographicPanel(targetName);
-          
-          // Optional: Also change the focus of the app to the double-clicked body
-          if (typeof setPlanet === 'function') setPlanet(targetName);
-        }
-      }
-    });
-  }
-});
 
