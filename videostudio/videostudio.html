@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VideoStudio — Interactive Video & Slideshow Creator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            box-sizing: border-box;
+            user-select: none;
+        }
+        body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background-color: #0b0f19;
+        }
+        .canvas-bg {
+            background-color: #0f172a;
+            background-image: radial-gradient(#1e293b 1.5px, transparent 1.5px);
+            background-size: 24px 24px;
+        }
+        .filmstrip-scroll::-webkit-scrollbar {
+            height: 8px;
+        }
+        .filmstrip-scroll::-webkit-scrollbar-track {
+            background: #090d16;
+        }
+        .filmstrip-scroll::-webkit-scrollbar-thumb {
+            background: #334155;
+            border-radius: 4px;
+        }
+        .filmstrip-scroll::-webkit-scrollbar-thumb:hover {
+            background: #475569;
+        }
+        /* Dynamic Row Effect Label Transitions */
+        .effect-row-container .effect-label-box {
+            max-height: 0px;
+            opacity: 0;
+            margin-top: 0px;
+            transition: max-height 0.18s ease-out, opacity 0.18s ease-out, margin-top 0.18s ease-out;
+        }
+        .effect-row-container:hover .effect-label-box,
+        .effect-row-container.is-row-hovered .effect-label-box {
+            max-height: 34px;
+            opacity: 1;
+            margin-top: 4px;
+        }
+    </style>
+</head>
+<body class="h-screen w-screen flex flex-col bg-slate-950 text-slate-100">
+
+    <!-- ======================================================================= -->
+    <!-- TOP TOOLBAR                                                             -->
+    <!-- ======================================================================= -->
+    <header class="bg-slate-900 border-b border-slate-800 px-4 py-2 flex items-center justify-between shadow-md z-30 shrink-0">
+        <div class="flex items-center gap-3">
+            <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-500 to-blue-600 flex items-center justify-center text-white font-bold shadow">
+                🎬
+            </div>
+            <div>
+                <!-- <h1 class="text-sm font-bold text-white leading-tight">VideoStudio</h1>  -->
+<h1 class="text-sm font-bold text-white leading-tight">VideoStudio <span class="text-red-500 text-xs ml-1 uppercase tracking-wide border border-red-500/50 px-1.5 py-0.5 rounded-md">Beta Testing (ERRORS EXIST)</span></h1>
+
+                <p id="lblProjectName" class="text-[11px] text-slate-400 leading-none">1920 × 1080 Project Workspace</p>
+            </div>
+        </div>
+
+        <input type="file" id="mediaFileInput" multiple accept="image/*,video/mp4,video/webm,video/ogg,video/quicktime" class="hidden">
+
+        <div class="flex items-center gap-2">
+            <button id="btnAddMedia" class="px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white text-xs font-semibold shadow transition flex items-center gap-1.5">
+                <span>➕</span>
+                <span>Add Media</span>
+            </button>
+            <button id="btnLoadDemo" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs font-semibold transition flex items-center gap-1.5">
+                <span>🖼️</span>
+                <span>Load Demo</span>
+            </button>
+            <button id="btnClearTimeline" class="px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-red-950/50 hover:text-red-400 border border-slate-700 text-xs font-semibold transition" title="Clear all slides">
+                <span>🗑️</span>
+            </button>
+            <div class="h-5 w-px bg-slate-800 mx-1"></div>
+            <button id="btnPlayAll" class="px-3 py-1.5 rounded-lg bg-amber-600 hover:bg-amber-700 text-white text-xs font-semibold shadow transition flex items-center gap-1.5">
+                <span>▶️</span>
+                <span>Preview Movie</span>
+            </button>
+            <button id="btnExportVideo" class="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold shadow transition flex items-center gap-1.5">
+                <span>💾</span>
+                <span>Export Video</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- ======================================================================= -->
+    <!-- MAIN WORKSPACE VIEWPORT                                                 -->
+    <!-- ======================================================================= -->
+    <main id="workspaceStage" class="relative flex-1 w-full overflow-hidden canvas-bg flex flex-col items-center justify-center p-2 sm:p-3">
+        
+        <!-- 1. OVERVIEW STAGE VIEW -->
+        <div id="overviewStage" class="w-full h-full flex items-center justify-center relative">
+            <canvas id="mainCanvas" class="block outline-none shadow-2xl rounded-sm"></canvas>
+            
+            <div id="stageHud" class="hidden absolute top-4 left-1/2 -translate-x-1/2 bg-slate-900/90 text-slate-200 px-4 py-1.5 rounded-full border border-slate-700/80 shadow-2xl backdrop-blur-md flex items-center gap-3 text-xs font-medium z-10">
+                <span id="lblHudSlideTitle" class="font-bold text-amber-400 truncate max-w-xs">Slide 1</span>
+                <span class="text-slate-600">|</span>
+                <span id="lblHudResolution" class="text-slate-400">1920 × 1080</span>
+                <span class="text-slate-600">|</span>
+                <span id="lblHudDuration" class="text-slate-300">Move: 5.0s</span>
+            </div>
+        </div>
+
+        <!-- 2. ZOOM & MOTION DUAL-FRAME STAGE (PhotoZoom_2.py Port) -->
+        <div id="zoomStage" class="hidden w-full h-full flex flex-col gap-2 relative">
+            <div class="h-11 px-4 bg-slate-900/90 border border-slate-800 rounded-xl flex flex-wrap items-center justify-between text-xs shrink-0 shadow-lg backdrop-blur-md z-10">
+                <div class="flex items-center gap-3">
+                    <button id="btnZoomPreview" class="px-3 py-1 rounded-lg bg-amber-600 hover:bg-amber-700 font-bold text-white shadow transition flex items-center gap-1.5">
+                        <span>▶</span><span>Preview</span>
+                    </button>
+                    <button id="btnZoomRandom" class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 font-semibold text-slate-200 transition flex items-center gap-1.5">
+                        <span>🎲</span><span>Random</span>
+                    </button>
+                    <div class="h-4 w-px bg-slate-700 mx-1"></div>
+                    <span class="text-slate-400">Duration:</span>
+                    <input type="range" id="zoomDurationSlider" min="1" max="200" value="50" step="5" class="w-28 sm:w-36 accent-blue-600 cursor-pointer">
+                    <span id="lblZoomDuration" class="font-bold text-amber-400 min-w-[32px]">5.0s</span>
+                </div>
+                <div class="flex items-center gap-4">
+                    <label class="flex items-center gap-1.5 cursor-pointer">
+                        <input type="checkbox" id="chkAllowZoom" checked class="w-3.5 h-3.5 rounded text-blue-600 bg-slate-800 border-slate-700">
+                        <span class="text-slate-300 font-medium">Allow Zoom Motion</span>
+                    </label>
+                    <label class="flex items-center gap-1.5 cursor-pointer">
+                        <input type="checkbox" id="chkLockBoundingBox" checked class="w-3.5 h-3.5 rounded text-blue-600 bg-slate-800 border-slate-700">
+                        <span class="text-slate-300 font-medium">Lock Bounding Box</span>
+                    </label>
+                </div>
+            </div>
+
+            <div id="zoomEditorsWrapper" class="flex-1 w-full grid grid-cols-2 gap-3 min-h-0">
+                <div class="relative w-full h-full flex flex-col items-center justify-center bg-black/60 rounded-xl border border-slate-800 overflow-hidden p-1 shadow-inner">
+                    <div class="absolute top-2 left-3 z-10 px-2 py-0.5 rounded bg-slate-900/80 border border-slate-700/80 text-[11px] font-bold text-cyan-400 flex items-center gap-1.5 pointer-events-none">
+                        <span class="w-2 h-2 rounded-full bg-cyan-400"></span>
+                        <span>Start Position</span>
+                    </div>
+                    <canvas id="zoomStartCanvas" class="block outline-none cursor-default"></canvas>
+                </div>
+
+                <div id="zoomEndFrameContainer" class="relative w-full h-full flex flex-col items-center justify-center bg-black/60 rounded-xl border border-slate-800 overflow-hidden p-1 shadow-inner">
+                    <div class="absolute top-2 left-3 z-10 px-2 py-0.5 rounded bg-slate-900/80 border border-slate-700/80 text-[11px] font-bold text-amber-400 flex items-center gap-1.5 pointer-events-none">
+                        <span class="w-2 h-2 rounded-full bg-amber-400"></span>
+                        <span>End Position</span>
+                    </div>
+                    <canvas id="zoomEndCanvas" class="block outline-none cursor-default"></canvas>
+                </div>
+            </div>
+
+            <div id="zoomPreviewOverlay" class="hidden absolute inset-0 bg-black z-30 flex flex-col items-center justify-center">
+                <canvas id="zoomPreviewCanvas" class="block outline-none shadow-2xl"></canvas>
+                <div class="absolute top-4 left-1/2 -translate-x-1/2 bg-slate-900/95 text-white px-5 py-2 rounded-full border border-slate-700 text-xs font-semibold backdrop-blur shadow-2xl flex items-center gap-4">
+                    <span id="lblPreviewProgress" class="text-amber-400 font-bold">Cinematic Pan Preview: 0%</span>
+                    <button id="btnStopPreview" class="text-red-400 hover:text-red-300 font-bold">⏹ Stop (Esc)</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 3. TITLE & FRAME STAGE (PhotoFrame.py Port) -->
+        <div id="frameStage" class="hidden w-full h-full flex gap-3 min-h-0 overflow-hidden">
+            <!-- Left Sidebar Controls Panel -->
+            <div class="w-80 sm:w-88 bg-slate-900/95 border border-slate-800 rounded-xl p-3.5 overflow-y-auto space-y-4 shrink-0 shadow-xl backdrop-blur-md">
+                
+                <!-- Section 1: Title Placement -->
+                <div class="bg-slate-950/70 border border-slate-800/80 rounded-xl p-3 space-y-3">
+                    <div class="flex items-center justify-between">
+                        <label class="flex items-center gap-2 cursor-pointer select-none">
+                            <input type="checkbox" id="chkTitleToggle" checked class="w-3.5 h-3.5 rounded text-blue-600 bg-slate-800 border-slate-700 cursor-pointer">
+                            <span class="text-xs font-bold text-slate-200">1. Title Placement</span>
+                        </label>
+                        <input type="color" id="colTitleColor" value="#ffffff" class="w-7 h-6 rounded border border-slate-700 bg-slate-800 cursor-pointer p-0.5">
+                    </div>
+
+                    <textarea id="txtTitleInput" rows="2" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-xs text-white focus:outline-none focus:border-blue-500 resize-none font-medium" placeholder="Enter slide title..."></textarea>
+
+                    <!-- Matrix 9-Position Grid -->
+                    <div class="grid grid-cols-3 gap-1 w-full pt-1">
+                        <button class="frame-matrix-btn py-1 text-[11px] font-medium bg-slate-800 hover:bg-slate-700 text-slate-300 rounded border border-slate-700" data-pos="UL">UL</button>
+                        <button class="frame-matrix-btn py-1 text-[11px] font-medium bg-slate-800 hover:bg-slate-700 text-slate-300 rounded border border-slate-700" data-pos="Up">Up</button>
+                        <button class="frame-matrix-btn py-1 text-[11px] font-medium bg-slate-800 hover:bg-slate-700 text-slate-300 rounded border border-slate-700" data-pos="UR">UR</button>
+                        <button class="frame-matrix-btn py-1 text-[11px] font-medium bg-slate-800 hover:bg-slate-700 text-slate-300 rounded border border-slate-700" data-pos="Left">Left</button>
+                        <button class="frame-matrix-btn py-1 text-[11px] font-medium bg-slate-800 hover:bg-slate-700 text-slate-300 rounded border border-slate-700" data-pos="Center">Center</button>
+                        <button class="frame-matrix-btn py-1 text-[11px] font-medium bg-slate-800 hover:bg-slate-700 text-slate-300 rounded border border-slate-700" data-pos="Right">Right</button>
+                        <button class="frame-matrix-btn py-1 text-[11px] font-medium bg-slate-800 hover:bg-slate-700 text-slate-300 rounded border border-slate-700" data-pos="LL">LL</button>
+                        <button class="frame-matrix-btn py-1 text-[11px] font-medium bg-slate-800 hover:bg-slate-700 text-slate-300 rounded border border-slate-700" data-pos="Down">Down</button>
+                        <button class="frame-matrix-btn py-1 text-[11px] font-medium bg-slate-800 hover:bg-slate-700 text-slate-300 rounded border border-slate-700" data-pos="LR">LR</button>
+                    </div>
+
+                    <div class="flex items-center justify-between text-xs pt-1 border-t border-slate-800/80">
+                        <label class="flex items-center gap-1.5 cursor-pointer select-none">
+                            <input type="checkbox" id="chkTitleShadow" checked class="w-3 h-3 rounded text-blue-600 bg-slate-800 border-slate-700 cursor-pointer">
+                            <span class="text-[11px] text-slate-300">Drop Shadow</span>
+                        </label>
+                        <div class="flex items-center gap-2">
+                            <span class="text-[11px] text-slate-400">Size:</span>
+                            <input type="range" id="sldTitleFontSize" min="12" max="64" value="26" class="w-20 accent-blue-600 cursor-pointer">
+                            <span id="lblTitleFontSize" class="text-[11px] font-bold text-amber-400 min-w-[28px]">26px</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Section 2: Border (Matte Structural) -->
+                <div class="bg-slate-950/70 border border-slate-800/80 rounded-xl p-3 space-y-3">
+                    <span class="text-xs font-bold text-slate-200">2. Border (Matte Structural)</span>
+                    
+                    <div class="grid grid-cols-2 gap-2 pt-1">
+                        <div class="flex items-center justify-between bg-slate-900 border border-slate-800 p-2 rounded-lg">
+                            <label class="flex items-center gap-1.5 cursor-pointer select-none">
+                                <input type="checkbox" id="chkMatteToggle" class="w-3.5 h-3.5 rounded text-blue-600 bg-slate-800 border-slate-700 cursor-pointer">
+                                <span class="text-xs text-slate-200 font-medium">Matte</span>
+                            </label>
+                            <input type="color" id="colMatteColor" value="#dddddd" class="w-6 h-5 rounded border border-slate-700 bg-slate-800 cursor-pointer p-0.5">
+                        </div>
+
+                        <div id="borderControlGroup" class="flex items-center justify-between bg-slate-900 border border-slate-800 p-2 rounded-lg opacity-40 pointer-events-none transition-opacity">
+                            <label class="flex items-center gap-1.5 cursor-pointer select-none">
+                                <input type="checkbox" id="chkBorderToggle" disabled class="w-3.5 h-3.5 rounded text-blue-600 bg-slate-800 border-slate-700 cursor-pointer">
+                                <span class="text-xs text-slate-200 font-medium">Border</span>
+                            </label>
+                            <input type="color" id="colBorderColor" value="#111144" disabled class="w-6 h-5 rounded border border-slate-700 bg-slate-800 cursor-pointer p-0.5">
+                        </div>
+                    </div>
+
+                    <!-- Matte Style Buttons (Bevel Mat leftmost and default) -->
+                    <div class="space-y-1">
+                        <span class="text-[11px] text-slate-400">Matte Style:</span>
+                        <div class="flex gap-1.5">
+                            <button class="matte-style-btn flex-1 py-1 rounded bg-blue-600 text-white border border-blue-400 text-xs font-semibold shadow" data-style="2">Bevel Mat</button>
+                            <button class="matte-style-btn flex-1 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 text-xs font-medium" data-style="0">Flat</button>
+                            <button class="matte-style-btn flex-1 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 text-xs font-medium" data-style="1">Rounded</button>
+                        </div>
+                    </div>
+
+                    <!-- Matte Size Buttons (6px works correctly) -->
+                    <div class="space-y-1">
+                        <span class="text-[11px] text-slate-400">Matte Size:</span>
+                        <div class="flex gap-1.5">
+                            <button class="matte-size-btn flex-1 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 text-xs font-medium" data-size="0">6px</button>
+                            <button class="matte-size-btn flex-1 py-1 rounded bg-blue-600 text-white border border-blue-400 text-xs font-semibold shadow" data-size="1">16px</button>
+                            <button class="matte-size-btn flex-1 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 text-xs font-medium" data-size="2">32px</button>
+                            <button class="matte-size-btn flex-1 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 text-xs font-medium" data-size="3">54px</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Interactive Canvas Area -->
+            <div class="flex-1 h-full bg-black/60 rounded-xl border border-slate-800 flex items-center justify-center p-2 overflow-hidden shadow-inner relative">
+                <canvas id="frameCanvas" class="block outline-none shadow-2xl"></canvas>
+            </div>
+        </div>
+
+
+        <!-- 4. PHOTO EFFECTS STAGE (PhotoEffects_2.py Port) -->
+        <div id="effectsStage" class="hidden w-full h-full flex flex-col gap-2 min-h-0 overflow-hidden">
+            <!-- Top Interactive Split-Preview Canvas -->
+            <div class="flex-1 w-full bg-black rounded-xl border border-slate-800 flex items-center justify-center p-1 overflow-hidden shadow-inner min-h-[160px]">
+                <canvas id="effectsCanvas" class="block outline-none max-h-full max-w-full object-contain"></canvas>
+            </div>
+
+            <!-- Bottom 4 Combinatory Effect Thumbnail Rows (Ordered: Color, Color Map, Rotation, Mirror) -->
+            <div class="bg-slate-900/95 border border-slate-800 rounded-xl p-3 space-y-1 shrink-0 shadow-xl overflow-x-auto overflow-y-auto max-h-[48vh] filmstrip-scroll">
+                <div class="effect-row-container flex items-start gap-2 p-1 rounded-xl transition-colors hover:bg-slate-800/40">
+                    <span class="w-24 text-xs font-bold text-slate-300 shrink-0 text-right pr-2 pt-3">Color:</span>
+                    <div id="effectsRowColor" class="flex items-start gap-2 overflow-x-auto filmstrip-scroll pb-1"></div>
+                </div>
+                <div class="effect-row-container flex items-start gap-2 p-1 rounded-xl transition-colors hover:bg-slate-800/40">
+                    <span class="w-24 text-xs font-bold text-slate-300 shrink-0 text-right pr-2 pt-3">ColorMap:</span>
+                    <div id="effectsRowColormap" class="flex items-start gap-2 overflow-x-auto filmstrip-scroll pb-1"></div>
+                </div>
+                <div class="effect-row-container flex items-start gap-2 p-1 rounded-xl transition-colors hover:bg-slate-800/40">
+                    <span class="w-24 text-xs font-bold text-slate-300 shrink-0 text-right pr-2 pt-3">Rotation:</span>
+                    <div id="effectsRowRotation" class="flex items-start gap-2 overflow-x-auto filmstrip-scroll pb-1"></div>
+                </div>
+                <div class="effect-row-container flex items-start gap-2 p-1 rounded-xl transition-colors hover:bg-slate-800/40">
+                    <span class="w-24 text-xs font-bold text-slate-300 shrink-0 text-right pr-2 pt-3">Mirror:</span>
+                    <div id="effectsRowMirror" class="flex items-start gap-2 overflow-x-auto filmstrip-scroll pb-1"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 5. PHOTO TRANSITIONS STAGE (PhotoTransitions.py Port) -->
+        <div id="transStage" class="hidden w-full h-full flex flex-col items-center gap-2 min-h-0 overflow-y-auto filmstrip-scroll p-1">
+            <!-- Top Row: Left Column (Duration, Type Buttons, Random) + Center Preview Canvas + Right Variant Column -->
+            <div class="w-full max-w-[1060px] flex-1 min-h-[180px] flex items-center justify-center gap-3">
+                
+                <!-- Left Vertical Column: Duration Slider, Type Column (Fade, No Fade, Image), & Random Button -->
+                <div id="transLeftColumn" class="w-[148px] bg-slate-900/95 border border-slate-800 rounded-xl p-3 flex flex-col items-center justify-center gap-2.5 shrink-0 shadow-xl">
+                    <span class="text-xs font-bold text-slate-300 text-center leading-tight">Transition Duration</span>
+                    <input type="range" id="transDurationSlider" min="1" max="100" value="20" class="w-full accent-blue-600 cursor-pointer" title="Transition Duration">
+                    <span id="lblTransDuration" class="text-sm font-bold text-amber-400">2.0s</span>
+                    <div class="w-full h-px bg-slate-800 my-0.5"></div>
+                    
+                    <!-- Vertical Type Column: Fade, No Fade, Image -->
+                    <div id="transTypeColumn" class="w-full flex flex-col gap-1.5">
+                        <button type="button" data-type="Fade" class="trans-type-btn w-full px-2 py-1.5 rounded text-xs font-semibold bg-slate-800 text-slate-300 border border-slate-700 hover:bg-slate-700 transition">Fade</button>
+                        <button type="button" data-type="No Fade" class="trans-type-btn w-full px-2 py-1.5 rounded text-xs font-semibold bg-slate-800 text-slate-300 border border-slate-700 hover:bg-slate-700 transition">No Fade</button>
+                        <button type="button" data-type="Image" class="trans-type-btn w-full px-2 py-1.5 rounded text-xs font-semibold bg-slate-800 text-slate-300 border border-slate-700 hover:bg-slate-700 transition">Image</button>
+                    </div>
+
+                    <div class="w-full h-px bg-slate-800 my-0.5"></div>
+                    <button id="btnTransRandomToggle" type="button" class="w-full px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition">Random</button>
+                </div>
+
+                <!-- Center Transition Dual-Slide Preview Canvas (800x300) -->
+                <div class="flex-1 h-full max-w-[800px] bg-black rounded-xl border border-slate-800 flex items-center justify-center p-1 overflow-hidden shadow-inner">
+                    <canvas id="transCanvas" width="800" height="300" class="block max-w-full max-h-full object-contain"></canvas>
+                </div>
+
+                <!-- Right Vertical Column: 5 Variant Buttons -->
+                <div id="transRightColumn" class="w-[88px] bg-slate-900/95 border border-slate-800 rounded-xl p-2 flex flex-col items-center justify-center gap-1.5 shrink-0 shadow-xl"></div>
+            </div>
+
+            <!-- Bottom Transition Type & Subtype Groups Container -->
+            <div id="transGroupsContainer" class="w-full max-w-[880px] bg-slate-900/95 border border-slate-800 rounded-xl p-3 flex flex-col items-center shrink-0 shadow-xl"></div>
+
+            <!-- Coupled 100% Randomizer Distribution Panel -->
+            <div id="transRandomPanel" class="hidden w-full max-w-[600px] bg-slate-900/95 border border-slate-800 rounded-xl p-4 flex flex-col items-center shrink-0 shadow-xl"></div>
+        </div>
+        <!-- END TRANSITIONS STAGE -->
+
+        <!-- 6. PHOTO PAINT STAGE (Paint02.py + Paint_Shape.py + Paint_Helper.py Port) -->
+        <div id="paintStage" class="hidden w-full h-full flex gap-2.5 min-h-0 overflow-hidden p-1">
+            <!-- Left Tool & Parameter Sidebar -->
+            <aside id="paintSidebar" class="w-[340px] shrink-0 bg-slate-900/95 border border-slate-800 rounded-xl p-2.5 flex flex-col gap-2 overflow-y-auto filmstrip-scroll shadow-xl"></aside>
+
+            <!-- Right Interactive Vector & Pixel Paint Canvas -->
+            <div id="paintCanvasWrap" class="flex-1 h-full bg-[#0b0f19] rounded-xl border border-slate-800 flex items-center justify-center relative overflow-hidden shadow-inner">
+                <canvas id="paintMainCanvas" class="block outline-none cursor-crosshair"></canvas>
+
+                <!-- Floating Auto-Expanding Rich Text Input Overlay -->
+                <div id="paintFloatingTextWrap" class="hidden absolute z-30">
+                    <textarea id="paintFloatingTextarea" rows="1" class="bg-slate-900/85 backdrop-blur-sm border-2 border-sky-400 rounded-lg px-2.5 py-1.5 text-white outline-none shadow-2xl resize-none leading-snug"></textarea>
+                </div>
+            </div>
+
+            <!-- Categorized Emoji & Country Flag Picker Modal -->
+            <div id="paintEmojiModal" class="hidden fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4">
+                <div class="bg-slate-900 border border-slate-700 rounded-2xl w-full max-w-4xl h-[75vh] flex flex-col shadow-2xl overflow-hidden">
+                    <div class="px-4 py-2.5 bg-slate-950 border-b border-slate-800 flex items-center justify-between">
+                        <span class="text-sm font-bold text-slate-200">Select Emoji or Country Flag</span>
+                        <div id="paintEmojiTabs" class="flex items-center gap-1 flex-wrap"></div>
+                    </div>
+                    <div id="paintEmojiContent" class="flex-1 overflow-y-auto filmstrip-scroll p-3 bg-slate-900"></div>
+                    <div class="px-4 py-2.5 bg-slate-950 border-t border-slate-800 flex items-center justify-between">
+                        <span id="lblPaintEmojiStatus" class="text-xs font-bold text-amber-400">Selected: 🙂</span>
+                        <div class="flex items-center gap-2">
+                            <button type="button" id="btnPaintEmojiCancel" class="px-4 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-slate-300">Cancel</button>
+                            <button type="button" id="btnPaintEmojiSet" class="px-4 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-xs font-bold text-white shadow">Set Emoji (🙂)</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- END PAINT STAGE -->
+
+        <!-- Global Drag & Drop Overlay Indicator -->
+        <div id="dropOverlay" class="hidden absolute inset-4 rounded-2xl border-4 border-dashed border-blue-500 bg-blue-600/10 backdrop-blur-[2px] pointer-events-none flex flex-col items-center justify-center z-40">
+            <div id="dropOverlayPrompt" class="bg-slate-900 border border-slate-700 px-6 py-4 rounded-xl shadow-2xl flex items-center gap-3 text-blue-400 font-semibold text-lg">
+                <span>📥</span>
+                <span>Drop images or videos to insert into project timeline</span>
+            </div>
+        </div>
+    </main>
+
+    <!-- ======================================================================= -->
+    <!-- HOVER-COLLAPSIBLE BOTTOM FILMSTRIP DRAWER                                -->
+    <!-- ======================================================================= -->
+    <section id="filmstripDrawer" class="relative z-20 shrink-0 bg-slate-900 border-t border-slate-800 transition-all duration-200 ease-in-out flex flex-col" style="height: 180px;">
+        <div id="drawerAccentLine" class="h-1 w-full bg-blue-600 cursor-pointer hover:bg-blue-400 transition-colors"></div>
+
+        <div id="filmstripTrack" class="flex-1 w-full overflow-x-auto overflow-y-hidden filmstrip-scroll flex items-center gap-2 px-3 py-1 bg-slate-950">
+        </div>
+
+        <div class="h-10 bg-slate-900 border-t border-slate-800 px-3 flex items-center justify-between text-xs text-slate-300">
+            <div class="flex items-center gap-1.5">
+                <button id="btnMoveLeft" class="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 disabled:opacity-30 disabled:cursor-not-allowed font-bold" title="Move Selected Left">◀</button>
+                <button id="btnMoveRight" class="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 disabled:opacity-30 disabled:cursor-not-allowed font-bold" title="Move Selected Right">▶</button>
+                <div class="h-4 w-px bg-slate-700 mx-1"></div>
+
+                <button id="tabOverview" class="tab-btn px-2.5 py-1 rounded font-medium bg-blue-600 text-white font-semibold">Overview</button>
+                <button id="tabFrame" class="tab-btn px-2.5 py-1 rounded font-medium bg-slate-800 hover:bg-slate-700 text-slate-300">Title / Frame</button>
+                <button id="tabZoom" class="tab-btn px-2.5 py-1 rounded font-medium bg-slate-800 hover:bg-slate-700 text-slate-300">Zoom / Motion</button>
+                <button id="tabEffects" class="tab-btn px-2.5 py-1 rounded font-medium bg-slate-800 hover:bg-slate-700 text-slate-300">Effects</button>
+                <button id="tabTrans" class="tab-btn px-2.5 py-1 rounded font-medium bg-slate-800 hover:bg-slate-700 text-slate-300">Transition</button>
+                <button id="tabPaint" class="tab-btn px-2.5 py-1 rounded font-medium bg-slate-800 hover:bg-slate-700 text-slate-300">Paint</button>
+
+            </div>
+
+            <div class="flex items-center gap-3">
+                <span id="lblSelectionCount" class="text-slate-500 hidden sm:inline">0 slides</span>
+                <label class="flex items-center gap-1.5 cursor-pointer">
+                    <input type="checkbox" id="chkHideSlide" class="w-3.5 h-3.5 rounded text-blue-600 bg-slate-800 border-slate-700">
+                    <span>Hide Slide</span>
+                </label>
+                <button id="btnPinDrawer" class="p-1 rounded hover:bg-slate-800 transition text-sm" title="Pin drawer open">
+                    <span id="lblPinIcon">📌</span>
+                </button>
+            </div>
+        </div>
+    </section>
+
+    <!-- Toast Notifications -->
+    <div id="toastContainer" class="fixed top-14 right-4 z-50 flex flex-col gap-2 pointer-events-none"></div>
+
+    <script src="photocollage_demo.js"></script>
+    <script src="photoframe.js"></script>
+    <script src="photoeffects.js"></script>
+    <script src="phototransitions.js"></script>
+    <script src="photopaint.js"></script>
+    <script src="videostudio.js"></script>
+
+
+
+</body>
+</html>

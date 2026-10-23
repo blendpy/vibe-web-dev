@@ -303,25 +303,30 @@ This HTML version was AI generated from the python source code.">
                         <option value="image/png">PNG Image (.png) — Lossless Quality</option>
                         <option value="image/jpeg">JPEG Image (.jpg) — Compact Size</option>
                         <option value="image/webp">WebP Image (.webp) — Modern High Compression</option>
+                        <option value="video/animation">Create Animation Video (.webm)</option>
+                        <option value="extract/images">Extract All Images (Original Files)</option>
                     </select>
                 </div>
-                <div class="bg-emerald-50 border border-emerald-200 rounded-xl p-3 text-xs text-emerald-800">
-                    Poster will be rendered at full resolution: <strong id="lblSaveDims">800 × 600</strong> pixels.
+                
+                <!-- Dynamic Info Box -->
+                <div id="saveInfoBox" class="bg-emerald-50 border border-emerald-200 rounded-xl p-3 text-xs text-emerald-800 transition-colors">
+                    <span id="lblSaveInfo">Poster will be rendered at full resolution: <strong id="lblSaveDims">800 × 600</strong> pixels.</span>
                 </div>
             </div>
             
-            <!-- Modal Footer (Cancel / Save Project / Download Poster) -->
+            <!-- Modal Footer (Cancel / Save Project / Dynamic Confirm Button) -->
             <div class="px-6 py-3.5 bg-slate-50 border-t border-slate-200 flex flex-wrap items-center justify-between gap-2.5">
                 <button id="btnSaveCancel" class="px-4 py-2 rounded-lg border border-slate-300 bg-white hover:bg-slate-100 text-slate-700 text-xs sm:text-sm font-medium transition">
                     Cancel
                 </button>
-                <div class="flex items-center gap-2.5">
-                    <button id="btnSaveProject" class="px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-xs sm:text-sm font-medium shadow-sm transition flex items-center gap-1.5" title="Save session as a standalone HTML file that reopens with images and layout intact">
+                <div class="grid grid-cols-2 gap-2.5">
+                    <button id="btnSaveProject" class="px-3 sm:px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-xs sm:text-sm font-medium shadow-sm transition flex items-center justify-center text-center gap-1.5" title="Save session as a standalone HTML file that reopens with images and layout intact">
                         <span>📦</span>
-                        <span>Save Project as HTML<br>(Includes All Images)</span>
+                        <span>Save Project as HTML<br class="hidden sm:inline">(Includes All Images)</span>
                     </button>
-                    <button id="btnSaveConfirm" class="px-5 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs sm:text-sm font-medium shadow-sm transition">
-                        Download Poster<br>(as One Image)
+                    <button id="btnSaveConfirm" class="px-3 sm:px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs sm:text-sm font-medium shadow-sm transition flex items-center justify-center text-center gap-1.5">
+                        <span id="lblSaveConfirmIcon">💾</span>
+                        <span id="lblSaveConfirmText">Download Poster<br class="hidden sm:inline">(as One Image)</span>
                     </button>
                 </div>
             </div>
@@ -335,5 +340,6 @@ This HTML version was AI generated from the python source code.">
 
 <script src="photocollage.js"></script>
 <script src="photocollage_demo.js"></script>
+<script src="photocollage_appcontrol.js"></script>
 </body>
 </html>
