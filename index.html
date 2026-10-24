@@ -218,6 +218,123 @@
         Hosted on GitHub Pages • blendpy/vibe-web-dev
     </footer>
 
+
+    <!-- ============================================================== -->
+    <!-- DEMO & MEDIA GENERATOR MODAL                                   -->
+    <!-- ============================================================== -->
+    <div id="demoPickerModal" class="hidden fixed inset-0 z-[80] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-slate-900 border border-slate-700/80 rounded-2xl w-full max-w-2xl overflow-hidden shadow-2xl flex flex-col max-h-[90vh]">
+            
+            <!-- Modal Header -->
+            <div class="px-6 py-4 border-b border-slate-800 flex items-center justify-between bg-slate-950/60">
+                <div class="flex items-center gap-2.5">
+                    <span class="text-xl">🚀</span>
+                    <h2 class="text-base font-bold text-white">Load Media & Slideshow Demos</h2>
+                </div>
+                <button id="btnDemoModalClose" class="text-slate-400 hover:text-white text-xl leading-none">&times;</button>
+            </div>
+
+            <!-- Tab Buttons -->
+            <div class="flex border-b border-slate-800 bg-slate-950/40 px-6 pt-3 gap-2">
+                <button id="tabDemoHelio" class="px-4 py-2 text-xs sm:text-sm font-semibold rounded-t-lg bg-blue-600 text-white shadow">🪐 Helio Planets</button>
+                <button id="tabDemoBing" class="px-4 py-2 text-xs sm:text-sm font-medium rounded-t-lg bg-slate-800 hover:bg-slate-700 text-slate-300">🖼️ Bing Photos</button>
+                <button id="tabDemoColor" class="px-4 py-2 text-xs sm:text-sm font-medium rounded-t-lg bg-slate-800 hover:bg-slate-700 text-slate-300">🎨 Color / Gradient</button>
+            </div>
+
+            <!-- Tab Panels Content -->
+            <div class="p-6 overflow-y-auto space-y-4 flex-1">
+                
+                <!-- Panel 1: Helio Planets -->
+                <div id="panelDemoHelio" class="space-y-4">
+                    <p class="text-xs sm:text-sm text-slate-300">
+                        Loads the full educational astronomical collection, featuring 32 high-resolution slides of planets, moons, dwarf planets, and comets with gradient chapter titles.
+                    </p>
+                    <div class="grid grid-cols-4 gap-2 bg-slate-950 p-3 rounded-xl border border-slate-800">
+                        <div class="text-center text-[11px] text-slate-400 p-2 bg-slate-900 rounded border border-slate-800">9 Planets</div>
+                        <div class="text-center text-[11px] text-slate-400 p-2 bg-slate-900 rounded border border-slate-800">9 Moons</div>
+                        <div class="text-center text-[11px] text-slate-400 p-2 bg-slate-900 rounded border border-slate-800">Dwarfs & Comets</div>
+                        <div class="text-center text-[11px] text-slate-400 p-2 bg-slate-900 rounded border border-slate-800">5 Chapter Dividers</div>
+                    </div>
+                    <label class="flex items-center gap-2 text-xs text-slate-400 cursor-pointer pt-1">
+                        <input type="checkbox" id="chkHelioClearTimeline" checked class="rounded bg-slate-800 border-slate-700">
+                        <span>Clear current timeline before loading</span>
+                    </label>
+                </div>
+
+                <!-- Panel 2: Bing Photos -->
+                <div id="panelDemoBing" class="hidden space-y-4">
+                    <p class="text-xs sm:text-sm text-slate-300">
+                        Pulls 1920×1080 high-resolution daily Bing wallpapers and nature landscapes directly from the web.
+                    </p>
+                    <div class="flex items-center gap-4 bg-slate-950 p-4 rounded-xl border border-slate-800">
+                        <label class="text-xs font-semibold text-slate-400">Number of Images:</label>
+                        <select id="selBingCount" class="bg-slate-800 border border-slate-700 rounded-lg px-3 py-1.5 text-xs font-bold text-white outline-none">
+                            <option value="5">5 Images</option>
+                            <option value="8" selected>8 Images</option>
+                            <option value="12">12 Images</option>
+                        </select>
+                    </div>
+                    <label class="flex items-center gap-2 text-xs text-slate-400 cursor-pointer">
+                        <input type="checkbox" id="chkBingClearTimeline" checked class="rounded bg-slate-800 border-slate-700">
+                        <span>Clear current timeline before loading</span>
+                    </label>
+                </div>
+
+                <!-- Panel 3: Color / Gradient Slide -->
+                <div id="panelDemoColor" class="hidden space-y-4">
+                    <p class="text-xs sm:text-sm text-slate-300">
+                        Generate a solid or two-color linear gradient slide with customizable title text.
+                    </p>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-slate-950 p-4 rounded-xl border border-slate-800">
+                        <!-- Left: Colors & Gradient Option -->
+                        <div class="space-y-3">
+                            <div class="flex items-center justify-between">
+                                <label class="text-xs font-semibold text-slate-400">Color 1 (Start):</label>
+                                <input type="color" id="pickerColor1" value="#1e3a8a" class="w-10 h-8 rounded border border-slate-700 cursor-pointer bg-transparent">
+                            </div>
+                            <label class="flex items-center gap-2 text-xs text-slate-300 cursor-pointer">
+                                <input type="checkbox" id="chkEnableGradient" checked class="rounded bg-slate-800 border-slate-700">
+                                <span class="font-semibold">Enable Linear Gradient</span>
+                            </label>
+                            <div id="rowColor2" class="flex items-center justify-between">
+                                <label class="text-xs font-semibold text-slate-400">Color 2 (End):</label>
+                                <input type="color" id="pickerColor2" value="#020617" class="w-10 h-8 rounded border border-slate-700 cursor-pointer bg-transparent">
+                            </div>
+                        </div>
+
+                        <!-- Right: Slide Title & Placement -->
+                        <div class="space-y-3">
+                            <div>
+                                <label class="text-xs font-semibold text-slate-400 block mb-1">Slide Title:</label>
+                                <input type="text" id="txtColorSlideTitle" value="Chapter Title" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-white outline-none">
+                            </div>
+                            <div>
+                                <label class="text-xs font-semibold text-slate-400 block mb-1">Title Placement:</label>
+                                <select id="selColorTitlePos" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-white outline-none">
+                                    <option value="CC" selected>Center (CC)</option>
+                                    <option value="LL">Lower Left (LL)</option>
+                                    <option value="LR">Lower Right (LR)</option>
+                                    <option value="UL">Upper Left (UL)</option>
+                                    <option value="UR">Upper Right (UR)</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Modal Footer -->
+            <div class="px-6 py-4 border-t border-slate-800 bg-slate-950/60 flex items-center justify-end gap-3">
+                <button id="btnDemoCancel" class="px-4 py-2 rounded-xl text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-300 transition">Cancel</button>
+                <button id="btnDemoConfirmLoad" class="px-5 py-2 rounded-xl text-xs font-bold bg-blue-600 hover:bg-blue-500 text-white shadow-lg transition flex items-center gap-2">
+                    <span id="lblDemoConfirmText">Load Helio Slides</span>
+                </button>
+            </div>
+
+        </div>
+    </div>
+
     <!-- Interactive Image Swap Script -->
     <script>
         document.addEventListener('DOMContentLoaded', () => {

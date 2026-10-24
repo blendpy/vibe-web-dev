@@ -375,7 +375,13 @@ class MediaItem {
             ctx.restore();
         }
 
-        this.thumbUrl = cvs.toDataURL("image/jpeg", 0.90);
+        // Wrap toDataURL in try/catch to prevent cross-origin lock-ups
+        try {
+            this.thumbUrl = cvs.toDataURL("image/jpeg", 0.90);
+        } catch (err) {
+            console.warn("CORS tainted canvas detected. Using source image directly:", err);
+            this.thumbUrl = (this.imgElement && this.imgElement.src) ? this.imgElement.src : null;
+        }
     }
 
     dispose() {
@@ -737,6 +743,7 @@ class ImageSectionEditorCanvas {
     }
 
     onWheel(e) {
+        if (e.ctrlKey || e.metaKey) return;
         e.preventDefault();
         const item = this.item;
         if (!item) return;
@@ -841,7 +848,7 @@ class ImageSectionEditorCanvas {
         ctx.stroke();
 
         const ticLen = isInteracting ? 10 : 5;
-        const ticWidth = isInteracting ? 3 : 1.5;
+        const ticWidth = isInteracting ? 4 : 2
         ctx.lineWidth = ticWidth;
         ctx.strokeStyle = isInteracting 
             ? (this.isEnd ? "#fbbf24" : "#22d3ee") 
@@ -854,7 +861,7 @@ class ImageSectionEditorCanvas {
         for (const gx of xGrid) {
             for (const gy of yGrid) {
                 ctx.moveTo(gx - ticLen, gy); ctx.lineTo(gx + ticLen, gy);
-                ctx.moveTo(gx, gy - ticLen); ctx.lineTo(gx + ticLen, gy);
+                ctx.moveTo(gx, gy - ticLen); ctx.lineTo(gx, ticLen + gy); 
             }
         }
         ctx.stroke();
@@ -926,13 +933,11 @@ class VideoStudioApp {
     constructor() {
         this.mediaItems = [];
         this.selectedIndices = [];
-        this.activeTab = "tabOverview";
+        this.activeTab = "tabZoom";
+        this.hudTimer = null;
 
         // Viewport Stage & Canvas
         this.stageEl = document.getElementById("workspaceStage");
-        this.overviewStage = document.getElementById("overviewStage");
-        this.canvas = document.getElementById("mainCanvas");
-        this.ctx = this.canvas.getContext("2d");
 
         // Zoom Dual-Frame Components (PhotoZoom_2.py Port)
         this.zoomStage = document.getElementById("zoomStage");
@@ -972,6 +977,12 @@ class VideoStudioApp {
         this.drawerEl = document.getElementById("filmstripDrawer");
         this.trackEl = document.getElementById("filmstripTrack");
 
+        // Continuous Soft Scroll State for Edge Buttons
+        this.trackScrollRaf = null;
+        this.trackScrollDir = 0;
+        this.trackScrollSpeed = 0;
+        this.initBindings();
+
         // Horizontal-Only Drag State
         this.isDragging = false;
         this.dragCandidateIdx = null;
@@ -984,10 +995,45 @@ class VideoStudioApp {
         this.scrollVelocity = 0;
         this.scrollRafId = null;
 
-        this.initBindings();
         this.updateDrawerHeight();
         this.renderFilmstrip();
         this.renderMainStage();
+    }
+
+    triggerTitleBubble(primaryIdx, item) {
+        const hud = document.getElementById("stageHud");
+        if (!hud || !item) return;
+
+        if (this.hudTimer) {
+            clearTimeout(this.hudTimer);
+            this.hudTimer = null;
+        }
+
+        const srcW = item.imgElement ? (item.imgElement.naturalWidth || item.imgElement.width || item.w) : item.w;
+        const srcH = item.imgElement ? (item.imgElement.naturalHeight || item.imgElement.height || item.h) : item.h;
+
+        const lblTitle = document.getElementById("lblHudSlideTitle");
+        const lblRes = document.getElementById("lblHudResolution");
+        const lblDur = document.getElementById("lblHudDuration");
+
+        if (lblTitle) lblTitle.textContent = `#${primaryIdx + 1} — ${item.filename}`;
+        if (lblRes) lblRes.textContent = `${srcW} × ${srcH} px`;
+        if (lblDur) lblDur.textContent = `Duration: ${item.moveDuration}s`;
+
+        // Make visible and fade in
+        hud.classList.remove("hidden", "opacity-0");
+        hud.classList.add("opacity-100");
+
+        // Fade out after 3 seconds
+        this.hudTimer = setTimeout(() => {
+            hud.classList.remove("opacity-100");
+            hud.classList.add("opacity-0");
+            setTimeout(() => {
+                if (hud.classList.contains("opacity-0")) {
+                    hud.classList.add("hidden");
+                }
+            }, 500);
+        }, 3000);
     }
 
     getSelectedItems() {
@@ -1004,18 +1050,81 @@ class VideoStudioApp {
                 fileInput.value = "";
             }
         });
+        
+        
+        // Smooth Animated Horizontal Mouse Wheel Scrolling on Filmstrip
+        let wheelTarget = this.trackEl.scrollLeft;
+        let isWheelScrolling = false;
 
-        document.getElementById("btnLoadDemo").addEventListener("click", () => this.loadDemoMedia());
-        document.getElementById("btnClearTimeline").addEventListener("click", () => this.clearTimeline());
-
-        // Horizontal Mouse Wheel Scrolling on Filmstrip
         this.trackEl.addEventListener("wheel", (e) => {
+            // Ignore wheel scrolling if Ctrl or Cmd is held, allowing browser page scaling
+            if (e.ctrlKey || e.metaKey) return;
+
             if (e.deltaY !== 0 || e.deltaX !== 0) {
                 e.preventDefault();
                 const delta = Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY;
-                this.trackEl.scrollLeft += delta;
+ 
+                // Sync start position if a previous glide finished or user dragged
+                if (!isWheelScrolling) {
+                    wheelTarget = this.trackEl.scrollLeft;
+                }
+
+                const maxScroll = Math.max(0, this.trackEl.scrollWidth - this.trackEl.clientWidth);
+                wheelTarget = Math.max(0, Math.min(maxScroll, wheelTarget + delta));
+
+                if (!isWheelScrolling) {
+                    isWheelScrolling = true;
+                    const stepScroll = () => {
+                        const current = this.trackEl.scrollLeft;
+                        const diff = wheelTarget - current;
+
+                        if (Math.abs(diff) > 0.5) {
+                            this.trackEl.scrollLeft = current + diff * 0.22;
+                            requestAnimationFrame(stepScroll);
+                        } else {
+                            this.trackEl.scrollLeft = wheelTarget;
+                            isWheelScrolling = false;
+                        }
+                    };
+                    requestAnimationFrame(stepScroll);
+                }
             }
         }, { passive: false });
+
+
+        // Track Scroll Listener: dynamically toggle button visibility as the user scrolls
+        this.trackEl.addEventListener("scroll", () => this.updateTrackScrollButtons(), { passive: true });
+
+        // Edge Buttons: Hold pointerdown to soft scroll continuously until release
+        const setupScrollButton = (btnId, dir) => {
+            const btn = document.getElementById(btnId);
+            if (!btn) return;
+
+            btn.addEventListener("pointerdown", (e) => {
+                if (e.button !== 0) return;
+                e.preventDefault();
+                e.stopPropagation();
+                try { btn.setPointerCapture(e.pointerId); } catch (_) {}
+                this.startTrackSoftScroll(dir);
+            });
+
+            const onRelease = (e) => {
+                try { btn.releasePointerCapture(e.pointerId); } catch (_) {}
+                this.stopTrackSoftScroll();
+            };
+
+            btn.addEventListener("pointerup", onRelease);
+            btn.addEventListener("pointercancel", onRelease);
+        };
+
+        setupScrollButton("btnTrackScrollLeft", -1);
+        setupScrollButton("btnTrackScrollRight", 1);
+
+
+
+
+        document.getElementById("btnLoadDemo").addEventListener("click", () => this.loadDemoMedia());
+        document.getElementById("btnClearTimeline").addEventListener("click", () => this.clearTimeline());
 
         // Zoom Toolbar Controls (Multi-Selection Aware)
         const zoomDurSlider = document.getElementById("zoomDurationSlider");
@@ -1033,7 +1142,7 @@ class VideoStudioApp {
             for (const itm of this.getSelectedItems()) {
                 itm.isZoom = allow;
                 // Instantly snap both zoom boxes to the maximum 16:9 crop that fits inside the image
-                itm.resetToFullExtent(); 
+                itm.resetToFullExtent();
             }
             this.updateZoomFramesVisibility();
         });
@@ -1052,7 +1161,7 @@ class VideoStudioApp {
         document.getElementById("btnZoomRandom").addEventListener("click", () => this.applyRandomZoomMotion());
         document.getElementById("btnZoomPreview").addEventListener("click", () => this.startKenBurnsPreview());
         document.getElementById("btnStopPreview").addEventListener("click", () => this.stopKenBurnsPreview());
-
+   
         // Global External File Drag & Drop
         const overlay = document.getElementById("dropOverlay");
         const overlayPrompt = document.getElementById("dropOverlayPrompt");
@@ -1113,6 +1222,7 @@ class VideoStudioApp {
 
         // Hover Collapsible Drawer Physics
         this.drawerEl.addEventListener("mouseenter", () => {
+            if (this.activeTab === "tabPaint") return;
             if (!this.isPinned && !this.isExpanded) {
                 this.isExpanded = true;
                 this.updateDrawerHeight();
@@ -1153,7 +1263,7 @@ class VideoStudioApp {
         });
 
         // Tool Tabs
-        const tabs = ["tabOverview", "tabFrame", "tabZoom", "tabEffects", "tabTrans", "tabPaint"];
+        const tabs = ["tabFrame", "tabZoom", "tabEffects", "tabTrans", "tabPaint"];
         tabs.forEach((tabId) => {
             const btn = document.getElementById(tabId);
             if (btn) {
@@ -1167,6 +1277,7 @@ class VideoStudioApp {
         // Window Resizing
         window.addEventListener("resize", () => {
             this.renderMainStage();
+            this.updateTrackScrollButtons();
         });
 
         // Pointer-based Horizontal Drag and Reorder Listeners
@@ -1181,19 +1292,26 @@ class VideoStudioApp {
         document.getElementById("btnExportVideo")?.addEventListener("click", () => {
             this._playMovieSequence(true);  // Export mode
         });
-
     }
 
     updateDrawerHeight() {
-        // Force the drawer to collapse to 44px (hiding thumbnails) when in Paint mode
-        if (this.activeTab === "tabPaint") {
-            this.drawerEl.style.height = "44px";
+        const isPaint = this.activeTab === "tabPaint";
+        const accentLine = document.getElementById("drawerAccentLine");
+
+        if (isPaint) {
+            // Completely hide the thumbnail list and top accent line
+            this.trackEl.classList.add("hidden");
+            if (accentLine) accentLine.classList.add("hidden");
+            this.drawerEl.style.height = "40px"; // Preserves only the tab switch buttons
         } else {
+            // Restore thumbnail track and accent line
+            this.trackEl.classList.remove("hidden");
+            if (accentLine) accentLine.classList.remove("hidden");
             this.drawerEl.style.height = this.isExpanded ? "180px" : "44px";
         }
+
         setTimeout(() => this.renderMainStage(), 210);
     }
-
 
     async ingestFiles(files) {
         const validExts = /\.(jpe?g|png|webp|bmp|gif|mp4|webm|mov|mkv|ogg)$/i;
@@ -1234,7 +1352,9 @@ class VideoStudioApp {
     }
 
     async loadDemoMedia() {
-        if (typeof window.loadDemoMedia === "function") {
+        if (typeof window.openDemoPickerModal === "function") {
+            window.openDemoPickerModal(this);
+        } else if (typeof window.loadDemoMedia === "function") {
             await window.loadDemoMedia(this);
         } else if (typeof loadDemoMedia === "function") {
             await loadDemoMedia(this);
@@ -1252,7 +1372,6 @@ class VideoStudioApp {
         }
     }
 
-
     // ==================================================================
     // MOVIE PREVIEW & EXPORT ENGINE (Continuous Motion Transitions)
     // ==================================================================
@@ -1266,7 +1385,7 @@ class VideoStudioApp {
         // 1. Create Fullscreen Overlay if it doesn't exist
         let overlay = document.getElementById("moviePreviewOverlay");
         let canvas, ctx, lblStatus, btnStop;
-        
+
         if (!overlay) {
             overlay = document.createElement("div");
             overlay.id = "moviePreviewOverlay";
@@ -1289,20 +1408,20 @@ class VideoStudioApp {
         ctx = canvas.getContext("2d");
         lblStatus = document.getElementById("lblMovieStatus");
         btnStop = document.getElementById("btnStopMovie");
-        
+
         this._stopSequence = false;
         btnStop.onclick = () => { this._stopSequence = true; };
 
         // 2. Setup MediaRecorder for Export
         let recorder = null;
         let chunks = [];
-        
+
         if (isExporting) {
             lblStatus.textContent = "Initializing Export...";
             try {
                 const stream = canvas.captureStream(30);
                 recorder = new MediaRecorder(stream, { mimeType: "video/webm;codecs=vp9" });
-                
+
                 recorder.ondataavailable = e => { if (e.data.size > 0) chunks.push(e.data); };
                 recorder.onstop = () => {
                     if (chunks.length === 0) return;
@@ -1372,42 +1491,41 @@ class VideoStudioApp {
 
         let slideTimeOffsetMs = 0; // Tracks time already consumed by the previous transition
 
+        let transInMs = 0; // Tracks incoming transition duration from previous slide
+
         // 3. Render Loop (Iterate through slides)
         for (let i = 0; i < visibleItems.length; i++) {
             if (this._stopSequence) break;
-            
+
             const item = visibleItems[i];
             const nextItem = visibleItems[i + 1];
 
-            const durationMs = (item.moveDuration || 5.0) * 1000;
-            const transMs = nextItem ? ((item.transDuration || 2.0) * 1000) : 0;
-            
+            const motionMs = (item.moveDuration || 5.0) * 1000;
+            const transOutMs = nextItem ? ((item.transDuration || 2.0) * 1000) : 0;
+            const totalMotionMs = transInMs + motionMs + transOutMs;
+
             lblStatus.textContent = isExporting 
                 ? `Exporting Slide ${i + 1} of ${visibleItems.length}...` 
                 : `Playing Slide ${i + 1} of ${visibleItems.length}`;
             
-            // Phase 1: Pure Slide 
-            // Deduct the time this slide already spent animating during the previous transition
-            const phase1Duration = Math.max(0, durationMs - slideTimeOffsetMs);
-            let currentItemTimeMs = slideTimeOffsetMs;
-
-            if (phase1Duration > 0) {
+            // Phase 1: Solo Slide Motion (Plays for full motionMs)
+            if (motionMs > 0) {
                 let start = performance.now();
                 await new Promise(resolve => {
                     const drawPhase1 = (now) => {
                         if (this._stopSequence) return resolve();
-                        
+
                         const realElapsed = now - start;
-                        currentItemTimeMs = slideTimeOffsetMs + realElapsed;
+                        const currentElapsed = Math.min(motionMs, realElapsed);
                         
-                        // Calculate 't' based on total time, maintaining the exact trajectory
-                        const t = currentItemTimeMs / durationMs; 
+                        // Progress seamlessly incorporates time already spent in incoming transition
+                        const t = (transInMs + currentElapsed) / totalMotionMs; 
 
                         renderSlide(ctx, item, t, canvas.width, canvas.height);
-                        
-                        if (realElapsed < phase1Duration) requestAnimationFrame(drawPhase1);
-                        else {
-                            currentItemTimeMs = slideTimeOffsetMs + phase1Duration;
+
+                        if (realElapsed < motionMs) {
+                            requestAnimationFrame(drawPhase1);
+                        } else {
                             resolve();
                         }
                     };
@@ -1418,31 +1536,33 @@ class VideoStudioApp {
             if (this._stopSequence) break;
             if (!nextItem) continue;
 
-            // Phase 2: Transition Window
+            // Phase 2: Transition Window (Both Current & Target Images Animate Concurrently)
             lblStatus.textContent = isExporting 
                 ? `Transitioning ${i + 1} ➔ ${i + 2}...` 
                 : `Transitioning ${i + 1} ➔ ${i + 2}`;
 
             let startTrans = performance.now();
-            const nextDurationMs = (nextItem.moveDuration || 5.0) * 1000;
-            const phase2StartTimeMs = currentItemTimeMs;
+            const nextMotionMs = (nextItem.moveDuration || 5.0) * 1000;
+            const nextTransOutMs = (i + 2 < visibleItems.length) ? ((visibleItems[i + 2].transDuration || 2.0) * 1000) : 0;
+            const nextTotalMotionMs = transOutMs + nextMotionMs + nextTransOutMs;
 
             await new Promise(resolve => {
                 const drawPhase2 = (now) => {
                     if (this._stopSequence) return resolve();
-                    
-                    const elapsed = now - startTrans;
-                    const p = Math.min(1.0, elapsed / transMs); 
 
-                    // Extrapolate current slide's motion past 100%, and start next slide's motion from 0.0
-                    currentItemTimeMs = phase2StartTimeMs + elapsed;
-                    const tA = currentItemTimeMs / durationMs;
-                    const tB = elapsed / nextDurationMs;
+                    const elapsed = Math.min(transOutMs, now - startTrans);
+                    const p = Math.min(1.0, elapsed / transOutMs);
+
+                    // Outgoing current slide moves towards 1.0 (rectEnd)
+                    const tA = (transInMs + motionMs + elapsed) / totalMotionMs;
+
+                    // Incoming target slide begins moving from 0.0 (rectStart) concurrently
+                    const tB = elapsed / nextTotalMotionMs;
 
                     renderSlide(ctxA, item, tA, canvas.width, canvas.height);
                     renderSlide(ctxB, nextItem, tB, canvas.width, canvas.height);
 
-                    // Hook into the TransEditor to apply the selected mask effect seamlessly
+                    // Hook into TransEditor to apply transition mask
                     const te = this.transEditor;
                     if (te) {
                         const backup = {
@@ -1460,7 +1580,14 @@ class VideoStudioApp {
                         te.activeRotationIdx = item.transRotation || 0;
                         te.maskInverted = !!item.transNegative;
 
-                        const imgTypes = { "Threshold": "activeThresholdIdx", "Distortion": "activeDistortionIdx", "Spiral": "activeSpiralIdx", "Wave": "activeWaveIdx", "Mosaic": "activeMosaicIdx", "Picture": "activePictholdIdx" };
+                        const imgTypes = { 
+                            "Threshold": "activeThresholdIdx", 
+                            "Distortion": "activeDistortionIdx", 
+                            "Spiral": "activeSpiralIdx", 
+                            "Wave": "activeWaveIdx", 
+                            "Mosaic": "activeMosaicIdx", 
+                            "Picture": "activePictholdIdx" 
+                        };
                         if (imgTypes[item.transType]) {
                             te.mode = `Type-${item.transType}`;
                             te[imgTypes[item.transType]] = parseInt(item.transItem, 10) || 0;
@@ -1479,29 +1606,30 @@ class VideoStudioApp {
                         ctx.globalAlpha = 1.0;
                     }
 
-                    if (elapsed < transMs) requestAnimationFrame(drawPhase2);
-                    else resolve();
+                    if (elapsed < transOutMs) {
+                        requestAnimationFrame(drawPhase2);
+                    } else {
+                        resolve();
+                    }
                 };
                 requestAnimationFrame(drawPhase2);
             });
-            
-            // Pass the consumed transition time to the next loop iteration
-            slideTimeOffsetMs = transMs;
+
+            // Hand off the transition time so the next slide begins its solo phase seamlessly
+            transInMs = transOutMs;
         }
-        
+
+
+
         // 4. Cleanup & Stop Recording
         if (recorder && recorder.state !== "inactive") {
             lblStatus.textContent = "Processing Video File...";
             recorder.stop();
         }
-        
+
         overlay.classList.add("hidden");
         if (!isExporting && !this._stopSequence) showToast("Playback Finished", "success");
     }
-
-
-
-
 
     selectSlide(index, multi = false, range = false) {
         if (index < 0 || index >= this.mediaItems.length) return;
@@ -1531,7 +1659,11 @@ class VideoStudioApp {
 
         this.renderFilmstrip();
         this.renderMainStage();
+
+        // Keep selected thumbnail visible when navigating with arrow keys
+        this.ensureVisible(primaryIdx);
     }
+
 
     moveSelection(delta) {
         if (!this.selectedIndices.length) return;
@@ -1596,8 +1728,25 @@ class VideoStudioApp {
     }
 
     ensureVisible(index) {
-        if (this.trackEl.children[index]) {
-            this.trackEl.children[index].scrollIntoView({ behavior: "smooth", block: "nearest", inline: "nearest" });
+        const card = this.trackEl?.children[index];
+        if (!card) return;
+
+        const trackRect = this.trackEl.getBoundingClientRect();
+        const cardRect = card.getBoundingClientRect();
+
+        // If card is off-screen to the left, scroll left with padding
+        if (cardRect.left < trackRect.left) {
+            this.trackEl.scrollBy({
+                left: cardRect.left - trackRect.left - 24,
+                behavior: "smooth"
+            });
+        } 
+        // If card is off-screen to the right, scroll right with padding
+        else if (cardRect.right > trackRect.right) {
+            this.trackEl.scrollBy({
+                left: cardRect.right - trackRect.right + 24,
+                behavior: "smooth"
+            });
         }
     }
 
@@ -1651,6 +1800,7 @@ class VideoStudioApp {
         const ghostW = Math.round(cardRect.width) || 150;
         const ghostH = Math.round(cardRect.height) || 120;
 
+        // 1. Floating Ghost Thumbnail following the cursor
         const ghost = document.createElement("div");
         ghost.id = "filmstripDragGhost";
         ghost.className = "absolute pointer-events-none z-50 rounded-lg overflow-hidden border-2 border-amber-400 ring-4 ring-amber-500/40 shadow-2xl opacity-95 transition-none bg-[#070b14] flex flex-col";
@@ -1677,6 +1827,7 @@ class VideoStudioApp {
         this.drawerEl.appendChild(ghost);
         this.ghostEl = ghost;
 
+        // 2. Empty landing spacer indicator
         const spacer = document.createElement("div");
         spacer.id = "dragDropSpacer";
         spacer.className = "shrink-0 rounded-lg border-2 border-dashed border-blue-400 bg-blue-500/15 transition-all duration-150";
@@ -1684,9 +1835,10 @@ class VideoStudioApp {
         spacer.style.height = `${ghostH}px`;
         this.spacerEl = spacer;
 
+        // 3. Keep original card visible on the track as a dimmed ghost thumbnail
         this.movingIndices.forEach((i) => {
             if (this.trackEl.children[i]) {
-                this.trackEl.children[i].classList.add("opacity-20", "scale-95");
+                this.trackEl.children[i].classList.add("opacity-30", "scale-95");
             }
         });
 
@@ -1694,6 +1846,7 @@ class VideoStudioApp {
         this.updateHorizontalGhost(e.clientX);
         this.startAutoScrollLoop();
     }
+
 
     updateHorizontalGhost(clientX) {
         if (!this.ghostEl) return;
@@ -1705,11 +1858,13 @@ class VideoStudioApp {
     updateDropSpacer(clientX) {
         if (!this.spacerEl) return;
 
-        const visibleCards = Array.from(this.trackEl.querySelectorAll(".filmstrip-card"));
-        let targetIdx = this.mediaItems.length;
+        // Compare position ONLY against stationary cards (ignoring the cards currently being dragged)
+        const allCards = Array.from(this.trackEl.querySelectorAll(".filmstrip-card"));
+        const stationaryCards = allCards.filter((_, idx) => !this.movingIndices.includes(idx));
+        let targetIdx = stationaryCards.length;
 
-        for (let i = 0; i < visibleCards.length; i++) {
-            const card = visibleCards[i];
+        for (let i = 0; i < stationaryCards.length; i++) {
+            const card = stationaryCards[i];
             const rect = card.getBoundingClientRect();
             const midpoint = rect.left + rect.width / 2;
 
@@ -1721,10 +1876,10 @@ class VideoStudioApp {
 
         if (this.currentDropIdx !== targetIdx) {
             this.currentDropIdx = targetIdx;
-            if (targetIdx >= visibleCards.length) {
+            if (targetIdx >= stationaryCards.length) {
                 this.trackEl.appendChild(this.spacerEl);
             } else {
-                this.trackEl.insertBefore(this.spacerEl, visibleCards[targetIdx]);
+                this.trackEl.insertBefore(this.spacerEl, stationaryCards[targetIdx]);
             }
         }
     }
@@ -1776,11 +1931,11 @@ class VideoStudioApp {
 
             if (this.currentDropIdx !== null && this.movingIndices.length > 0) {
                 const movingItems = this.movingIndices.map(i => this.mediaItems[i]);
-                const numBefore = this.movingIndices.filter(i => i < this.currentDropIdx).length;
-                let insertIdx = this.currentDropIdx - numBefore;
-                insertIdx = Math.max(0, Math.min(insertIdx, this.mediaItems.length - movingItems.length));
-
+                // Remove the moving items from their old spots
                 this.mediaItems = this.mediaItems.filter(item => !movingItems.includes(item));
+                
+                // Insert them directly into targetIdx (no offsets or subtractions)
+                const insertIdx = Math.max(0, Math.min(this.currentDropIdx, this.mediaItems.length));
                 this.mediaItems.splice(insertIdx, 0, ...movingItems);
 
                 this.selectedIndices = [];
@@ -1803,7 +1958,7 @@ class VideoStudioApp {
 
     setActiveTab(tabId) {
         this.activeTab = tabId;
-        const tabs = ["tabOverview", "tabFrame", "tabZoom", "tabEffects", "tabTrans", "tabPaint"];
+        const tabs = ["tabFrame", "tabZoom", "tabEffects", "tabTrans", "tabPaint"];
         tabs.forEach((id) => {
             const btn = document.getElementById(id);
             if (!btn) return;
@@ -1813,7 +1968,13 @@ class VideoStudioApp {
                 btn.className = "tab-btn px-2.5 py-1 rounded font-medium bg-slate-800 hover:bg-slate-700 text-slate-300";
             }
         });
-        
+
+        // Hide top toolbar in Paint mode to maximize canvas space; show it on all other tabs
+        const topHeader = document.querySelector("header");
+        if (topHeader) {
+            topHeader.classList.toggle("hidden", tabId === "tabPaint");
+        }
+
         // Trigger drawer height recalculation immediately when tabs change
         this.updateDrawerHeight();
         this.renderMainStage();
@@ -1941,6 +2102,78 @@ class VideoStudioApp {
     }
 
     // ==================================================================
+    // FILMSTRIP EDGE BUTTONS: Visibility & Soft Scrolling
+    // ==================================================================
+    updateTrackScrollButtons() {
+        const btnLeft = document.getElementById("btnTrackScrollLeft");
+        const btnRight = document.getElementById("btnTrackScrollRight");
+        if (!btnLeft || !btnRight || !this.trackEl) return;
+
+        // Hide buttons if drawer is collapsed, in Paint mode, or empty
+        if (!this.isExpanded || this.activeTab === "tabPaint" || this.mediaItems.length === 0) {
+            btnLeft.classList.add("hidden");
+            btnRight.classList.add("hidden");
+            return;
+        }
+
+        const scrollLeft = this.trackEl.scrollLeft;
+        const scrollWidth = this.trackEl.scrollWidth;
+        const clientWidth = this.trackEl.clientWidth;
+        const tolerance = 4; // Ignores fractional subpixel rounding
+
+        const hasOffscreenLeft = scrollLeft > tolerance;
+        const hasOffscreenRight = (scrollWidth - clientWidth - scrollLeft) > tolerance;
+
+        btnLeft.classList.toggle("hidden", !hasOffscreenLeft);
+        btnRight.classList.toggle("hidden", !hasOffscreenRight);
+    }
+
+    startTrackSoftScroll(direction) {
+        this.trackScrollDir = direction; // -1 for left, 1 for right
+        this.trackScrollSpeed = 5;       // Starts soft and ramps smoothly to ~13
+
+        const step = () => {
+            if (this.trackScrollDir === 0) return;
+
+            // Soft acceleration
+            if (this.trackScrollSpeed < 13) {
+                this.trackScrollSpeed += 0.4;
+            }
+
+            this.trackEl.scrollLeft += this.trackScrollDir * this.trackScrollSpeed;
+            this.updateTrackScrollButtons();
+
+            // Stop automatically if we hit the left edge
+            if (this.trackScrollDir < 0 && this.trackEl.scrollLeft <= 0) {
+                this.stopTrackSoftScroll();
+                return;
+            }
+
+            // Stop automatically if we hit the right edge
+            const maxScroll = this.trackEl.scrollWidth - this.trackEl.clientWidth;
+            if (this.trackScrollDir > 0 && this.trackEl.scrollLeft >= maxScroll - 1) {
+                this.stopTrackSoftScroll();
+                return;
+            }
+
+            this.trackScrollRaf = requestAnimationFrame(step);
+        };
+
+        if (this.trackScrollRaf) cancelAnimationFrame(this.trackScrollRaf);
+        this.trackScrollRaf = requestAnimationFrame(step);
+    }
+
+    stopTrackSoftScroll() {
+        this.trackScrollDir = 0;
+        if (this.trackScrollRaf) {
+            cancelAnimationFrame(this.trackScrollRaf);
+            this.trackScrollRaf = null;
+        }
+        this.updateTrackScrollButtons();
+    }
+
+
+    // ==================================================================
     // FILMSTRIP RENDERING (Thumbnails + Index & Name + Cyan Duration)
     // ==================================================================
     renderFilmstrip() {
@@ -2004,13 +2237,13 @@ class VideoStudioApp {
 
             // Text Below Thumbnail: Index + Image Name on Left, Move Duration on Right
             const infoRow = document.createElement("div");
-            infoRow.className = "flex items-center justify-between px-1 pt-1 text-[11px] pointer-events-none gap-1 min-w-0";
+            infoRow.className = "w-full flex items-center justify-between px-1 pt-1 text-[11px] pointer-events-none gap-1 min-w-0 overflow-hidden";
             infoRow.innerHTML = `
-                <div class="flex items-baseline gap-1 min-w-0 flex-1 truncate">
+                <div class="flex items-baseline gap-1 min-w-0 flex-1 overflow-hidden">
                     <span class="${isSelected ? "text-amber-400 font-bold" : "text-slate-400"} text-[11px] shrink-0">#${idx + 1}</span>
-                    <span class="${isSelected ? "text-slate-200" : "text-slate-400"} text-[9.5px] font-medium truncate" title="${item.title}">${item.title}</span>
+                    <span class="${isSelected ? "text-slate-200" : "text-slate-400"} text-[9.5px] font-medium min-w-0 flex-1 truncate block" title="${item.title}">${item.title}</span>
                 </div>
-                <span class="${isSelected ? "text-amber-400 font-bold" : "text-cyan-400 font-bold"} text-[11px] shrink-0 ml-1">${item.moveDuration}s</span>
+                <span class="${isSelected ? "text-amber-400 font-bold" : "text-cyan-400 font-bold"} text-[11px] shrink-0 whitespace-nowrap pl-1">${Number(item.moveDuration || 5.0).toFixed(1)}s</span>
             `;
             unit.appendChild(infoRow);
 
@@ -2018,7 +2251,7 @@ class VideoStudioApp {
             if (idx < this.mediaItems.length - 1) {
                 const transBadge = document.createElement("div");
                 transBadge.className = "absolute z-20 px-1.5 py-0.5 rounded-full bg-slate-900/95 border border-slate-700/90 text-[9.5px] font-semibold text-slate-300 shadow-md backdrop-blur-sm pointer-events-none select-none whitespace-nowrap";
-                transBadge.style.left = "calc(100% + 4px)";
+                transBadge.style.left = "calc(100%)";  // 100% + 4px
                 transBadge.style.top = `${Math.round(thumbH / 2)}px`;
                 transBadge.style.transform = "translate(-50%, -50%)";
                 transBadge.textContent = `${item.transDuration}s`;
@@ -2027,8 +2260,13 @@ class VideoStudioApp {
 
             unit.addEventListener("pointerdown", (e) => this.onCardPointerDown(e, idx, unit));
             this.trackEl.appendChild(unit);
+            // Update scroll arrow visibility after rendering cards
+            requestAnimationFrame(() => this.updateTrackScrollButtons());
+
         });
     }
+
+
 
 
 
@@ -2036,10 +2274,20 @@ class VideoStudioApp {
         const primaryIdx = this.selectedIndices[this.selectedIndices.length - 1];
         const item = this.mediaItems[primaryIdx];
 
-if (this.paintStage) this.paintStage.classList.add("hidden");
+        if (this.paintStage) this.paintStage.classList.add("hidden");
+
+        // Clear HUD if leaving tabFrame
+        const hud = document.getElementById("stageHud");
+        if (this.activeTab !== "tabFrame" && hud) {
+            if (this.hudTimer) {
+                clearTimeout(this.hudTimer);
+                this.hudTimer = null;
+            }
+            hud.classList.add("hidden", "opacity-0");
+            hud.classList.remove("opacity-100");
+        }
 
         // 1. Hide all stages first (and stop transition timer if leaving tabTrans)
-        this.overviewStage.classList.add("hidden");
         this.zoomStage.classList.add("hidden");
         if (this.frameStage) this.frameStage.classList.add("hidden");
         if (this.effectsStage) this.effectsStage.classList.add("hidden");
@@ -2057,25 +2305,11 @@ if (this.paintStage) this.paintStage.classList.add("hidden");
             return;
         }
 
-        // 2. Route to the active tab
-        if (this.activeTab === "tabZoom") {
-            this.zoomStage.classList.remove("hidden");
-            if (!item) return;
-
-            document.getElementById("zoomDurationSlider").value = Math.round(item.moveDuration * 10);
-            document.getElementById("lblZoomDuration").textContent = `${item.moveDuration.toFixed(1)}s`;
-            document.getElementById("chkAllowZoom").checked = item.isZoom;
-            document.getElementById("chkLockBoundingBox").checked = item.isLock;
-
-            this.updateZoomFramesVisibility();
-            return;
-        }
-
-
         if (this.activeTab === "tabFrame" && this.frameStage && this.frameEditor) {
             this.frameStage.classList.remove("hidden");
             if (!item) return;
             this.frameEditor.syncWithActiveItem();
+            this.triggerTitleBubble(primaryIdx, item);
             return;
         }
 
@@ -2093,70 +2327,17 @@ if (this.paintStage) this.paintStage.classList.add("hidden");
             return;
         }
 
-        // 3. Default: Overview Mode
-        this.overviewStage.classList.remove("hidden");
+        // 2. Default: Zoom / Motion Mode
+        this.zoomStage.classList.remove("hidden");
+        if (!item) return;
 
-        const hud = document.getElementById("stageHud");
-        const stageW = this.stageEl.clientWidth;
-        const stageH = this.stageEl.clientHeight;
+        document.getElementById("zoomDurationSlider").value = Math.round(item.moveDuration * 10);
+        document.getElementById("lblZoomDuration").textContent = `${item.moveDuration.toFixed(1)}s`;
+        document.getElementById("chkAllowZoom").checked = item.isZoom;
+        document.getElementById("chkLockBoundingBox").checked = item.isLock;
 
-        if (stageW <= 0 || stageH <= 0) return;
-
-        if (!item || !item.imgElement) {
-            hud.classList.add("hidden");
-            this.canvas.width = Math.min(800, stageW - 32);
-            this.canvas.height = Math.min(500, stageH - 32);
-
-            this.ctx.fillStyle = "#0f172a";
-            this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
-
-            this.ctx.strokeStyle = "#334155";
-            this.ctx.lineWidth = 2;
-            this.ctx.strokeRect(10, 10, this.canvas.width - 20, this.canvas.height - 20);
-
-            this.ctx.fillStyle = "#94a3b8";
-            this.ctx.font = "bold 16px Inter, sans-serif";
-            this.ctx.textAlign = "center";
-            this.ctx.fillText("Drop Images or Videos Here to Begin", this.canvas.width / 2, this.canvas.height / 2 - 8);
-            this.ctx.font = "500 12px Inter, sans-serif";
-            this.ctx.fillStyle = "#64748b";
-            this.ctx.fillText("Click 'Add Media' or 'Load Demo' in the top toolbar", this.canvas.width / 2, this.canvas.height / 2 + 18);
-            return;
-        }
-
-        const sourceToDraw = item.getProcessedSource() || item.imgElement;
-        const srcW = sourceToDraw.naturalWidth || sourceToDraw.width || item.w;
-        const srcH = sourceToDraw.naturalHeight || sourceToDraw.height || item.h;
-
-        hud.classList.remove("hidden");
-        document.getElementById("lblHudSlideTitle").textContent = `#${primaryIdx + 1} — ${item.filename}`;
-        document.getElementById("lblHudResolution").textContent = `${srcW} × ${srcH} px`;
-        document.getElementById("lblHudDuration").textContent = `Duration: ${item.moveDuration}s`;
-
-        const pad = 24;
-        const maxW = Math.max(100, stageW - pad);
-        const maxH = Math.max(100, stageH - pad);
-
-        const imgAspect = srcW / srcH;
-        let drawW = maxW;
-        let drawH = drawW / imgAspect;
-
-        if (drawH > maxH) {
-            drawH = maxH;
-            drawW = drawH * imgAspect;
-        }
-
-        drawW = Math.round(drawW);
-        drawH = Math.round(drawH);
-
-        this.canvas.width = drawW;
-        this.canvas.height = drawH;
-
-        this.ctx.imageSmoothingEnabled = true;
-        this.ctx.imageSmoothingQuality = "high";
-        this.ctx.drawImage(sourceToDraw, 0, 0, srcW, srcH, 0, 0, drawW, drawH);
+        this.updateZoomFramesVisibility();
     }
-
 
     handleKeyDown(e) {
         if (["INPUT", "TEXTAREA"].includes(document.activeElement?.tagName)) return;
@@ -2229,4 +2410,9 @@ window.showToast = showToast;
 
 window.onload = function () {
     window.videoStudioApp = new VideoStudioApp();
+    
+    // Display the Demo Picker dialog on startup (Bing selected as default)
+    if (typeof window.videoStudioApp.loadDemoMedia === "function") {
+        window.videoStudioApp.loadDemoMedia();
+    }
 };
