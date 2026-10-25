@@ -117,7 +117,7 @@ function drawSinglePaintAction(ctx, action) {
         const isItalic = !!(action.italic ?? params["Italic"]);
         const hasOutline = !!(action.outline ?? params["Text Outline"]);
         const hasBgPill = !!(action.bgPill ?? params["Background Pill"]);
-        const bgOpacity = (action.bgOpacity ?? params["Bg Opacity (%)"] ?? 65) / 100.0;
+        const bgOpacity = (action.bgOpacity ?? params["Bg Opacity (%)"] ?? 85) / 100.0;
 
         ctx.save();
         ctx.translate(cx, cy);
@@ -139,7 +139,8 @@ function drawSinglePaintAction(ctx, action) {
             const lum = 0.299 * r + 0.587 * g + 0.114 * b;
             ctx.fillStyle = lum < 128 ? `rgba(248, 250, 252, ${bgOpacity})` : `rgba(15, 23, 42, ${bgOpacity})`;
             ctx.beginPath();
-            ctx.roundRect(-maxW / 2 - padX, -totalH / 2 - padY, maxW + padX * 2, totalH + padY * 2, 8);
+            // Reduce height by 4 pixels (cut from bottom, top y remains -totalH / 2 - padY)
+            ctx.roundRect(-maxW / 2 - padX, -totalH / 2 - padY, maxW + padX * 2, totalH + padY * 2 - 11, 8);
             ctx.fill();
         }
 
@@ -362,8 +363,8 @@ class PhotoPaintEditor {
         this.app = app;
         this.SHAPE_PARAMS = getPaintShapeParamsConfig();
 
-        this.maintype = "Shapes"; // "Shapes", "Text", "Select"
-        this.currentShape = "Line";
+        this.maintype = "Text"; // "Shapes", "Text", "Select"
+        this.currentShape = "FontModern";
         this.lastSelectedShape = {
             "Shapes": "Line",
             "Text": "FontModern",
@@ -388,13 +389,21 @@ class PhotoPaintEditor {
         this.lastPanMouse = [0, 0];
 
         // Canvas Interaction & Selection State
-        this.selectedActionIdx = null;
+        this.selectedActionIndices = [];
+        this.clipboard = [];
+        this.pasteCascadeCount = 0;
         this.vertexEditMode = false;
         this.draggingVertexInfo = null;
         this.resizableBox = null;
         this.isResizingShape = false;
         this.isRotatingShape = false;
         this.origActionCopy = null;
+        this.origGroupState = null;
+        this.isMarqueeSelecting = false;
+        this.marqueeAdditive = false;
+        this.marqueeBaseSelection = [];
+        this.marqueeRectWorld = null;
+        this._handledSelectionOnDown = false;
 
         this.isDrawing = false;
         this.hasDragged = false;
@@ -412,10 +421,25 @@ class PhotoPaintEditor {
 
         // Active Floating Rich Text Editor
         this.activeTextIdx = null;
+        this.fontPreviewState = null;
 
         this.initDOM();
         this.buildSidebarUI();
         this.bindCanvasEvents();
+    }
+
+    get selectedActionIdx() {
+        return this.selectedActionIndices.length > 0
+            ? this.selectedActionIndices[this.selectedActionIndices.length - 1]
+            : null;
+    }
+
+    set selectedActionIdx(val) {
+        if (val === null || val === undefined) {
+            this.selectedActionIndices = [];
+        } else {
+            this.selectedActionIndices = [val];
+        }
     }
 
     get item() {
@@ -464,6 +488,44 @@ class PhotoPaintEditor {
         this.floatingTextarea = document.getElementById("paintFloatingTextarea");
         this.emojiModal = document.getElementById("paintEmojiModal");
     }
+
+
+
+
+    // START SAMPLE TEXT
+    updateSampleTextPreview() {
+        this.updateFontPreviewOverlay();
+    }
+
+    updateFontPreviewOverlay() {
+        if (this.maintype !== "Text" || !this.currentShape.startsWith("Font")) {
+            this.fontPreviewState = null;
+            return;
+        }
+        if (this.selectedActionIdx !== null && this.actions[this.selectedActionIdx]?.type === "text") {
+            this.fontPreviewState = null;
+            return;
+        }
+        const params = this.savedParams[this.currentShape] || {};
+        const catKey = this.currentShape.replace("Font", "");
+        this.fontPreviewState = {
+            type: "text",
+            text: "Sample Text",
+            center: [Math.round(this.origW / 2), Math.round(this.origH / 2)],
+            angle: 0,
+            color: this.color,
+            fontFace: params[catKey] || "Inter",
+            fontSize: params["Text Size"] || 32,
+            bold: !!params["Bold"],
+            italic: !!params["Italic"],
+            outline: !!params["Text Outline"],
+            bgPill: !!params["Background Pill"],
+            bgOpacity: params["Bg Opacity (%)"] ?? 85,
+            params: { ...params }
+        };
+        this.redrawAll();
+    }
+    // END SAMPLE TEXT
 
     // ==================================================================
     // SIDEBAR UI CONSTRUCTION
@@ -611,7 +673,7 @@ class PhotoPaintEditor {
         this.previewCtx = this.previewCanvas ? this.previewCanvas.getContext("2d") : null;
 
         this.bindSidebarControls();
-        this.setMainMode("Shapes", true);
+        this.setMainMode("Text", true);
     }
 
     bindSidebarControls() {
@@ -662,16 +724,24 @@ class PhotoPaintEditor {
 
 
 
+        
+
+
         const colorInp = document.getElementById("inpPaintColor");
         colorInp?.addEventListener("input", () => {
             this.color = colorInp.value;
-            if (this.selectedActionIdx !== null && this.actions[this.selectedActionIdx]) {
+            if (this.selectedActionIndices.length > 0) {
                 this.beginLiveEditSession();
-                this.actions[this.selectedActionIdx].color = this.color;
-                if (this.actions[this.selectedActionIdx].type === "fill") {
-                    delete this.actions[this.selectedActionIdx].cachedCanvas;
-                }
-                this.invalidateFillsAfter(this.selectedActionIdx);
+                let minIdx = Infinity;
+                this.selectedActionIndices.forEach((idx) => {
+                    const act = this.actions[idx];
+                    if (act) {
+                        act.color = this.color;
+                        if (act.type === "fill") delete act.cachedCanvas;
+                        if (idx < minIdx) minIdx = idx;
+                    }
+                });
+                if (minIdx !== Infinity) this.invalidateFillsAfter(minIdx);
             }
             if (this.activeTextIdx !== null && this.actions[this.activeTextIdx]) {
                 this.beginLiveEditSession();
@@ -692,10 +762,16 @@ class PhotoPaintEditor {
         widthSlider?.addEventListener("input", () => {
             this.thickness = parseInt(widthSlider.value, 10);
             document.getElementById("lblPaintWidthVal").textContent = `${this.thickness}px`;
-            if (this.selectedActionIdx !== null && this.actions[this.selectedActionIdx]) {
+            if (this.selectedActionIndices.length > 0) {
                 this.beginLiveEditSession();
-                this.actions[this.selectedActionIdx].thickness = this.thickness;
-                this.invalidateFillsAfter(this.selectedActionIdx);
+                let minIdx = Infinity;
+                this.selectedActionIndices.forEach((idx) => {
+                    if (this.actions[idx]) {
+                        this.actions[idx].thickness = this.thickness;
+                        if (idx < minIdx) minIdx = idx;
+                    }
+                });
+                if (minIdx !== Infinity) this.invalidateFillsAfter(minIdx);
             }
             this.renderPreviewPanel();
             this.redrawAll();
@@ -710,10 +786,16 @@ class PhotoPaintEditor {
         alphaSlider?.addEventListener("input", () => {
             this.fillOpacity = parseInt(alphaSlider.value, 10);
             document.getElementById("lblPaintAlphaVal").textContent = `${this.fillOpacity}%`;
-            if (this.selectedActionIdx !== null && this.actions[this.selectedActionIdx]) {
+            if (this.selectedActionIndices.length > 0) {
                 this.beginLiveEditSession();
-                this.actions[this.selectedActionIdx].fillOpacity = this.fillOpacity;
-                this.invalidateFillsAfter(this.selectedActionIdx);
+                let minIdx = Infinity;
+                this.selectedActionIndices.forEach((idx) => {
+                    if (this.actions[idx]) {
+                        this.actions[idx].fillOpacity = this.fillOpacity;
+                        if (idx < minIdx) minIdx = idx;
+                    }
+                });
+                if (minIdx !== Infinity) this.invalidateFillsAfter(minIdx);
             }
             this.renderPreviewPanel();
             this.redrawAll();
@@ -723,6 +805,8 @@ class PhotoPaintEditor {
                 this.commitLiveEditSession();
             }
         });
+
+
 
 
 
@@ -849,16 +933,62 @@ class PhotoPaintEditor {
                 grid.appendChild(btn);
             });
             this.typeGridContainer.appendChild(grid);
-        } else if (this.maintype === "Select") {
+        
+
+
+} else if (this.maintype === "Select") {
             this.currentShape = "Select";
-            const info = document.createElement("div");
-            info.className = "text-xs text-slate-300 px-1 py-1 leading-relaxed";
-            info.innerHTML = `Click any shape or text on the canvas to move, resize, or rotate it. <b>Double-click</b> a shape to drag or delete individual vertices.`;
-            this.typeGridContainer.appendChild(info);
+            const wrap = document.createElement("div");
+            wrap.className = "flex flex-col gap-2 px-1 py-1";
+            wrap.innerHTML = `
+                <div class="text-xs text-slate-300 leading-relaxed">
+                    Click or drag a box to select objects. <b>Double-click</b> a shape to edit vertices.
+                </div>
+                <div class="grid grid-cols-2 gap-1.5 pt-0.5">
+                    <button type="button" id="btnTypePanelGroup" disabled class="py-1.5 px-2 rounded-lg border text-xs font-semibold transition bg-slate-900/50 border-slate-800 text-slate-600 cursor-not-allowed" title="Group Selected Objects (Ctrl+G)">
+                        ^-G Group
+                    </button>
+                    <button type="button" id="btnTypePanelUngroup" disabled class="py-1.5 px-2 rounded-lg border text-xs font-semibold transition bg-slate-900/50 border-slate-800 text-slate-600 cursor-not-allowed" title="Ungroup Selected Objects (Ctrl+Shift+G)">
+                        ^Shift-G Ungroup
+                    </button>
+                </div>
+            `;
+            this.typeGridContainer.appendChild(wrap);
+
+            document.getElementById("btnTypePanelGroup")?.addEventListener("click", () => this.groupSelectedActions());
+            document.getElementById("btnTypePanelUngroup")?.addEventListener("click", () => this.ungroupSelectedActions());
         }
 
         this.highlightActiveTypeButton();
+        this.updateGroupButtonsState();
     }
+
+    updateGroupButtonsState() {
+        const btnGroup = document.getElementById("btnTypePanelGroup");
+        const btnUngroup = document.getElementById("btnTypePanelUngroup");
+        if (!btnGroup && !btnUngroup) return;
+
+        const selIndices = (this.selectedActionIndices || []).filter(i => !!this.actions[i]);
+        const canGroup = selIndices.length > 1;
+        const canUngroup = selIndices.some(i => !!this.actions[i]?.groupId);
+
+        const activeCls = "py-1.5 px-2 rounded-lg border text-xs font-semibold transition bg-slate-800 hover:bg-slate-700 border-slate-700 text-slate-200 cursor-pointer";
+        const disabledCls = "py-1.5 px-2 rounded-lg border text-xs font-semibold transition bg-slate-900/50 border-slate-800 text-slate-600 cursor-not-allowed";
+
+        if (btnGroup) {
+            btnGroup.disabled = !canGroup;
+            btnGroup.className = canGroup ? activeCls : disabledCls;
+        }
+        if (btnUngroup) {
+            btnUngroup.disabled = !canUngroup;
+            btnUngroup.className = canUngroup ? activeCls : disabledCls;
+        }
+    }
+
+
+
+
+
 
     highlightActiveTypeButton() {
         Object.entries(this.shapeButtons || {}).forEach(([name, btn]) => {
@@ -1016,6 +1146,8 @@ class PhotoPaintEditor {
                 row.innerHTML = `<span class="text-xs font-semibold text-slate-300">${label}:</span>`;
                 row.appendChild(sel);
                 this.paramsContentEl.appendChild(row);
+            
+
             } else if (param.length === 3 && param[1] === "font") {
                 const fontList = param[2];
                 const currentFont = curDict[label] || fontList[0];
@@ -1023,7 +1155,20 @@ class PhotoPaintEditor {
                 const isItalic = !!curDict["Italic"];
 
                 const listBox = document.createElement("div");
-                listBox.className = "max-h-[100px] overflow-y-auto filmstrip-scroll border border-slate-800 rounded-lg bg-slate-900 divide-y divide-slate-800/60";
+                listBox.tabIndex = 0;
+                listBox.className = "max-h-[100px] overflow-y-auto filmstrip-scroll border border-slate-800 rounded-lg bg-slate-900 divide-y divide-slate-800/60 focus:outline-none focus:border-sky-500";
+
+                let selectedBtn = null;
+
+                const selectFontByName = (fName) => {
+                    this._fontListScrollTop = listBox.scrollTop;
+                    this._shouldFocusFontList = true;
+                    this.beginLiveEditSession();
+                    curDict[label] = fName;
+                    this.applyParamToSelectedAction(activeParamKey, label, fName, true);
+                    this.updateParametersUI();
+                    this.updateFontPreviewOverlay();
+                };
 
                 fontList.forEach((fName) => {
                     const itemBtn = document.createElement("button");
@@ -1033,18 +1178,58 @@ class PhotoPaintEditor {
                     itemBtn.style.fontWeight = isBold ? "bold" : "normal";
                     itemBtn.style.fontStyle = isItalic ? "italic" : "normal";
                     const isSel = fName === currentFont;
-                    itemBtn.className = `w-full text-left px-2.5 py-1 text-xs transition ${
+                    itemBtn.className = `w-full text-left px-2.5 py-1 text-xs transition focus:outline-none ${
                         isSel ? "bg-sky-300 text-slate-950 font-bold" : "text-slate-200 hover:bg-slate-800"
                     }`;
+                    if (isSel) selectedBtn = itemBtn;
+
                     itemBtn.addEventListener("click", () => {
-                        this.beginLiveEditSession();
-                        curDict[label] = fName;
-                        this.applyParamToSelectedAction(activeParamKey, label, fName, true);
-                        this.updateParametersUI();
+                        selectFontByName(fName);
                     });
                     listBox.appendChild(itemBtn);
                 });
+
+                // Allow Up/Down arrow keys to cycle fonts while focus is in the font list
+                listBox.addEventListener("keydown", (e) => {
+                    if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+                        e.preventDefault();
+                        const curIdx = fontList.indexOf(currentFont);
+                        const nextIdx = e.key === "ArrowDown"
+                            ? Math.min(fontList.length - 1, curIdx + 1)
+                            : Math.max(0, curIdx - 1);
+                        if (nextIdx !== curIdx && fontList[nextIdx]) {
+                            selectFontByName(fontList[nextIdx]);
+                        }
+                    }
+                });
+
                 this.paramsContentEl.appendChild(listBox);
+
+                if (this._fontListScrollTop !== undefined) {
+                    listBox.scrollTop = this._fontListScrollTop;
+                }
+
+                // Restore scroll position and return focus after text/sample updates complete
+                requestAnimationFrame(() => {
+                    if (this._fontListScrollTop !== undefined) {
+                        listBox.scrollTop = this._fontListScrollTop;
+                    }
+                    if (selectedBtn) {
+                        selectedBtn.scrollIntoView({ block: "nearest" });
+                        if (this._shouldFocusFontList) {
+                            this._shouldFocusFontList = false;
+                            selectedBtn.focus({ preventScroll: true });
+                        }
+                    }
+                });
+            
+
+
+
+
+
+
+
             } else if (param.length === 3 && param[1] === "emoji_grid") {
                 if (!this.quickEmojiList) {
                     this.quickEmojiList = ["🙂", "🥷", "🦊", "🍎", "🏀", "✈️", "🌎", "🎥", "📝", "💙", "◀️", "🏁"];
@@ -1126,38 +1311,46 @@ class PhotoPaintEditor {
                 this.paramsContentEl.appendChild(wrap);
             }
         }
-
-        // Add Auto-Contrasting Sample Text Panel when in Font mode
         if (activeParamKey && activeParamKey.startsWith("Font")) {
-            const sampleWrap = document.createElement("div");
-            sampleWrap.className = "mt-1 border border-slate-700 rounded-lg overflow-hidden shrink-0";
-            const sampleCvs = document.createElement("canvas");
-            sampleCvs.width = 280;
-            sampleCvs.height = 76;
-            sampleCvs.className = "w-full h-[76px] block";
-            sampleWrap.appendChild(sampleCvs);
-            this.paramsContentEl.appendChild(sampleWrap);
-            this.samplePanelCanvas = sampleCvs;
-            this.updateSampleTextPreview();
+            this.updateFontPreviewOverlay();
+        } else {
+            this.fontPreviewState = null;
         }
     }
 
 
 
 
+
     buildSelectModePanel() {
-        const hasSel = this.selectedActionIdx !== null && this.actions[this.selectedActionIdx];
-        const act = hasSel ? this.actions[this.selectedActionIdx] : null;
+        this.updateGroupButtonsState();
+
+        const selIndices = this.selectedActionIndices.filter(i => !!this.actions[i]);
+        const count = selIndices.length;
+        const primaryAct = count > 0 ? this.actions[selIndices[count - 1]] : null;
+        const hasGroupedItem = selIndices.some(i => !!this.actions[i]?.groupId);
+        const canVertexEdit = count === 1 && ["shape", "polygon_shape", "line"].includes(primaryAct.type) && primaryAct.shape !== "Emoji";
 
         const wrap = document.createElement("div");
         wrap.className = "flex flex-col gap-2";
 
-        if (!act) {
-            wrap.innerHTML = `<div class="text-xs text-slate-400 italic py-2 text-center">No object currently selected on canvas.</div>`;
-        } else {
-            const canVertexEdit = ["shape", "polygon_shape", "line"].includes(act.type) && act.shape !== "Emoji";
+        if (count === 0) {
             wrap.innerHTML = `
-                <div class="text-xs font-bold text-sky-400 px-1">Selected: ${act.shape || act.type.toUpperCase()}</div>
+                <div class="text-xs text-slate-400 italic py-1.5 text-center">
+                    No object selected (${this.clipboard.length ? "Ctrl+V to paste" : "Ctrl+Click or Ctrl+A to select"}).
+                </div>
+                ${this.clipboard.length > 0 ? `
+                <button type="button" id="btnSelectPaste" class="w-full py-1.5 px-2 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs font-semibold text-slate-200">
+                    Paste (${this.clipboard.length}) (Ctrl+V)
+                </button>` : ""}
+            `;
+        } else {
+            const labelText = count === 1
+                ? `${primaryAct.shape || primaryAct.type.toUpperCase()}${primaryAct.groupId ? " (Grouped)" : ""}`
+                : `${count} Objects${hasGroupedItem ? " (Grouped)" : ""}`;
+
+            wrap.innerHTML = `
+                <div class="text-xs font-bold text-sky-400 px-1">Selected: ${labelText}</div>
                 ${canVertexEdit ? `
                 <button type="button" id="btnSelectToggleVertex" class="w-full py-1.5 px-3 rounded-lg font-bold text-xs border transition ${
                     this.vertexEditMode
@@ -1166,9 +1359,15 @@ class PhotoPaintEditor {
                 }">
                     ${this.vertexEditMode ? "✓ Vertex Edit Mode Active" : "Edit Individual Vertices"}
                 </button>` : ""}
-                <div class="grid grid-cols-2 gap-1.5 pt-1">
+                <div class="grid grid-cols-2 gap-1.5">
+                    <button type="button" id="btnSelectCopy" class="py-1.5 px-2 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs font-semibold text-slate-200" title="Copy (Ctrl+C)">Copy (^C)</button>
+                    <button type="button" id="btnSelectPaste" ${!this.clipboard.length ? "disabled" : ""} class="py-1.5 px-2 rounded-lg border text-xs font-semibold transition ${
+                        this.clipboard.length ? "bg-slate-800 hover:bg-slate-700 border-slate-700 text-slate-200" : "bg-slate-900/50 border-slate-800 text-slate-600 cursor-not-allowed"
+                    }" title="Paste (Ctrl+V)">Paste (^V)</button>
+                </div>
+                <div class="grid grid-cols-2 gap-1.5">
                     <button type="button" id="btnSelectDuplicate" class="py-1.5 px-2 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs font-semibold text-slate-200">Duplicate</button>
-                    <button type="button" id="btnSelectDelete" class="py-1.5 px-2 rounded-lg bg-red-900/60 hover:bg-red-800 border border-red-700/60 text-xs font-semibold text-red-100">Delete Object</button>
+                    <button type="button" id="btnSelectDelete" class="py-1.5 px-2 rounded-lg bg-red-900/60 hover:bg-red-800 border border-red-700/60 text-xs font-semibold text-red-100">Delete</button>
                 </div>
             `;
         }
@@ -1176,81 +1375,203 @@ class PhotoPaintEditor {
         this.paramsContentEl.appendChild(wrap);
 
         document.getElementById("btnSelectToggleVertex")?.addEventListener("click", () => {
-            if (this.selectedActionIdx === null) return;
+            if (this.selectedActionIndices.length !== 1) return;
+            this.saveUndoSnapshot();
             if (!this.vertexEditMode) {
                 this.convertShapeToEditable(this.selectedActionIdx);
                 this.vertexEditMode = true;
             } else {
                 this.vertexEditMode = false;
             }
-            this.saveUndoSnapshot();  // Might need to be moved up (there is not: this.actions.push)
-            this.updateParametersUI(); // ???: this.buildSelectModePanel();
+            this.commitPaintChanges();
+            this.updateParametersUI();
             this.redrawAll();
         });
 
-        document.getElementById("btnSelectDuplicate")?.addEventListener("click", () => {
-            if (!act) return;
-            const clone = JSON.parse(JSON.stringify(act));
-            if (clone.center) clone.center = [clone.center[0] + 24, clone.center[1] + 24];
-            if (clone.points) clone.points = clone.points.map(([x, y]) => [x + 24, y + 24]);
-            if (clone.polygons) {
-                clone.polygons = clone.polygons.map(([ext, ints]) => [
-                    ext.map(([x, y]) => [x + 24, y + 24]),
-                    (ints || []).map(r => r.map(([x, y]) => [x + 24, y + 24]))
-                ]);
+        document.getElementById("btnSelectCopy")?.addEventListener("click", () => this.copySelectedActions());
+        document.getElementById("btnSelectPaste")?.addEventListener("click", () => this.pasteClipboardActions());
+        document.getElementById("btnSelectDuplicate")?.addEventListener("click", () => this.duplicateSelectedActions());
+        document.getElementById("btnSelectDelete")?.addEventListener("click", () => this.deleteSelectedActions());
+    }
+
+    getStartIndexAfterClear() {
+        for (let i = this.actions.length - 1; i >= 0; i--) {
+            if (this.actions[i].type === "clear") return i + 1;
+        }
+        return 0;
+    }
+
+    selectAllActions() {
+        const startIdx = this.getStartIndexAfterClear();
+        const allIndices = [];
+        for (let i = startIdx; i < this.actions.length; i++) {
+            const act = this.actions[i];
+            if (act && act.type !== "fill" && act.type !== "clear") {
+                allIndices.push(i);
             }
-            this.saveUndoSnapshot();
-            this.actions.push(clone);
-            this.selectedActionIdx = this.actions.length - 1;
-            this.commitPaintChanges();
-            this.redrawAll();
-        });
+        }
+        this.selectedActionIndices = allIndices;
+        this.vertexEditMode = false;
+        this.syncPanelToSelectedAction();
+        this.updateGroupButtonsState();
+        this.redrawAll();
+        if (typeof showToast === "function") {
+            showToast(`Selected all ${allIndices.length} paint object${allIndices.length === 1 ? "" : "s"}`, "info");
+        }
+    }
 
-        document.getElementById("btnSelectDelete")?.addEventListener("click", () => {
-            if (this.selectedActionIdx === null) return;
-            const idx = this.selectedActionIdx;
-            this.saveUndoSnapshot();
-            this.actions.splice(idx, 1);
-            this.selectedActionIdx = null;
+
+
+
+    getGroupPeerIndices(idx) {
+        const act = this.actions[idx];
+        if (!act) return [];
+        if (!act.groupId) return [idx];
+        const gid = act.groupId;
+        const startIdx = this.getStartIndexAfterClear();
+        const peers = [];
+        for (let i = startIdx; i < this.actions.length; i++) {
+            if (this.actions[i]?.groupId === gid) peers.push(i);
+        }
+        return peers.length ? peers : [idx];
+    }
+
+    selectActionWithGroup(idx, toggle = false) {
+        if (idx === null || idx === undefined || !this.actions[idx]) {
+            if (!toggle) {
+                this.selectedActionIndices = [];
+                this.vertexEditMode = false;
+            }
+            return;
+        }
+        const peers = this.getGroupPeerIndices(idx);
+        if (!toggle) {
+            this.selectedActionIndices = [...peers];
+        } else {
+            const alreadySelected = this.selectedActionIndices.includes(idx);
+            if (alreadySelected) {
+                this.selectedActionIndices = this.selectedActionIndices.filter(i => !peers.includes(i));
+            } else {
+                for (const p of peers) {
+                    if (!this.selectedActionIndices.includes(p)) {
+                        this.selectedActionIndices.push(p);
+                    }
+                }
+            }
+        }
+        if (this.selectedActionIndices.length !== 1) {
             this.vertexEditMode = false;
-            this.invalidateFillsAfter(idx);
-            this.commitPaintChanges();
-            this.updateParametersUI(); // ???: this.buildSelectModePanel();
-            this.redrawAll();
-        });
+        }
     }
 
-    updateSampleTextPreview() {
-        if (!this.samplePanelCanvas) return;
-        const cvs = this.samplePanelCanvas;
-        const ctx = cvs.getContext("2d");
-        const w = cvs.width, h = cvs.height;
-
-        const [r, g, b] = hexToRgbArray(this.color);
-        const lum = 0.299 * r + 0.587 * g + 0.114 * b;
-        ctx.fillStyle = lum < 128 ? "#ffffff" : "#000000";
-        ctx.fillRect(0, 0, w, h);
-
-        const params = this.savedParams[this.currentShape] || {};
-        const catKey = this.currentShape.replace("Font", "");
-        const fontFace = params[catKey] || "Inter";
-        const isBold = !!params["Bold"];
-        const isItalic = !!params["Italic"];
-        const fontSize = Math.min(28, Math.max(10, params["Text Size"] || 18));
-
-        ctx.font = `${isItalic ? "italic " : ""}${isBold ? "bold " : ""}${fontSize}px "${fontFace}", sans-serif`;
-        ctx.fillStyle = this.color;
-        ctx.textBaseline = "top";
-
-        const lines = [
-            "Sample: 0123456789",
-            "abcdefghijklm NOPQRSTUVWXYZ",
-            "@#&(){}[]<>_+-*/=$%?!"
-        ];
-        lines.forEach((line, i) => {
-            ctx.fillText(line, 6, 4 + i * (fontSize + 4));
-        });
+    offsetActionClone(clone, dx, dy) {
+        if (clone.center) clone.center = [clone.center[0] + dx, clone.center[1] + dy];
+        if (clone.pos) clone.pos = [clone.pos[0] + dx, clone.pos[1] + dy];
+        if (clone.points) clone.points = clone.points.map(([x, y]) => [x + dx, y + dy]);
+        if (clone.polygons) {
+            clone.polygons = clone.polygons.map(([ext, ints]) => [
+                ext.map(([x, y]) => [x + dx, y + dy]),
+                (ints || []).map(r => r.map(([x, y]) => [x + dx, y + dy]))
+            ]);
+        }
+        return clone;
     }
+
+    groupSelectedActions() {
+        const valid = this.selectedActionIndices.filter(i => !!this.actions[i]);
+        if (valid.length < 2) return;
+        this.saveUndoSnapshot();
+        const newGroupId = "grp_" + Date.now() + "_" + Math.random().toString(36).substring(2, 6);
+        valid.forEach((idx) => {
+            this.actions[idx].groupId = newGroupId;
+        });
+        this.vertexEditMode = false;
+        this.commitPaintChanges();
+        this.updateParametersUI();
+        this.redrawAll();
+        if (typeof showToast === "function") showToast(`Grouped ${valid.length} objects`, "info");
+    }
+
+    ungroupSelectedActions() {
+        const valid = this.selectedActionIndices.filter(i => !!this.actions[i]?.groupId);
+        if (!valid.length) return;
+        this.saveUndoSnapshot();
+        valid.forEach((idx) => {
+            delete this.actions[idx].groupId;
+        });
+        this.commitPaintChanges();
+        this.updateParametersUI();
+        this.redrawAll();
+        if (typeof showToast === "function") showToast("Ungrouped selected objects", "info");
+    }
+
+    copySelectedActions() {
+        const sorted = [...this.selectedActionIndices].filter(i => !!this.actions[i]).sort((a, b) => a - b);
+        if (!sorted.length) return;
+        this.clipboard = sorted.map((idx) => {
+            const copy = { ...this.actions[idx] };
+            delete copy.cachedCanvas;
+            return JSON.parse(JSON.stringify(copy));
+        });
+        this.pasteCascadeCount = 0;
+        this.updateParametersUI();
+        if (typeof showToast === "function") {
+            showToast(`Copied ${this.clipboard.length} object${this.clipboard.length > 1 ? "s" : ""}`, "info");
+        }
+    }
+
+    pasteClipboardActions() {
+        if (!this.clipboard || !this.clipboard.length) return;
+        this.saveUndoSnapshot();
+        this.pasteCascadeCount = (this.pasteCascadeCount || 0) + 1;
+        const offset = 24 * this.pasteCascadeCount;
+
+        const groupMap = new Map();
+        const newIndices = [];
+
+        this.clipboard.forEach((item) => {
+            const clone = JSON.parse(JSON.stringify(item));
+            this.offsetActionClone(clone, offset, offset);
+            if (clone.groupId) {
+                if (!groupMap.has(clone.groupId)) {
+                    groupMap.set(clone.groupId, "grp_" + Date.now() + "_" + Math.random().toString(36).substring(2, 6));
+                }
+                clone.groupId = groupMap.get(clone.groupId);
+            }
+            this.actions.push(clone);
+            newIndices.push(this.actions.length - 1);
+        });
+
+        this.selectedActionIndices = newIndices;
+        this.vertexEditMode = false;
+        this.syncPanelToSelectedAction();
+        this.commitPaintChanges();
+        this.redrawAll();
+    }
+
+    duplicateSelectedActions() {
+        this.copySelectedActions();
+        this.pasteClipboardActions();
+    }
+
+    deleteSelectedActions() {
+        const sorted = [...this.selectedActionIndices].filter(i => !!this.actions[i]).sort((a, b) => b - a);
+        if (!sorted.length) return;
+        this.saveUndoSnapshot();
+        const minIdx = sorted[sorted.length - 1];
+        for (const idx of sorted) {
+            this.actions.splice(idx, 1);
+        }
+        this.selectedActionIndices = [];
+        this.vertexEditMode = false;
+        this.invalidateFillsAfter(minIdx);
+        this.commitPaintChanges();
+        this.updateParametersUI();
+        this.redrawAll();
+    }
+
+   
+
 
     // ==================================================================
     // 156x156 PREVIEW PANEL & 2x LOUPE MAGNIFIER
@@ -1634,7 +1955,7 @@ class PhotoPaintEditor {
                 this.savedParams[paramKey]["Italic"] = !!act.italic;
                 this.savedParams[paramKey]["Text Outline"] = !!act.outline;
                 this.savedParams[paramKey]["Background Pill"] = !!act.bgPill;
-                this.savedParams[paramKey]["Bg Opacity (%)"] = act.bgOpacity ?? 65;
+                this.savedParams[paramKey]["Bg Opacity (%)"] = act.bgOpacity ?? 85;
             }
 
             if (this.maintype === "Shapes" && !paramKey.startsWith("Font")) {
@@ -1654,49 +1975,131 @@ class PhotoPaintEditor {
     }
 
     applyParamToSelectedAction(paramKey, label, value, isFinalized = true) {
-        const targetIdx = this.activeTextIdx !== null ? this.activeTextIdx : this.selectedActionIdx;
-        if (targetIdx === null || !this.actions[targetIdx]) return;
+        const targets = this.activeTextIdx !== null
+            ? [this.activeTextIdx]
+            : this.selectedActionIndices;
+        if (!targets.length) return;
 
-        const act = this.actions[targetIdx];
-        const actParamKey = this.getActionParamShapeKey(act);
-        if (actParamKey !== paramKey && !(act.type === "polygon_shape" && label === "Corner Radius (%)")) {
-            return;
-        }
+        let minModifiedIdx = Infinity;
 
-        if (!act.params) act.params = {};
-        act.params[label] = value;
-
-        if (act.type === "text") {
-            const catName = paramKey.replace("Font", "");
-            if (label === catName) act.fontFace = value;
-            else if (label === "Text Size") act.fontSize = value;
-            else if (label === "Bold") act.bold = !!value;
-            else if (label === "Italic") act.italic = !!value;
-            else if (label === "Text Outline") act.outline = !!value;
-            else if (label === "Background Pill") act.bgPill = !!value;
-            else if (label === "Bg Opacity (%)") act.bgOpacity = value;
-
-            if (this.activeTextIdx !== null && this.floatingTextarea) {
-                const [scale] = this.getTransformParams();
-                this.floatingTextarea.style.fontFamily = `"${act.fontFace}", sans-serif`;
-                this.floatingTextarea.style.fontSize = `${Math.max(12, Math.round(act.fontSize * scale))}px`;
-                this.floatingTextarea.style.fontWeight = act.bold ? "bold" : "normal";
-                this.floatingTextarea.style.fontStyle = act.italic ? "italic" : "normal";
-                this.floatingTextarea.style.color = act.color;
-                this.autoResizeFloatingTextarea();
+        targets.forEach((targetIdx) => {
+            const act = this.actions[targetIdx];
+            if (!act) return;
+            const actParamKey = this.getActionParamShapeKey(act);
+            if (actParamKey !== paramKey && !(act.type === "polygon_shape" && label === "Corner Radius (%)")) {
+                return;
             }
-        }
 
-        if (act.type === "fill") {
-            delete act.cachedCanvas;
+            if (!act.params) act.params = {};
+            act.params[label] = value;
+
+            if (act.type === "text") {
+                const catName = paramKey.replace("Font", "");
+                if (label === catName) act.fontFace = value;
+                else if (label === "Text Size") act.fontSize = value;
+                else if (label === "Bold") act.bold = !!value;
+                else if (label === "Italic") act.italic = !!value;
+                else if (label === "Text Outline") act.outline = !!value;
+                else if (label === "Background Pill") act.bgPill = !!value;
+                else if (label === "Bg Opacity (%)") act.bgOpacity = value;
+
+                if (this.activeTextIdx === targetIdx && this.floatingTextarea) {
+                    const [scale] = this.getTransformParams();
+                    this.floatingTextarea.style.fontFamily = `"${act.fontFace}", sans-serif`;
+                    this.floatingTextarea.style.fontSize = `${Math.max(12, Math.round(act.fontSize * scale))}px`;
+                    this.floatingTextarea.style.fontWeight = act.bold ? "bold" : "normal";
+                    this.floatingTextarea.style.fontStyle = act.italic ? "italic" : "normal";
+                    this.floatingTextarea.style.color = act.color;
+                    this.autoResizeFloatingTextarea();
+                }
+            }
+
+            if (act.type === "fill") {
+                delete act.cachedCanvas;
+            }
+            if (targetIdx < minModifiedIdx) minModifiedIdx = targetIdx;
+        });
+
+        if (minModifiedIdx !== Infinity) {
+            this.invalidateFillsAfter(minModifiedIdx);
         }
-        this.invalidateFillsAfter(targetIdx);
 
         if (isFinalized) {
             this.commitLiveEditSession();
         }
         this.redrawAll();
     }
+
+    getSelectionCenterAndAngle() {
+        const valid = this.selectedActionIndices.filter(i => !!this.actions[i]);
+        if (valid.length === 0) return [[0, 0], 0];
+        if (valid.length === 1) {
+            return this.getActionCenterAndAngle(this.actions[valid[0]]);
+        }
+        const allVerts = [];
+        valid.forEach((idx) => {
+            allVerts.push(...this.getActionVertices(this.actions[idx]));
+        });
+        if (!allVerts.length) return [[0, 0], 0];
+        const xs = allVerts.map(v => v[0]);
+        const ys = allVerts.map(v => v[1]);
+        return [[(Math.min(...xs) + Math.max(...xs)) / 2, (Math.min(...ys) + Math.max(...ys)) / 2], 0];
+    }
+
+    getSelectionLocalBounds() {
+        const valid = this.selectedActionIndices.filter(i => !!this.actions[i]);
+        if (valid.length === 0) return null;
+        if (valid.length === 1) {
+            return this.getActionLocalBounds(this.actions[valid[0]]);
+        }
+        const allVerts = [];
+        valid.forEach((idx) => {
+            allVerts.push(...this.getActionVertices(this.actions[idx]));
+        });
+        if (!allVerts.length) return null;
+        const xs = allVerts.map(v => v[0]);
+        const ys = allVerts.map(v => v[1]);
+        const w = Math.max(8, Math.max(...xs) - Math.min(...xs));
+        const h = Math.max(8, Math.max(...ys) - Math.min(...ys));
+        return [-w / 2, -h / 2, w, h];
+    }
+
+    doesActionIntersectRect(act, minX, minY, maxX, maxY) {
+        if (!act || act.type === "fill" || act.type === "clear") return false;
+        const verts = this.getActionVertices(act);
+        if (!verts.length) return false;
+
+        const xs = verts.map(v => v[0]);
+        const ys = verts.map(v => v[1]);
+        const aMinX = Math.min(...xs), aMaxX = Math.max(...xs);
+        const aMinY = Math.min(...ys), aMaxY = Math.max(...ys);
+
+        // Reject if bounding boxes do not overlap
+        if (aMaxX < minX || aMinX > maxX || aMaxY < minY || aMinY > maxY) return false;
+
+        // Accept if any vertex is inside the marquee rectangle
+        for (const [vx, vy] of verts) {
+            if (vx >= minX && vx <= maxX && vy >= minY && vy <= maxY) return true;
+        }
+
+        // Accept if any edge of the shape is close to or crosses the marquee rectangle
+        const rectCorners = [[minX, minY], [maxX, minY], [maxX, maxY], [minX, maxY]];
+        if (verts.length >= 3 && this.pointInPolygon((minX + maxX) / 2, (minY + maxY) / 2, verts)) {
+            return true;
+        }
+        for (let i = 0; i < verts.length; i++) {
+            const p1 = verts[i];
+            const p2 = verts[(i + 1) % verts.length];
+            if (i === verts.length - 1 && act.type === "line" && !act.fill) break;
+            for (const [cx, cy] of rectCorners) {
+                if (this.distToSegment(cx, cy, p1[0], p1[1], p2[0], p2[1]) <= Math.max(maxX - minX, maxY - minY) * 0.5) {
+                    return true;
+                }
+            }
+        }
+        return true;
+    }
+
 
 
 
@@ -1792,8 +2195,8 @@ class PhotoPaintEditor {
                 });
                 this.ctx.restore();
                 const totalH = lines.length * fontSize * 1.22;
-                const pad = 12;
-                return [-maxW / 2 - pad, -totalH / 2 - pad, maxW + pad * 2, totalH + pad * 2];
+                const padX = 12, padY = 8;
+                return [-maxW / 2 - padX, -totalH / 2 - padY, maxW + padX * 2, totalH + padY * 2 - 11];
             }
             return [-60, -25, 120, 50];
         }
@@ -2316,20 +2719,62 @@ class PhotoPaintEditor {
         }, { passive: false });
     }
 
-    applyBoxResize() {
-        if (this.selectedActionIdx === null || !this.origActionCopy || !this.resizableBox) return;
-        const act = this.actions[this.selectedActionIdx];
-        const origAct = this.origActionCopy;
-        const origBounds = this.getActionLocalBounds(origAct);
-        if (!origBounds) return;
+    
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    captureOrigGroupState() {
+        const [[cx, cy], angle] = this.getSelectionCenterAndAngle();
+        const bounds = this.getSelectionLocalBounds();
+        if (!bounds) return null;
+        const actionsMap = new Map();
+        this.selectedActionIndices.forEach((idx) => {
+            if (this.actions[idx]) {
+                const copy = { ...this.actions[idx] };
+                delete copy.cachedCanvas;
+                actionsMap.set(idx, JSON.parse(JSON.stringify(copy)));
+            }
+        });
+        return {
+            cx,
+            cy,
+            angle,
+            currentAngle: angle,
+            bounds: [...bounds],
+            actions: actionsMap
+        };
+    }
+
+    applyBoxResize() {
+        if (!this.origGroupState || !this.resizableBox) return;
+        const { cx, cy, angle, bounds: origBounds, actions: origMap } = this.origGroupState;
         const [origLx, origLy, origLw, origLh] = origBounds;
         const safeLw = origLw || 0.001, safeLh = origLh || 0.001;
         const { x: newLx, y: newLy, width: newLw, height: newLh } = this.resizableBox;
         const scaleX = newLw / safeLw;
         const scaleY = newLh / safeLh;
-
-        const [[cx, cy], angle] = this.getActionCenterAndAngle(origAct);
         const cosA = Math.cos(angle), sinA = Math.sin(angle);
 
         const transformLocalPt = ([px, py]) => {
@@ -2344,27 +2789,33 @@ class PhotoPaintEditor {
             ];
         };
 
-        if (act.type === "line") {
-            act.points = origAct.points.map(pt => transformLocalPt(pt));
-            act.center = transformLocalPt([cx, cy]);
-        } else if (act.type === "polygon_shape") {
-            act.polygons = origAct.polygons.map(([ext, ints]) => [
-                ext.map(pt => transformLocalPt(pt)),
-                (ints || []).map(r => r.map(pt => transformLocalPt(pt)))
-            ]);
-            act.center = transformLocalPt([cx, cy]);
-        } else if (act.type === "shape") {
-            const avgScale = (Math.abs(scaleX) + Math.abs(scaleY)) / 2;
-            act.radius = (origAct.radius || 50) * avgScale;
-            act.center = transformLocalPt([cx, cy]);
-        } else if (act.type === "text") {
-            const avgScale = (Math.abs(scaleX) + Math.abs(scaleY)) / 2;
-            act.fontSize = Math.max(8, (origAct.fontSize || 32) * avgScale);
-            act.center = transformLocalPt([cx, cy]);
+        for (const [idx, origAct] of origMap.entries()) {
+            const act = this.actions[idx];
+            if (!act) continue;
+            const [[actCx, actCy]] = this.getActionCenterAndAngle(origAct);
+
+            if (act.type === "line") {
+                act.points = origAct.points.map(pt => transformLocalPt(pt));
+                act.center = transformLocalPt([actCx, actCy]);
+            } else if (act.type === "polygon_shape") {
+                act.polygons = origAct.polygons.map(([ext, ints]) => [
+                    ext.map(pt => transformLocalPt(pt)),
+                    (ints || []).map(r => r.map(pt => transformLocalPt(pt)))
+                ]);
+                act.center = transformLocalPt([actCx, actCy]);
+            } else if (act.type === "shape") {
+                const avgScale = (Math.abs(scaleX) + Math.abs(scaleY)) / 2;
+                act.radius = (origAct.radius || 50) * avgScale;
+                act.center = transformLocalPt([actCx, actCy]);
+            } else if (act.type === "text") {
+                const avgScale = (Math.abs(scaleX) + Math.abs(scaleY)) / 2;
+                act.fontSize = Math.max(8, (origAct.fontSize || 32) * avgScale);
+                act.center = transformLocalPt([actCx, actCy]);
+            }
         }
     }
 
-    onPointerDown(e) {  // In onPointerDown(e) (around lines 1255–1330):
+    onPointerDown(e) {
         if (!this.item) return;
 
         // Middle mouse button or Alt+LeftClick pans the canvas
@@ -2386,19 +2837,20 @@ class PhotoPaintEditor {
         const sx = e.clientX - rect.left;
         const sy = e.clientY - rect.top;
         const [wx, wy] = this.screenToWorld(sx, sy);
+        const isCtrl = e.ctrlKey || e.metaKey;
 
         this.isDrawing = true;
         this.hasDragged = false;
+        this.isMarqueeSelecting = false;
+        this.marqueeRectWorld = null;
+        this._handledSelectionOnDown = false;
         this.dragStartScreen = [sx, sy];
         this.dragStartWorld = [wx, wy];
 
-        this.beginLiveEditSession(); // NEW CODE?
-
-        // 1. Check active ResizableBox handles first
-        if (this.selectedActionIdx !== null && this.actions[this.selectedActionIdx] && !this.vertexEditMode) {
-            const act = this.actions[this.selectedActionIdx];
-            const [[cx, cy], angle] = this.getActionCenterAndAngle(act);
-            const bounds = this.getActionLocalBounds(act);
+        // 1. Check active ResizableBox handles first (when not Ctrl-clicking to toggle selection)
+        if (!isCtrl && this.selectedActionIndices.length > 0 && !this.vertexEditMode) {
+            const [[cx, cy], angle] = this.getSelectionCenterAndAngle();
+            const bounds = this.getSelectionLocalBounds();
             if (bounds) {
                 const [scale] = this.getTransformParams();
                 const hs = PAINT_HANDLE_SIZE / Math.max(0.001, scale);
@@ -2408,11 +2860,19 @@ class PhotoPaintEditor {
                 const handleId = box.hitTestHandle(lx, ly);
 
                 if (handleId) {
-                    if (handleId !== "rot" && !["se", "sw", "ne", "nw", "c"].includes(handleId) && act.type === "shape" && act.shape !== "Emoji") {
-                        this.convertShapeToEditable(this.selectedActionIdx);
+                    this.beginLiveEditSession();
+                    if (
+                        this.selectedActionIndices.length === 1 &&
+                        handleId !== "rot" &&
+                        !["se", "sw", "ne", "nw", "c"].includes(handleId)
+                    ) {
+                        const singleAct = this.actions[this.selectedActionIdx];
+                        if (singleAct?.type === "shape" && singleAct.shape !== "Emoji") {
+                            this.convertShapeToEditable(this.selectedActionIdx);
+                        }
                     }
                     this.resizableBox = box;
-                    this.origActionCopy = JSON.parse(JSON.stringify(this.actions[this.selectedActionIdx]));
+                    this.origGroupState = this.captureOrigGroupState();
                     if (handleId === "rot") {
                         this.isRotatingShape = true;
                     } else {
@@ -2426,19 +2886,48 @@ class PhotoPaintEditor {
         }
 
         // 2. Check Vertex handles if in Vertex Edit Mode
-        if (this.selectedActionIdx !== null && this.actions[this.selectedActionIdx] && this.vertexEditMode) {
+        if (!isCtrl && this.selectedActionIndices.length === 1 && this.vertexEditMode) {
             const act = this.actions[this.selectedActionIdx];
             const vHit = this.hitTestVertex(act, wx, wy);
             if (vHit) {
+                this.beginLiveEditSession();
                 this.draggingVertexInfo = vHit;
                 this.canvas.setPointerCapture(e.pointerId);
                 return;
             }
         }
 
-        // 3. Flood Fill Tool
+        // 3. Hit test existing objects on the canvas
+        const hitIdx = this.hitTestShape(wx, wy);
+
+        // Ctrl+Click on any object toggles it (and its group) in the multi-selection
+        if (isCtrl && hitIdx !== null) {
+            this.selectActionWithGroup(hitIdx, true);
+            this._handledSelectionOnDown = true;
+            this.syncPanelToSelectedAction();
+            this.isDrawing = false;
+            this.redrawAll();
+            return;
+        }
+
+        // Ctrl+Drag on empty space (or dragging on empty space in Select mode) starts Marquee Selection
+        if ((this.maintype === "Select" && hitIdx === null) || (isCtrl && hitIdx === null)) {
+            this.isMarqueeSelecting = true;
+            this.marqueeAdditive = isCtrl;
+            this.marqueeBaseSelection = isCtrl ? [...this.selectedActionIndices] : [];
+            if (!isCtrl) {
+                this.selectedActionIndices = [];
+                this.vertexEditMode = false;
+                this.updateParametersUI();
+            }
+            this.redrawAll();
+            this.canvas.setPointerCapture(e.pointerId);
+            return;
+        }
+
+        // 4. Flood Fill Tool
         if (this.maintype === "Shapes" && this.currentShape === "Fill") {
-            this.selectedActionIdx = null;
+            this.selectedActionIndices = [];
             this.vertexEditMode = false;
             const fillAct = {
                 type: "fill",
@@ -2446,7 +2935,7 @@ class PhotoPaintEditor {
                 color: this.color,
                 params: { ...(this.savedParams["Fill"] || {}) }
             };
-            this.saveUndoSnapshot();   // NEW CODE
+            this.saveUndoSnapshot();
             this.actions.push(fillAct);
             this.undoneActions.length = 0;
             this.isDrawing = false;
@@ -2455,17 +2944,18 @@ class PhotoPaintEditor {
             return;
         }
 
-        // 4. Text Tool Creation
+        // 5. Text Tool Creation or Selection
         if (this.maintype === "Text" && this.currentShape.startsWith("Font")) {
-            const hitIdx = this.hitTestShape(wx, wy);
             if (hitIdx !== null && this.actions[hitIdx]?.type === "text") {
-                this.selectedActionIdx = hitIdx;
+                this.selectActionWithGroup(hitIdx, false);
+                this._handledSelectionOnDown = true;
+                this.syncPanelToSelectedAction();
                 this.isDrawing = false;
                 this.redrawAll();
                 return;
             }
 
-            this.selectedActionIdx = null;
+            this.selectedActionIndices = [];
             this.vertexEditMode = false;
             const params = this.savedParams[this.currentShape] || {};
             const catKey = this.currentShape.replace("Font", "");
@@ -2481,10 +2971,10 @@ class PhotoPaintEditor {
                 italic: !!params["Italic"],
                 outline: !!params["Text Outline"],
                 bgPill: !!params["Background Pill"],
-                bgOpacity: params["Bg Opacity (%)"] ?? 65,
+                bgOpacity: params["Bg Opacity (%)"] ?? 85,
                 params: { ...params }
             };
-            this.saveUndoSnapshot(); // NEW CODE
+            this.saveUndoSnapshot();
             this.actions.push(newTextAct);
             this.undoneActions.length = 0;
             this.isDrawing = false;
@@ -2492,16 +2982,35 @@ class PhotoPaintEditor {
             return;
         }
 
-        // 5. Hit test existing shapes
-        const hitIdx = this.hitTestShape(wx, wy);
+        // 6. Standard Object Hit or Shape Drawing Start
         if (hitIdx !== null) {
-            this.selectedActionIdx = hitIdx;
-            this.vertexEditMode = false;
-            if (this.maintype === "Select") this.buildSelectModePanel();
+            if (!this.selectedActionIndices.includes(hitIdx)) {
+                this.selectActionWithGroup(hitIdx, false);
+                this.syncPanelToSelectedAction();
+            }
+            this._handledSelectionOnDown = true;
+
+            // In Select mode, dragging anywhere on a selected object moves the whole selection
+            if (this.maintype === "Select" && !this.vertexEditMode) {
+                const [[cx, cy], angle] = this.getSelectionCenterAndAngle();
+                const bounds = this.getSelectionLocalBounds();
+                if (bounds) {
+                    this.beginLiveEditSession();
+                    const [scale] = this.getTransformParams();
+                    const hs = PAINT_HANDLE_SIZE / Math.max(0.001, scale);
+                    const pad = 10.0 / Math.max(0.001, scale);
+                    const box = new PaintResizableBox(bounds[0], bounds[1], bounds[2], bounds[3], hs, pad);
+                    const [lx, ly] = this.worldToLocal(wx, wy, cx, cy, angle);
+                    this.resizableBox = box;
+                    this.origGroupState = this.captureOrigGroupState();
+                    this.resizableBox.startDrag("c", [lx, ly]);
+                    this.isResizingShape = true;
+                }
+            }
         } else {
-            this.selectedActionIdx = null;
+            this.selectedActionIndices = [];
             this.vertexEditMode = false;
-            if (this.maintype === "Select") this.buildSelectModePanel();
+            if (this.maintype === "Select") this.updateParametersUI();
         }
         this.redrawAll();
 
@@ -2515,6 +3024,12 @@ class PhotoPaintEditor {
 
     onPointerMove(e) {
         if (!this.canvas || this.app.activeTab !== "tabPaint") return;
+
+        // Clear temporary font preview overlay as soon as mouse moves into the image canvas
+        if (this.isHoveringCanvas && this.fontPreviewState) {
+            this.fontPreviewState = null;
+            this.redrawAll();
+        }
 
         if (this.isPanning) {
             const dx = e.clientX - this.lastPanMouse[0];
@@ -2542,9 +3057,30 @@ class PhotoPaintEditor {
             this.hasDragged = true;
         }
 
-        // 1. Resizing / Moving via ResizableBox
-        if (this.isResizingShape && this.resizableBox && this.origActionCopy) {
-            const [[cx, cy], angle] = this.getActionCenterAndAngle(this.origActionCopy);
+        // 0. Marquee Drag-Box Selection
+        if (this.isMarqueeSelecting) {
+            const [startWx, startWy] = this.dragStartWorld;
+            const minX = Math.min(startWx, wx), maxX = Math.max(startWx, wx);
+            const minY = Math.min(startWy, wy), maxY = Math.max(startWy, wy);
+            this.marqueeRectWorld = [minX, minY, maxX - minX, maxY - minY];
+
+            const startIdx = this.getStartIndexAfterClear();
+            const nextSel = new Set(this.marqueeBaseSelection);
+            for (let i = startIdx; i < this.actions.length; i++) {
+                if (this.doesActionIntersectRect(this.actions[i], minX, minY, maxX, maxY)) {
+                    for (const peerIdx of this.getGroupPeerIndices(i)) {
+                        nextSel.add(peerIdx);
+                    }
+                }
+            }
+            this.selectedActionIndices = Array.from(nextSel).sort((a, b) => a - b);
+            this.redrawAll();
+            return;
+        }
+
+        // 1. Resizing / Moving via ResizableBox (Single or Multi-Selection)
+        if (this.isResizingShape && this.resizableBox && this.origGroupState) {
+            const { cx, cy, angle } = this.origGroupState;
             const [lx, ly] = this.worldToLocal(wx, wy, cx, cy, angle);
             this.resizableBox.updateDrag([lx, ly]);
             this.applyBoxResize();
@@ -2552,24 +3088,29 @@ class PhotoPaintEditor {
             return;
         }
 
-        // 2. Rotating via ResizableBox 'rot' pin
-        if (this.isRotatingShape && this.selectedActionIdx !== null && this.origActionCopy) {
-            const act = this.actions[this.selectedActionIdx];
-            const origAct = this.origActionCopy;
-            const [[cx, cy], origAngle] = this.getActionCenterAndAngle(origAct);
-
+        // 2. Rotating via ResizableBox 'rot' pin (Single or Multi-Selection)
+        if (this.isRotatingShape && this.origGroupState) {
+            const { cx, cy, angle: origGroupAngle, actions: origMap } = this.origGroupState;
             const startAng = Math.atan2(this.dragStartWorld[1] - cy, this.dragStartWorld[0] - cx);
             const currAng = Math.atan2(wy - cy, wx - cx);
             const diff = currAng - startAng;
-            act.angle = origAngle + diff;
+            this.origGroupState.currentAngle = origGroupAngle + diff;
 
-            if (act.type === "line") {
-                act.points = origAct.points.map(([px, py]) => paintRotatePt(px, py, cx, cy, diff));
-            } else if (act.type === "polygon_shape") {
-                act.polygons = origAct.polygons.map(([ext, ints]) => [
-                    ext.map(([vx, vy]) => paintRotatePt(vx, vy, cx, cy, diff)),
-                    (ints || []).map(r => r.map(([vx, vy]) => paintRotatePt(vx, vy, cx, cy, diff)))
-                ]);
+            for (const [idx, origAct] of origMap.entries()) {
+                const act = this.actions[idx];
+                if (!act) continue;
+                const [[actCx, actCy], actOrigAngle] = this.getActionCenterAndAngle(origAct);
+                act.center = paintRotatePt(actCx, actCy, cx, cy, diff);
+                act.angle = (actOrigAngle || 0) + diff;
+
+                if (act.type === "line") {
+                    act.points = origAct.points.map(([px, py]) => paintRotatePt(px, py, cx, cy, diff));
+                } else if (act.type === "polygon_shape") {
+                    act.polygons = origAct.polygons.map(([ext, ints]) => [
+                        ext.map(([vx, vy]) => paintRotatePt(vx, vy, cx, cy, diff)),
+                        (ints || []).map(r => r.map(([vx, vy]) => paintRotatePt(vx, vy, cx, cy, diff)))
+                    ]);
+                }
             }
             this.redrawAll();
             return;
@@ -2592,8 +3133,8 @@ class PhotoPaintEditor {
 
         if (this.maintype !== "Shapes" || !this.hasDragged) return;
 
-        if (this.selectedActionIdx !== null) {
-            this.selectedActionIdx = null;
+        if (this.selectedActionIndices.length > 0) {
+            this.selectedActionIndices = [];
             this.vertexEditMode = false;
         }
 
@@ -2715,11 +3256,23 @@ class PhotoPaintEditor {
         this.isDrawing = false;
         try { this.canvas.releasePointerCapture(e.pointerId); } catch (_) {}
 
+        if (this.isMarqueeSelecting) {
+            this.isMarqueeSelecting = false;
+            this.marqueeRectWorld = null;
+            this._preEditSnapshot = null;
+            this.syncPanelToSelectedAction();
+            this.redrawAll();
+            return;
+        }
+
         if (this.isRotatingShape) {
             this.isRotatingShape = false;
-            this.origActionCopy = null;
-            this.invalidateFillsAfter(this.selectedActionIdx);
-            this.commitLiveEditSession()
+            this.origGroupState = null;
+            if (this.selectedActionIndices.length > 0) {
+                this.invalidateFillsAfter(Math.min(...this.selectedActionIndices));
+            }
+            if (this.hasDragged) this.commitLiveEditSession();
+            else this._preEditSnapshot = null;
             this.redrawAll();
             return;
         }
@@ -2727,9 +3280,12 @@ class PhotoPaintEditor {
         if (this.isResizingShape) {
             if (this.resizableBox) this.resizableBox.stopDrag();
             this.isResizingShape = false;
-            this.origActionCopy = null;
-            this.invalidateFillsAfter(this.selectedActionIdx);
-            this.commitLiveEditSession()
+            this.origGroupState = null;
+            if (this.selectedActionIndices.length > 0) {
+                this.invalidateFillsAfter(Math.min(...this.selectedActionIndices));
+            }
+            if (this.hasDragged) this.commitLiveEditSession();
+            else this._preEditSnapshot = null;
             this.redrawAll();
             return;
         }
@@ -2740,7 +3296,7 @@ class PhotoPaintEditor {
                 this.invalidateFillsAfter(this.selectedActionIdx);
             }
             this.draggingVertexInfo = null;
-            this.commitLiveEditSession()
+            this.commitLiveEditSession();
             this.redrawAll();
             return;
         }
@@ -2749,14 +3305,15 @@ class PhotoPaintEditor {
         const [wx, wy] = this.screenToWorld(e.clientX - rect.left, e.clientY - rect.top);
 
         if (!this.hasDragged) {
+            this._preEditSnapshot = null;
             const hitIdx = this.hitTestShape(wx, wy);
             if (hitIdx !== null) {
-                this.selectedActionIdx = hitIdx;
-                this.vertexEditMode = false;
-                this.syncPanelToSelectedAction(); // NEW CODE
-                // REMOVED: if (this.maintype === "Select") this.buildSelectModePanel();
+                if (!this._handledSelectionOnDown) {
+                    this.selectActionWithGroup(hitIdx, e.ctrlKey || e.metaKey);
+                }
+                this.syncPanelToSelectedAction();
             } else {
-                this.selectedActionIdx = null;
+                this.selectedActionIndices = [];
                 this.vertexEditMode = false;
                 if (this.maintype === "Shapes" && this.currentShape !== "Line" && this.currentShape !== "Fill") {
                     const action = {
@@ -2773,7 +3330,7 @@ class PhotoPaintEditor {
                     this.undoneActions.length = 0;
                     this.saveUndoSnapshot();
                     await this.performBooleanOperation(this.polyMode, action);
-                    this.selectedActionIdx = this.actions.length - 1;
+                    this.selectedActionIndices = [this.actions.length - 1];
                     this.syncPanelToSelectedAction();
                     this.commitPaintChanges();
                 }
@@ -2806,8 +3363,10 @@ class PhotoPaintEditor {
                     fill: fillPoly
                 };
                 this.undoneActions.length = 0;
+                this.saveUndoSnapshot();
                 await this.performBooleanOperation(this.polyMode, action);
-                this.selectedActionIdx = null;
+                this.selectedActionIndices = [this.actions.length - 1];
+                this.syncPanelToSelectedAction();
                 this.commitPaintChanges();
             }
         } else {
@@ -2837,8 +3396,10 @@ class PhotoPaintEditor {
                     params: { ...(this.savedParams[this.currentShape] || {}) }
                 };
                 this.undoneActions.length = 0;
+                this.saveUndoSnapshot();
                 await this.performBooleanOperation(this.polyMode, action);
-                this.selectedActionIdx = null;
+                this.selectedActionIndices = [this.actions.length - 1];
+                this.syncPanelToSelectedAction();
                 this.commitPaintChanges();
             }
         }
@@ -2856,10 +3417,12 @@ class PhotoPaintEditor {
                 this.openFloatingTextEditor(hitIdx);
                 return;
             }
+            this.saveUndoSnapshot();
             this.convertShapeToEditable(hitIdx);
-            this.selectedActionIdx = hitIdx;
+            this.selectedActionIndices = [hitIdx];
             this.vertexEditMode = true;
-            if (this.maintype === "Select") this.buildSelectModePanel();
+            this.commitPaintChanges();
+            this.updateParametersUI();
             this.redrawAll();
         }
     }
@@ -2883,31 +3446,56 @@ class PhotoPaintEditor {
             return true;
         }
 
+        // Select All Paint Objects (Ctrl+A) when Paint tab is active
+        if (ctrl && !shift && key === "a") {
+            e.preventDefault();
+            this.selectAllActions();
+            return true;
+        }
+        // Group (Ctrl+G) and Ungroup (Ctrl+Shift+G)
+        if (ctrl && key === "g") {
+            e.preventDefault();
+            if (shift) this.ungroupSelectedActions();
+            else this.groupSelectedActions();
+            return true;
+        }
+
+        // Copy (Ctrl+C) and Paste (Ctrl+V)
+        if (ctrl && key === "c") {
+            if (this.selectedActionIndices.length > 0) {
+                e.preventDefault();
+                this.copySelectedActions();
+                return true;
+            }
+        }
+        if (ctrl && key === "v") {
+            if (this.clipboard && this.clipboard.length > 0) {
+                e.preventDefault();
+                this.pasteClipboardActions();
+                return true;
+            }
+        }
+
         // Boolean operation shortcuts: Ctrl+U, Ctrl+I, Ctrl+S, Ctrl+E, Ctrl+D
         const boolShortcuts = { u: "union", i: "intersect", s: "symmetric", e: "erase", d: "disjoint" };
-        if (ctrl && boolShortcuts[key]) {
+        if (ctrl && !shift && boolShortcuts[key]) {
             e.preventDefault();
             this.performBooleanOperation(boolShortcuts[key], null);
             return true;
         }
 
         if (e.key === "Delete" || e.key === "Backspace") {
-            if (this.selectedActionIdx !== null && this.actions[this.selectedActionIdx]) {
+            if (this.selectedActionIndices.length > 0) {
                 e.preventDefault();
-                const idx = this.selectedActionIdx;
                 if (!this.vertexEditMode) {
-                    this.actions.splice(idx, 1);
-                    this.selectedActionIdx = null;
-                    this.vertexEditMode = false;
-                    this.invalidateFillsAfter(idx);
-                    this.commitPaintChanges();
-                    if (this.maintype === "Select") this.buildSelectModePanel();
-                    this.redrawAll();
-                } else {
+                    this.deleteSelectedActions();
+                } else if (this.selectedActionIdx !== null) {
+                    const idx = this.selectedActionIdx;
                     const act = this.actions[idx];
                     const [mx, my] = this.currentMouseWorld;
                     const vHit = this.hitTestVertex(act, mx, my);
                     if (vHit) {
+                        this.saveUndoSnapshot();
                         this.deleteVertexFromShape(act, vHit);
                         this.invalidateFillsAfter(idx);
                         this.commitPaintChanges();
@@ -2941,7 +3529,7 @@ class PhotoPaintEditor {
             this.bgCanvas = cvs;
         }
 
-        this.selectedActionIdx = null;
+        this.selectedActionIndices = [];
         this.vertexEditMode = false;
         this.resizeMainCanvas();
         this.redrawAll();
@@ -3000,12 +3588,32 @@ class PhotoPaintEditor {
             }
         }
 
+        // Render temporary font preview in center of image if active
+        if (this.fontPreviewState) {
+            drawSinglePaintAction(ctx, this.fontPreviewState);
+        }
+
+        // Draw Marquee Drag-Selection Box if active
+        if (this.isMarqueeSelecting && this.marqueeRectWorld) {
+            const [mx, my, mw, mh] = this.marqueeRectWorld;
+            ctx.save();
+            ctx.fillStyle = "rgba(56, 189, 248, 0.14)";
+            ctx.strokeStyle = "#38bdf8";
+            ctx.lineWidth = Math.max(1, 1.5 / scale);
+            ctx.setLineDash([5 / scale, 4 / scale]);
+            ctx.fillRect(mx, my, mw, mh);
+            ctx.strokeRect(mx, my, mw, mh);
+            ctx.restore();
+        }
+
         // Draw Selection / Vertex Edit Overlays
-        if (this.selectedActionIdx !== null && this.actions[this.selectedActionIdx]) {
-            const act = this.actions[this.selectedActionIdx];
-            if (act.isEditing) {
+        const validSelected = this.selectedActionIndices.filter(i => !!this.actions[i]);
+        if (validSelected.length > 0) {
+            const primaryAct = this.actions[validSelected[validSelected.length - 1]];
+            if (primaryAct.isEditing) {
                 // Skip box while inline textarea is open
-            } else if (this.vertexEditMode) {
+            } else if (validSelected.length === 1 && this.vertexEditMode) {
+                const act = primaryAct;
                 const verts = this.getActionVertices(act);
                 if (verts.length) {
                     const xs = verts.map(v => v[0]);
@@ -3068,10 +3676,31 @@ class PhotoPaintEditor {
                     ctx.restore();
                 }
             } else {
-                // Draw ResizableBox
-                if (!this.isResizingShape || !this.resizableBox) {
-                    const [[cx, cy], angle] = this.getActionCenterAndAngle(act);
-                    const bounds = this.getActionLocalBounds(act);
+                // Highlight individual member bounds when multiple objects are selected
+                if (validSelected.length > 1) {
+                    ctx.save();
+                    ctx.strokeStyle = "rgba(56, 189, 248, 0.45)";
+                    ctx.lineWidth = Math.max(1, 1.2 / scale);
+                    ctx.setLineDash([3 / scale, 3 / scale]);
+                    validSelected.forEach((idx) => {
+                        const member = this.actions[idx];
+                        const [[mcx, mcy], mAngle] = this.getActionCenterAndAngle(member);
+                        const mBounds = this.getActionLocalBounds(member);
+                        if (mBounds) {
+                            ctx.save();
+                            ctx.translate(mcx, mcy);
+                            ctx.rotate(mAngle);
+                            ctx.strokeRect(mBounds[0], mBounds[1], mBounds[2], mBounds[3]);
+                            ctx.restore();
+                        }
+                    });
+                    ctx.restore();
+                }
+
+                // Draw Shared ResizableBox
+                if ((!this.isResizingShape && !this.isRotatingShape) || !this.origGroupState) {
+                    const [[cx, cy], angle] = this.getSelectionCenterAndAngle();
+                    const bounds = this.getSelectionLocalBounds();
                     if (bounds) {
                         const hs = PAINT_HANDLE_SIZE / Math.max(0.001, scale);
                         const pad = 10.0 / Math.max(0.001, scale);
@@ -3082,16 +3711,20 @@ class PhotoPaintEditor {
                         box.draw(ctx, scale);
                         ctx.restore();
                     }
-                } else if (this.origActionCopy) {
+                } else if (this.origGroupState) {
                     const box = this.resizableBox;
-                    box.handleSize = PAINT_HANDLE_SIZE / Math.max(0.001, scale);
-                    box.hitPadding = 10.0 / Math.max(0.001, scale);
-                    const [[origCx, origCy], origAngle] = this.getActionCenterAndAngle(this.origActionCopy);
-                    ctx.save();
-                    ctx.translate(origCx, origCy);
-                    ctx.rotate(origAngle);
-                    box.draw(ctx, scale);
-                    ctx.restore();
+                    if (box) {
+                        box.handleSize = PAINT_HANDLE_SIZE / Math.max(0.001, scale);
+                        box.hitPadding = 10.0 / Math.max(0.001, scale);
+                        const drawAngle = this.isRotatingShape
+                            ? (this.origGroupState.currentAngle ?? this.origGroupState.angle)
+                            : this.origGroupState.angle;
+                        ctx.save();
+                        ctx.translate(this.origGroupState.cx, this.origGroupState.cy);
+                        ctx.rotate(drawAngle);
+                        box.draw(ctx, scale);
+                        ctx.restore();
+                    }
                 }
             }
         }

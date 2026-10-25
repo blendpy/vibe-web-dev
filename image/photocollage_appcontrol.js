@@ -103,14 +103,12 @@ class PhotoCollageApp {
         const format = fmtEl.value;
 
         if (format === "video/animation") {
-            // Animation Video Mode
             infoBox.className = "bg-amber-50 border border-amber-200 rounded-xl p-3 text-xs text-amber-900 transition-colors";
             lblInfo.innerHTML = "A slideshow animation video will be recorded cycling through all collage photos at <strong>" + this.opts.out_w + " × " + this.opts.out_h + "</strong> resolution.";
             lblConfirmIcon.textContent = "🎬";
             lblConfirmText.innerHTML = "Create Animation<br class=\"hidden sm:inline\">(as WebM Video)";
             btnConfirm.className = "px-3 sm:px-4 py-2 rounded-lg bg-amber-600 hover:bg-amber-700 text-white text-xs sm:text-sm font-medium shadow-sm transition flex items-center justify-center text-center gap-1.5";
         } else if (format === "extract/images") {
-            // Extract All Images Mode
             const count = (this.history[this.history_index] && this.history[this.history_index].photolist) 
                 ? this.history[this.history_index].photolist.length 
                 : 0;
@@ -120,7 +118,6 @@ class PhotoCollageApp {
             lblConfirmText.innerHTML = "Extract All Images<br class=\"hidden sm:inline\">(Individual Files)";
             btnConfirm.className = "px-3 sm:px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs sm:text-sm font-medium shadow-sm transition flex items-center justify-center text-center gap-1.5";
         } else {
-            // Standard Poster Image Mode (PNG, JPEG, WebP)
             infoBox.className = "bg-emerald-50 border border-emerald-200 rounded-xl p-3 text-xs text-emerald-800 transition-colors";
             lblInfo.innerHTML = "Poster will be rendered at full resolution: <strong>" + this.opts.out_w + " × " + this.opts.out_h + "</strong> pixels.";
             lblConfirmIcon.textContent = "💾";
@@ -147,7 +144,6 @@ class PhotoCollageApp {
             if (el) el.addEventListener("click", fn);
         };
 
-        // Dynamic Save Format switch (Poster Image vs Animation Video vs Extract All Images)
         const saveFormatSelect = document.getElementById("saveFormat");
         if (saveFormatSelect) {
             saveFormatSelect.addEventListener("change", () => {
@@ -245,6 +241,9 @@ class PhotoCollageApp {
 
         window.addEventListener("keydown", (e) => this.on_window_key_press(e));
 
+        // Clipboard Paste Listener (Supports Copy Image, blocks Copy Image Address)
+        window.addEventListener("paste", (e) => this.handle_paste_event(e));
+
         this.resizeTimeout = null;
         window.addEventListener("resize", () => {
             this.resizeCanvasToContainer();
@@ -259,6 +258,50 @@ class PhotoCollageApp {
         });
 
         this.initSettingsModalBindings();
+    }
+
+    handle_paste_event(e) {
+        // Do not intercept pasting if active inside an input or textarea (e.g. filename)
+        if (["INPUT", "TEXTAREA"].includes(document.activeElement?.tagName)) {
+            return;
+        }
+
+        const clipboardData = e.clipboardData || window.clipboardData;
+        if (!clipboardData) return;
+
+        const items = clipboardData.items;
+        const imageFiles = [];
+
+        if (items) {
+            for (let i = 0; i < items.length; i++) {
+                const item = items[i];
+                if (item.type && item.type.startsWith("image/")) {
+                    const file = item.getAsFile();
+                    if (file) {
+                        const ext = item.type.split("/")[1] || "png";
+                        const defaultName = `Pasted_Image_${Date.now()}.${ext}`;
+                        const namedFile = new File([file], (file.name && file.name !== "image.png") ? file.name : defaultName, {
+                            type: file.type
+                        });
+                        imageFiles.push(namedFile);
+                    }
+                }
+            }
+        }
+
+        if (imageFiles.length > 0) {
+            e.preventDefault();
+            this.handleFilesSelected(imageFiles);
+        } else {
+            // Check if user copied an image URL/address instead of the image itself
+            const pastedText = clipboardData.getData("text/plain")?.trim() || "";
+            const isUrlLike = /^(https?:\/\/|data:image\/|\/)/i.test(pastedText) || /\.(png|jpe?g|webp|gif|svg)(\?.*)?$/i.test(pastedText);
+
+            if (isUrlLike) {
+                e.preventDefault();
+                showToast("Pasting image URLs is disabled. Right-click the image and choose 'Copy Image' instead.", "info");
+            }
+        }
     }
 
     resizeCanvasToContainer() {
@@ -788,7 +831,7 @@ class PhotoCollageApp {
             ctx.font = "bold 16px Inter, sans-serif";
             ctx.textAlign = "center";
             const lines = [
-                "Drag & Drop Images Here",
+                "Drag & Drop Images Here (or Paste with Ctrl+V)",
                 "Drag a box to move/swap image",
                 "Move near line to resize",
                 "Click red circle or Del to delete an image"
@@ -1553,8 +1596,6 @@ class PhotoCollageApp {
         }, 60);
     }
 
-
-
     executeExportAnimationVideo() {
         const collage = this.history[this.history_index];
         if (!collage || !collage.page) return;
@@ -1565,7 +1606,6 @@ class PhotoCollageApp {
             return;
         }
 
-        // Enforce even dimensions required by video encoders (max 1920 on longest edge)
         let outW = this.opts.out_w;
         let outH = this.opts.out_h;
         const maxDim = 1920;
@@ -1580,7 +1620,6 @@ class PhotoCollageApp {
         this.showComputingDialog(true, "Recording animation video...");
         this.updateComputingDialog(0.05);
 
-        // Pre-render the static full poster at target resolution
         const exportCollage = collage.duplicate();
         exportCollage.page.target_ratio = (1.0 * outH) / outW;
         exportCollage.page.adjust_cols_heights();
@@ -1588,13 +1627,11 @@ class PhotoCollageApp {
         exportCollage.page.scale_to_fit(outW, outH);
         const basePosterCanvas = renderCollageToCanvas(exportCollage.page, this.opts, 1.0);
 
-        // Recording canvas
         const recCanvas = document.createElement("canvas");
         recCanvas.width = outW;
         recCanvas.height = outH;
         const recCtx = recCanvas.getContext("2d");
 
-        // Determine supported WebM codec
         let mimeType = "video/webm;codecs=vp9";
         if (!MediaRecorder.isTypeSupported(mimeType)) {
             mimeType = MediaRecorder.isTypeSupported("video/webm;codecs=vp8") 
@@ -1638,7 +1675,6 @@ class PhotoCollageApp {
 
         mediaRecorder.start();
 
-        // Build animation timeline steps
         const zoomDur = 1.0;
         const pauseDur = Math.max(0.5, this.opts.pause_duration);
         const fadeDur = 0.8;
@@ -1654,7 +1690,6 @@ class PhotoCollageApp {
         const drawFrame = () => {
             const time = currentFrame / fps;
 
-            // Draw baseline poster
             recCtx.drawImage(basePosterCanvas, 0, 0, outW, outH);
 
             if (time >= introDur && time < introDur + (cells.length * cellCycleDur)) {
@@ -1705,7 +1740,6 @@ class PhotoCollageApp {
                     recCtx.shadowBlur = 25;
                     recCtx.drawImage(img, curX, curY, curW, curH);
 
-                    // Badge overlay
                     recCtx.shadowBlur = 0;
                     recCtx.fillStyle = "rgba(15, 23, 42, 0.75)";
                     const labelText = `${cell.photo.filename} (${cell.photo.w} × ${cell.photo.h})`;
@@ -1733,7 +1767,6 @@ class PhotoCollageApp {
 
         requestAnimationFrame(drawFrame);
     }
-
 
     executeExtractAllImages() {
         const collage = this.history[this.history_index];
@@ -1766,7 +1799,6 @@ class PhotoCollageApp {
                             const a = document.createElement("a");
                             a.href = url;
                             
-                            // Disambiguate extension if needed
                             let outName = photo.filename;
                             if (!/\.(png|jpe?g|webp|gif)$/i.test(outName)) {
                                 outName += ".png";
@@ -1883,4 +1915,3 @@ class PhotoCollageApp {
         }, 80);
     }
 }
-

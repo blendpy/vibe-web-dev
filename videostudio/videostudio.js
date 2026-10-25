@@ -37,6 +37,9 @@ class MediaItem {
         this.videoDuration = "0:00";
         this.isHidden = false;
 
+        //const defaultMove = window.videoStudioApp?.settings?.opts?.defaultMoveDuration ?? 5.0;
+        //const defaultTrans = window.videoStudioApp?.settings?.opts?.defaultTransDuration ?? 2.0;
+
         // PhotoZoom Parameters (Port of PhotoZoom_2.py)
         this.isZoom = true;
         this.isLock = true;
@@ -70,6 +73,9 @@ class MediaItem {
         this.frameStyle = 2; // Default: 2 (Bevel Mat)
         this.frameSize = 1;  // Default: 1 (16px)
         this.rotationAngle = 0;
+
+
+
 
         // Transitions Parameters (Port of PhotoTransitions.py)
         this.transDuration = 2.0;
@@ -415,15 +421,20 @@ function loadMediaFile(file) {
             img.src = url;
         } else {
             const video = document.createElement("video");
-            video.preload = "metadata";
             video.muted = true;
             video.playsInline = true;
+            video.preload = "auto";
 
             video.onloadedmetadata = () => {
-                video.currentTime = Math.min(1.0, (video.duration || 0) * 0.25);
+                const dur = Number.isFinite(video.duration) && video.duration > 0 ? video.duration : 5.0;
+                // Seek slightly in to capture a representative thumbnail frame
+                video.currentTime = Math.min(0.5, dur * 0.1);
             };
 
             video.onseeked = () => {
+                // Unbind onseeked so it doesn't re-trigger during movie playback
+                video.onseeked = null;
+
                 const vw = video.videoWidth || 1280;
                 const vh = video.videoHeight || 720;
                 const cvs = document.createElement("canvas");
@@ -433,8 +444,13 @@ function loadMediaFile(file) {
                 ctx.drawImage(video, 0, 0, vw, vh);
 
                 const item = new MediaItem(file.name, vw, vh, cvs, true, url);
-                const mins = Math.floor(video.duration / 60);
-                const secs = Math.floor(video.duration % 60);
+                item.videoElement = video;
+
+                const dur = Number.isFinite(video.duration) && video.duration > 0 ? video.duration : 5.0;
+                item.moveDuration = Math.max(0.5, Number(dur.toFixed(1)));
+
+                const mins = Math.floor(dur / 60);
+                const secs = Math.floor(dur % 60);
                 item.videoDuration = `${mins}:${secs.toString().padStart(2, "0")}`;
                 resolve(item);
             };
@@ -931,6 +947,9 @@ class ImageSectionEditorCanvas {
 // ======================================================================
 class VideoStudioApp {
     constructor() {
+        // Initialize Master Video Project Settings
+        this.settings = typeof VideoSettingsManager === "function" ? new VideoSettingsManager(this) : null;
+
         this.mediaItems = [];
         this.selectedIndices = [];
         this.activeTab = "tabZoom";
@@ -1289,9 +1308,11 @@ class VideoStudioApp {
         document.getElementById("btnPlayAll")?.addEventListener("click", () => {
             this._playMovieSequence(false); // Play mode
         });
-        document.getElementById("btnExportVideo")?.addEventListener("click", () => {
-            this._playMovieSequence(true);  // Export mode
+        // Movie Playback & Export Modal bindings
+        document.getElementById("btnPlayAll")?.addEventListener("click", () => {
+            this._playMovieSequence(false); // Play mode
         });
+        
     }
 
     updateDrawerHeight() {
@@ -1372,10 +1393,14 @@ class VideoStudioApp {
         }
     }
 
+
+
+
+
     // ==================================================================
     // MOVIE PREVIEW & EXPORT ENGINE (Continuous Motion Transitions)
     // ==================================================================
-    async _playMovieSequence(isExporting = false) {
+    async _playMovieSequence(isExporting = false, customFilename = null) { // <--- CHANGED HERE
         const visibleItems = this.mediaItems.filter(item => !item.isHidden);
         if (!visibleItems.length) {
             showToast("Timeline is empty. Add media to preview or export.", "error");
@@ -1416,10 +1441,19 @@ class VideoStudioApp {
         let recorder = null;
         let chunks = [];
 
+
+        const outW = this.settings?.opts?.out_w || 1920;
+        const outH = this.settings?.opts?.out_h || 1080;
+        const targetFps = this.settings?.opts?.fps || 30;
+
+        canvas.width = outW;
+        canvas.height = outH;
+
+
         if (isExporting) {
             lblStatus.textContent = "Initializing Export...";
             try {
-                const stream = canvas.captureStream(30);
+                const stream = canvas.captureStream(targetFps);
                 recorder = new MediaRecorder(stream, { mimeType: "video/webm;codecs=vp9" });
 
                 recorder.ondataavailable = e => { if (e.data.size > 0) chunks.push(e.data); };
@@ -1429,7 +1463,7 @@ class VideoStudioApp {
                     const url = URL.createObjectURL(blob);
                     const a = document.createElement("a");
                     a.href = url;
-                    a.download = `VideoStudio_Export_${Date.now()}.webm`;
+                    a.download = `${customFilename || `VideoStudio_Export_${Date.now()}`}.webm`; // <--- CHANGED HERE
                     document.body.appendChild(a);
                     a.click();
                     document.body.removeChild(a);
@@ -1445,18 +1479,27 @@ class VideoStudioApp {
             }
         }
 
-        // Offscreen buffers for transitioning between two moving frames
+        // Offscreen buffers for transitioning between two moving frames (matched to project output size)
         const cvsA = document.createElement("canvas");
-        cvsA.width = 1920; cvsA.height = 1080;
+        cvsA.width = outW; cvsA.height = outH;
         const ctxA = cvsA.getContext("2d");
 
         const cvsB = document.createElement("canvas");
-        cvsB.width = 1920; cvsB.height = 1080;
+        cvsB.width = outW; cvsB.height = outH;
         const ctxB = cvsB.getContext("2d");
 
         // Helper to render a slide at a specific percentage of its motion path (t)
         const renderSlide = (targetCtx, item, t, cw, ch) => {
-            const src = item.getProcessedSource() || item.imgElement;
+            let src = null;
+            if (item.isVideo && item.videoElement) {
+                if (item.paintActions && item.paintActions.length > 0 && typeof renderPaintActionsToCanvas === "function") {
+                    src = renderPaintActionsToCanvas(item.videoElement, item);
+                } else {
+                    src = item.videoElement;
+                }
+            } else {
+                src = item.getProcessedSource() || item.imgElement;
+            }
             if (!src) return;
 
             const r1 = item.rectStart || [0, 0, item.w, item.h];
@@ -1464,7 +1507,6 @@ class VideoStudioApp {
             const a1 = item.rotateStart || 0;
             const a2 = item.isZoom ? (item.rotateEnd || a1) : a1;
 
-            // Extrapolate perfectly even if t > 1.0
             const curX = r1[0] + (r2[0] - r1[0]) * t;
             const curY = r1[1] + (r2[1] - r1[1]) * t;
             const curW = r1[2] + (r2[2] - r1[2]) * t;
@@ -1489,7 +1531,23 @@ class VideoStudioApp {
             targetCtx.restore();
         };
 
-        let slideTimeOffsetMs = 0; // Tracks time already consumed by the previous transition
+        const startVideoItem = (itm) => {
+            if (itm && itm.isVideo && itm.videoElement) {
+                const v = itm.videoElement;
+                v.currentTime = 0;
+                v.muted = isExporting;
+                v.play().catch(() => {
+                    v.muted = true;
+                    v.play().catch(() => {});
+                });
+            }
+        };
+
+        const stopVideoItem = (itm) => {
+            if (itm && itm.isVideo && itm.videoElement) {
+                itm.videoElement.pause();
+            }
+        };
 
         let transInMs = 0; // Tracks incoming transition duration from previous slide
 
@@ -1499,6 +1557,12 @@ class VideoStudioApp {
 
             const item = visibleItems[i];
             const nextItem = visibleItems[i + 1];
+
+            if (i === 0 && item.isVideo) {
+                startVideoItem(item);
+            } else if (item.isVideo && item.videoElement?.paused && !item.videoElement?.ended) {
+                item.videoElement.play().catch(() => {});
+            }
 
             const motionMs = (item.moveDuration || 5.0) * 1000;
             const transOutMs = nextItem ? ((item.transDuration || 2.0) * 1000) : 0;
@@ -1517,8 +1581,6 @@ class VideoStudioApp {
 
                         const realElapsed = now - start;
                         const currentElapsed = Math.min(motionMs, realElapsed);
-                        
-                        // Progress seamlessly incorporates time already spent in incoming transition
                         const t = (transInMs + currentElapsed) / totalMotionMs; 
 
                         renderSlide(ctx, item, t, canvas.width, canvas.height);
@@ -1533,13 +1595,23 @@ class VideoStudioApp {
                 });
             }
 
-            if (this._stopSequence) break;
-            if (!nextItem) continue;
+            if (this._stopSequence) {
+                stopVideoItem(item);
+                break;
+            }
+            if (!nextItem) {
+                stopVideoItem(item);
+                continue;
+            }
 
             // Phase 2: Transition Window (Both Current & Target Images Animate Concurrently)
             lblStatus.textContent = isExporting 
                 ? `Transitioning ${i + 1} ➔ ${i + 2}...` 
                 : `Transitioning ${i + 1} ➔ ${i + 2}`;
+
+            if (nextItem.isVideo) {
+                startVideoItem(nextItem);
+            }
 
             let startTrans = performance.now();
             const nextMotionMs = (nextItem.moveDuration || 5.0) * 1000;
@@ -1553,16 +1625,12 @@ class VideoStudioApp {
                     const elapsed = Math.min(transOutMs, now - startTrans);
                     const p = Math.min(1.0, elapsed / transOutMs);
 
-                    // Outgoing current slide moves towards 1.0 (rectEnd)
                     const tA = (transInMs + motionMs + elapsed) / totalMotionMs;
-
-                    // Incoming target slide begins moving from 0.0 (rectStart) concurrently
                     const tB = elapsed / nextTotalMotionMs;
 
                     renderSlide(ctxA, item, tA, canvas.width, canvas.height);
                     renderSlide(ctxB, nextItem, tB, canvas.width, canvas.height);
 
-                    // Hook into TransEditor to apply transition mask
                     const te = this.transEditor;
                     if (te) {
                         const backup = {
@@ -1573,7 +1641,7 @@ class VideoStudioApp {
 
                         te.ctx = ctx;
                         te.canvas = canvas;
-                        te.canvasSize = [1920, 1080];
+                        te.canvasSize = [outW, outH]; // <--- Changed from [1920, 1080]
                         te.srcCanvas = cvsA;
                         te.dstCanvas = cvsB;
                         te.progress = p;
@@ -1598,7 +1666,6 @@ class VideoStudioApp {
                         te.renderCanvas();
                         Object.assign(te, backup);
                     } else {
-                        // Fallback crossfade
                         ctx.globalAlpha = 1.0;
                         ctx.drawImage(cvsA, 0, 0);
                         ctx.globalAlpha = p;
@@ -1615,9 +1682,12 @@ class VideoStudioApp {
                 requestAnimationFrame(drawPhase2);
             });
 
-            // Hand off the transition time so the next slide begins its solo phase seamlessly
+            stopVideoItem(item);
             transInMs = transOutMs;
         }
+
+        visibleItems.forEach(stopVideoItem);
+
 
 
 
@@ -2235,7 +2305,7 @@ class VideoStudioApp {
 
             unit.appendChild(thumbFrame);
 
-            // Text Below Thumbnail: Index + Image Name on Left, Move Duration on Right
+            // Text Below Thumbnail: Index + Image Name on Left, Move Duration on Right (hidden for videos)
             const infoRow = document.createElement("div");
             infoRow.className = "w-full flex items-center justify-between px-1 pt-1 text-[11px] pointer-events-none gap-1 min-w-0 overflow-hidden";
             infoRow.innerHTML = `
@@ -2243,7 +2313,7 @@ class VideoStudioApp {
                     <span class="${isSelected ? "text-amber-400 font-bold" : "text-slate-400"} text-[11px] shrink-0">#${idx + 1}</span>
                     <span class="${isSelected ? "text-slate-200" : "text-slate-400"} text-[9.5px] font-medium min-w-0 flex-1 truncate block" title="${item.title}">${item.title}</span>
                 </div>
-                <span class="${isSelected ? "text-amber-400 font-bold" : "text-cyan-400 font-bold"} text-[11px] shrink-0 whitespace-nowrap pl-1">${Number(item.moveDuration || 5.0).toFixed(1)}s</span>
+                ${!item.isVideo ? `<span class="${isSelected ? "text-amber-400 font-bold" : "text-cyan-400 font-bold"} text-[11px] shrink-0 whitespace-nowrap pl-1">${Number(item.moveDuration || 5.0).toFixed(1)}s</span>` : ""}
             `;
             unit.appendChild(infoRow);
 

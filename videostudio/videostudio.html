@@ -64,6 +64,10 @@
                 <h1 class="text-sm font-bold text-white leading-tight">VideoStudio <span class="text-red-500 text-xs ml-1 uppercase tracking-wide border border-red-500/50 px-1.5 py-0.5 rounded-md">Beta Testing</span></h1>
                 <p id="lblProjectName" class="text-[11px] text-slate-400 leading-none">1920 × 1080 Project Workspace</p>
             </div>
+<button id="btnSettings" type="button" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs font-semibold shadow transition flex items-center gap-1.5" title="Video Project Resolution & Settings">
+                <span>⚙️</span><span>Settings</span>
+            </button>
+
         </div>
 
         <input type="file" id="mediaFileInput" multiple accept="image/*,video/mp4,video/webm,video/ogg,video/quicktime" class="hidden">
@@ -536,7 +540,134 @@
     <!-- Toast Notifications -->
     <div id="toastContainer" class="fixed top-14 right-4 z-50 flex flex-col gap-2 pointer-events-none"></div>
 
-    <!-- Script Imports -->
+    <!-- ======================================================================= -->
+    <!-- VIDEO PROJECT SETTINGS MODAL                                            -->
+    <!-- ======================================================================= -->
+    <div id="settingsModal" class="hidden fixed inset-0 bg-slate-950/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+        <div class="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-lg overflow-hidden text-slate-800 animate-fadeIn">
+            <!-- Modal Header -->
+            <div class="px-6 py-3.5 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                    <span class="text-lg">⚙️</span>
+                    <h2 class="text-base font-bold text-slate-800">Video Project Settings</h2>
+                </div>
+                <span class="text-xs px-2.5 py-0.5 rounded-full bg-blue-50 text-blue-700 font-semibold border border-blue-200">Timeline Master</span>
+            </div>
+
+            <!-- Modal Body -->
+            <div class="p-6 space-y-4">
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">1. Video Dimensions &amp; Orientation</label>
+                    <div class="flex items-center gap-2 mb-2.5">
+                        <div class="flex-1">
+                            <label for="etrVideoW" class="block text-[11px] font-semibold text-slate-500 mb-0.5">Width</label>
+                            <input type="number" id="etrVideoW" min="320" max="7680" value="1920" step="2" class="w-full px-3 py-1.5 rounded-lg border border-slate-300 bg-white text-sm font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        </div>
+                        <span class="text-slate-400 font-bold pt-4 text-base">×</span>
+                        <div class="flex-1">
+                            <label for="etrVideoH" class="block text-[11px] font-semibold text-slate-500 mb-0.5">Height</label>
+                            <input type="number" id="etrVideoH" min="240" max="4320" value="1080" step="2" class="w-full px-3 py-1.5 rounded-lg border border-slate-300 bg-white text-sm font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        </div>
+                        <span class="text-xs font-semibold text-slate-500 pt-4">px</span>
+                    </div>
+
+                    <div class="space-y-2 bg-slate-50 p-3 rounded-xl border border-slate-200">
+                        <div class="flex flex-col sm:flex-row sm:items-center gap-2">
+                            <label for="cmbVideoTemplate" class="text-xs font-semibold text-slate-700 shrink-0">Standard Template:</label>
+                            <select id="cmbVideoTemplate" class="flex-1 px-2.5 py-1.5 rounded-lg border border-slate-300 bg-white text-xs font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            </select>
+                        </div>
+                        <label class="inline-flex items-center gap-2 cursor-pointer pt-0.5">
+                            <input type="checkbox" id="chkVideoLandscape" checked class="w-4 h-4 rounded text-blue-600 focus:ring-blue-500 border-slate-300 cursor-pointer">
+                            <span class="text-xs font-medium text-slate-700">Landscape Orientation (16:9 standard)</span>
+                        </label>
+                    </div>
+
+                    <div id="videoSettingsInfoBox" class="mt-2.5 bg-blue-50 border border-blue-200 rounded-xl px-3 py-2 text-xs text-blue-900 flex items-center justify-between">
+                        <span>Aspect Ratio: <strong id="lblSettingsAspect">16:9 (1.78:1)</strong></span>
+                        <span id="lblSettingsMegapixels" class="text-blue-700 font-semibold">2.07 MP</span>
+                    </div>
+                </div>
+
+                <hr class="border-slate-200">
+
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">2. Render Framerate</label>
+                    <div class="bg-slate-50 p-3 rounded-xl border border-slate-200 flex items-center justify-between">
+                        <span class="text-xs font-semibold text-slate-700">Playback &amp; Export Target:</span>
+                        <div class="flex items-center gap-1.5 bg-white p-0.5 rounded-lg border border-slate-300">
+                            <button type="button" id="btnFps30" class="px-3 py-1 rounded text-xs font-bold bg-blue-600 text-white shadow-sm transition">30 FPS</button>
+                            <button type="button" id="btnFps60" class="px-3 py-1 rounded text-xs font-semibold text-slate-600 hover:text-slate-900 transition">60 FPS</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Modal Footer -->
+            <div class="px-6 py-3.5 bg-slate-50 border-t border-slate-200 flex items-center justify-end gap-2.5">
+                <button type="button" id="btnSettingsCancel" class="px-4 py-2 rounded-lg border border-slate-300 bg-white hover:bg-slate-100 text-slate-700 text-xs sm:text-sm font-medium transition">
+                    Cancel
+                </button>
+                <button type="button" id="btnSettingsOk" class="px-5 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs sm:text-sm font-semibold shadow-sm transition">
+                    Apply Settings
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ======================================================================= -->
+    <!-- EXPORT VIDEO & PROJECT DIALOG                                           -->
+    <!-- ======================================================================= -->
+    <div id="exportModal" class="hidden fixed inset-0 bg-slate-950/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+        <div class="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-md overflow-hidden text-slate-800">
+            <div class="px-6 py-4 bg-slate-50 border-b border-slate-200 flex items-center gap-2">
+                <span class="text-lg">🎬</span>
+                <h2 class="text-base font-bold text-slate-800">Export Video &amp; Project</h2>
+            </div>
+
+            <div class="p-6 space-y-4">
+                <div>
+                    <label for="exportFilename" class="block text-xs font-semibold text-slate-700 mb-1">File Name</label>
+                    <input type="text" id="exportFilename" value="videostudio-movie" class="w-full px-3 py-2 rounded-lg border border-slate-300 bg-white text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+
+                <div>
+                    <label for="exportFormat" class="block text-xs font-semibold text-slate-700 mb-1">Export Format</label>
+                    <select id="exportFormat" class="w-full px-3 py-2 rounded-lg border border-slate-300 bg-white text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <option value="video/webm">WebM Animation Video (.webm)</option>
+                        <option value="extract/images">Extract All Images (Original Files)</option>
+                    </select>
+                </div>
+
+                <div id="exportInfoBox" class="bg-emerald-50 border border-emerald-200 rounded-xl p-3 text-xs text-emerald-800 space-y-1 transition-colors">
+                    <div id="lblExportInfoPrimary">
+                        Video Size: <strong id="lblExportDims">1920 × 1080 px</strong> (<span id="lblExportDuration">0.0s</span>)
+                    </div>
+                    <div id="lblExportInfoSecondary">
+                        Estimated Output File Size: <strong id="lblExportEstSize">~0.0 MB</strong>
+                    </div>
+                </div>
+            </div>
+
+            <div class="px-6 py-3.5 bg-slate-50 border-t border-slate-200 flex flex-wrap items-center justify-between gap-2.5">
+                <button type="button" id="btnExportCancel" class="px-4 py-2 rounded-lg border border-slate-300 bg-white hover:bg-slate-100 text-slate-700 text-xs sm:text-sm font-medium transition">
+                    Cancel
+                </button>
+                <div class="grid grid-cols-2 gap-2.5">
+                    <button type="button" id="btnSaveProjectHtml" class="px-3 sm:px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-xs sm:text-sm font-medium shadow-sm transition flex items-center justify-center text-center gap-1.5" title="Save session as a standalone HTML file that reopens with media and settings intact">
+                        <span>📦</span>
+                        <span>Save Project as HTML</span>
+                    </button>
+                    <button type="button" id="btnExportConfirm" class="px-3 sm:px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs sm:text-sm font-medium shadow-sm transition flex items-center justify-center text-center gap-1.5">
+                        <span id="lblExportConfirmIcon">🎬</span>
+                        <span id="lblExportConfirmText">Export Video</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Script Imports Placed at the very bottom after all modals -->
     <script src="photodemo.js"></script>
     <script src="photoframe.js"></script>
     <script src="photoeffects.js"></script>
@@ -544,8 +675,7 @@
     <script src="photopaint_shapes.js"></script>
     <script src="photopaint_emoji.js"></script>
     <script src="photopaint.js"></script>
+    <script src="videosettings.js?v=2"></script>
     <script src="videostudio.js"></script>
-
 </body>
 </html>
-

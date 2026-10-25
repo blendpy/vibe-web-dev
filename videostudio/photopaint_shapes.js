@@ -96,8 +96,8 @@ function getPaintShapeParamsConfig() {
             ["Italic", "toggle", false],
             ["Text Size", 10, 120, 32],
             ["Text Outline", "bool", false],
-            ["Background Pill", "bool", false],
-            ["Bg Opacity (%)", 10, 100, 65]
+            ["Background Pill", "bool", true],
+            ["Bg Opacity (%)", 10, 100, 85]
         ];
     });
 
