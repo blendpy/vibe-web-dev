@@ -838,6 +838,18 @@ window.onload = function () {
                     return;
                 }
 
+                let isRendered = false;
+                const forceRenderCheck = () => {
+                    if (isRendered) return;
+                    isRendered = true;
+                    app.showComputingDialog(false);
+                    app.render_preview(false);
+                    showToast("Restored saved project successfully!", "success");
+                };
+
+                // Failsafe timer: force render after 2.5 seconds even if an image onload hangs
+                const failsafeTimer = setTimeout(forceRenderCheck, 2500);
+
                 app.history = data.history.map((hState) => {
                     const reconstructedList = hState.photolist.map((pData) => {
                         const img = new Image();
@@ -847,17 +859,16 @@ window.onload = function () {
 
                         img.onload = () => {
                             loadedImagesCount++;
-                            if (loadedImagesCount === totalImagesCount) {
-                                app.showComputingDialog(false);
-                                app.render_preview(false);
-                                showToast("Restored saved project successfully!", "success");
+                            if (loadedImagesCount >= totalImagesCount) {
+                                clearTimeout(failsafeTimer);
+                                forceRenderCheck();
                             }
                         };
                         img.onerror = () => {
                             loadedImagesCount++;
-                            if (loadedImagesCount === totalImagesCount) {
-                                app.showComputingDialog(false);
-                                app.render_preview(false);
+                            if (loadedImagesCount >= totalImagesCount) {
+                                clearTimeout(failsafeTimer);
+                                forceRenderCheck();
                             }
                         };
                         img.src = pData.dataUrl;
@@ -869,12 +880,6 @@ window.onload = function () {
                     return uc;
                 });
 
-                setTimeout(() => {
-                    app.showComputingDialog(false);
-                    if (app.history.length > 0) {
-                        app.render_preview(false);
-                    }
-                }, 500);
             } catch (err) {
                 app.showComputingDialog(false);
                 showToast(`Error restoring session: ${err.message}`, "error");
@@ -885,3 +890,5 @@ window.onload = function () {
         app.loadDemoPhotos();
     }
 };
+
+

@@ -1843,12 +1843,23 @@ class PhotoCollageApp {
                 const elementToDataUrl = (el) => {
                     if (!el) return null;
                     if (el.src && el.src.indexOf("data:") === 0) return el.src;
+                    if (el.tagName === "CANVAS") {
+                        try {
+                            return el.toDataURL("image/png");
+                        } catch (e) {
+                            return null;
+                        }
+                    }
                     const cvs = document.createElement("canvas");
                     cvs.width = el.naturalWidth || el.width || 800;
                     cvs.height = el.naturalHeight || el.height || 600;
                     const ctx = cvs.getContext("2d");
-                    ctx.drawImage(el, 0, 0);
-                    return cvs.toDataURL("image/jpeg", 0.92);
+                    try {
+                        ctx.drawImage(el, 0, 0);
+                        return cvs.toDataURL("image/jpeg", 0.92);
+                    } catch (err) {
+                        return null;
+                    }
                 };
 
                 const serializedHistory = this.history.map((uc) => {
@@ -1880,13 +1891,18 @@ class PhotoCollageApp {
                 const stripRegex = new RegExp('<script id="saved-session-payload">[\\s\\S]*?' + tagEnd, 'gi');
                 let cleanHtml = htmlClone.replace(stripRegex, "");
 
+                // Replace local script references with CDN paths so standalone HTML works anywhere
                 cleanHtml = cleanHtml.replace(
                     /<script\s+src=["']?photocollage\.js["']?>\s*<\/script>/i,
-                    '<script src="https://blendpy.github.io/vibe-web-dev/image/photocollage.js"></script>'
+                    '<script src="https://blendpy.github.io/vibe-web-dev/photocollage/photocollage.js"></script>'
                 );
                 cleanHtml = cleanHtml.replace(
                     /<script\s+src=["']?photocollage_demo\.js["']?>\s*<\/script>/i,
-                    '<script src="https://blendpy.github.io/vibe-web-dev/image/photocollage_demo.js"></script>'
+                    '<script src="https://blendpy.github.io/vibe-web-dev/photocollage/photocollage_demo.js"></script>'
+                );
+                cleanHtml = cleanHtml.replace(
+                    /<script\s+src=["']?photocollage_appcontrol\.js["']?>\s*<\/script>/i,
+                    '<script src="https://blendpy.github.io/vibe-web-dev/photocollage/photocollage_appcontrol.js"></script>'
                 );
 
                 const payloadScript = '\n<script id="saved-session-payload">\nwindow.SAVED_SESSION_DATA = ' + 

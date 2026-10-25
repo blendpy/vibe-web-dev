@@ -947,10 +947,8 @@ class ImageSectionEditorCanvas {
 // ======================================================================
 class VideoStudioApp {
     constructor() {
-        // Initialize Master Video Project Settings
-        this.settings = typeof VideoSettingsManager === "function" ? new VideoSettingsManager(this) : null;
-
         this.mediaItems = [];
+        this.settings = typeof VideoSettingsManager === "function" ? new VideoSettingsManager(this) : null;
         this.selectedIndices = [];
         this.activeTab = "tabZoom";
         this.hudTimer = null;
@@ -2478,11 +2476,20 @@ class VideoStudioApp {
 window.MediaItem = MediaItem;
 window.showToast = showToast;
 
-window.onload = function () {
+window.onload = async function () {
     window.videoStudioApp = new VideoStudioApp();
     
-    // Display the Demo Picker dialog on startup (Bing selected as default)
-    if (typeof window.videoStudioApp.loadDemoMedia === "function") {
-        window.videoStudioApp.loadDemoMedia();
+    // Check if we opened a saved standalone HTML project
+    const hasRestored = window.videoStudioApp.settings 
+        ? await window.videoStudioApp.settings.restoreSavedProjectIfPresent() 
+        : false;
+
+    // ONLY open the demo picker modal on startup if NO saved project was restored and the timeline is empty
+    if (!hasRestored && window.videoStudioApp.mediaItems.length === 0) {
+        if (typeof window.videoStudioApp.loadDemoMedia === "function") {
+            window.videoStudioApp.loadDemoMedia();
+        }
     }
 };
+
+

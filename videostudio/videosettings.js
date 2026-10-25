@@ -43,6 +43,11 @@ class VideoSettingsManager {
         this.initSettingsBindings();
         this.initExportBindings();
         this.updateHeaderBadge();
+
+        // Automatically restore saved project if this page was opened from a saved HTML file
+        setTimeout(() => {
+            this.restoreSavedProjectIfPresent();
+        }, 0);
     }
 
     // ==================================================================
@@ -358,7 +363,7 @@ class VideoSettingsManager {
             if (dimensionsChanged) {
                 this.resizeAllTransitions(w, h);
             }
-            this.app.renderMainStage();
+            this.app.renderMainStage?.();
 
             if (typeof showToast === "function") {
                 const orientLabel = isLandscape ? "Landscape" : "Portrait";
@@ -419,14 +424,12 @@ class VideoSettingsManager {
             }
         }
 
-        // Scale WebM bitrate estimate relative to 1080p @ 30fps baseline (~0.3125 MB/sec)
         const pixelScale = (this.opts.out_w * this.opts.out_h) / (1920 * 1080);
         const fpsScale = this.opts.fps === 60 ? 1.4 : 1.0;
         const estSizeMB = visibleItems.length
             ? Math.max(0.1, totalSeconds * 0.3125 * pixelScale * fpsScale)
             : 0;
 
-        // Estimate Standalone HTML Project Size (Base64 JPEG slides + Paint JSON)
         let estHtmlBytes = 120 * 1024;
         for (const item of mediaItems) {
             const w = item.w || 1920;
@@ -541,7 +544,7 @@ class VideoSettingsManager {
 
         for (let i = 0; i < mediaItems.length; i++) {
             const item = mediaItems[i];
-            const src = item.getProcessedSource() || item.imgElement;
+            const src = item.getProcessedSource?.() || item.imgElement;
             if (!src) continue;
 
             const cvs = document.createElement("canvas");
@@ -567,6 +570,7 @@ class VideoSettingsManager {
         if (typeof showToast === "function") showToast("All slide images extracted!", "success");
     }
 
+    
     saveProjectAsHtml() {
         const mediaItems = this.app?.mediaItems || [];
         if (!mediaItems.length) {
@@ -585,13 +589,17 @@ class VideoSettingsManager {
             try {
                 const elementToDataUrl = (el, fallbackW, fallbackH) => {
                     if (!el) return null;
-                    if (el.src && el.src.indexOf("data:") === 0) return el.src;
-                    const cvs = document.createElement("canvas");
-                    cvs.width = el.naturalWidth || el.videoWidth || el.width || fallbackW || 1920;
-                    cvs.height = el.naturalHeight || el.videoHeight || el.height || fallbackH || 1080;
-                    const ctx = cvs.getContext("2d");
-                    ctx.drawImage(el, 0, 0, cvs.width, cvs.height);
-                    return cvs.toDataURL("image/jpeg", 0.92);
+                    if (typeof el.src === "string" && el.src.indexOf("data:") === 0) return el.src;
+                    try {
+                        const cvs = document.createElement("canvas");
+                        cvs.width = el.naturalWidth || el.videoWidth || el.width || fallbackW || 1920;
+                        cvs.height = el.naturalHeight || el.videoHeight || el.height || fallbackH || 1080;
+                        const ctx = cvs.getContext("2d");
+                        ctx.drawImage(el, 0, 0, cvs.width, cvs.height);
+                        return cvs.toDataURL("image/jpeg", 0.92);
+                    } catch (_) {
+                        return el.src || null;
+                    }
                 };
 
                 const serializedItems = mediaItems.map((item) => ({
@@ -648,7 +656,13 @@ class VideoSettingsManager {
                 const stripRegex = new RegExp('<script id="saved-session-payload">[\\s\\S]*?' + tagEnd, 'gi');
                 let cleanHtml = htmlClone.replace(stripRegex, "");
 
-                // 2. Replace relative script paths with full HTTP CDN paths
+                // 2. Ensure modals and demo overlays are hidden in the exported HTML
+                cleanHtml = cleanHtml.replace(
+                    /(id=["'](?:exportModal|settingsModal|demoPickerModal|demoLoadingOverlay)["'][^>]*class=["'])([^"']*)/gi,
+                    (match, p1, p2) => p1 + (p2.includes("hidden") ? p2 : "hidden " + p2)
+                );
+
+                // 3. Replace relative script paths with full HTTP CDN paths
                 cleanHtml = cleanHtml.replace(
                     /<script\s+src=["']?(?:\.\/)?photodemo\.js(?:\?[^"']*)?["']?\s*>\s*<\/script>/i,
                     '<script src="https://blendpy.github.io/vibe-web-dev/videostudio/photodemo.js"></script>'
@@ -686,12 +700,11 @@ class VideoSettingsManager {
                     '<script src="https://blendpy.github.io/vibe-web-dev/videostudio/videostudio.js"></script>'
                 );
 
-                // 3. Inject saved project payload before </head> so it loads before the scripts run
+                // 4. Inject saved project payload before </head>
                 const payloadScript = '\n<script id="saved-session-payload">\nwindow.__SAVED_VIDEOSTUDIO_PROJECT__ = ' +
-                    JSON.stringify(sessionData) + ';\n<' + '/script>';
+                    JSON.stringify(sessionData) + ';\nwindow.SAVED_SESSION_DATA = window.__SAVED_VIDEOSTUDIO_PROJECT__;\n<' + '/script>';
                 cleanHtml = cleanHtml.replace(/<\/head>/i, payloadScript + '\n<' + '/head>');
 
-                // 4. Download the standalone HTML file
                 const blob = new Blob(["<!DOCTYPE html>\n" + cleanHtml], { type: "text/html;charset=utf-8" });
                 const url = URL.createObjectURL(blob);
                 const fnEl = document.getElementById("exportFilename");
@@ -717,12 +730,10 @@ class VideoSettingsManager {
         }, 80);
     }
 
-
-    async restoreSavedProjectIfPresent() {
-        const saved = window.__SAVED_VIDEOSTUDIO_PROJECT__;
+restoreSavedProjectIfPresent() {
+        const saved = window.__SAVED_VIDEOSTUDIO_PROJECT__ || window.SAVED_SESSION_DATA;
         if (!saved || !this.app) return false;
 
-        // Support both legacy array format and new { opts, items } format
         const itemsList = Array.isArray(saved) ? saved : (saved.items || []);
         if (!itemsList.length) return false;
 
@@ -732,36 +743,64 @@ class VideoSettingsManager {
             this.updateHeaderBadge();
         }
 
+        // Prevent any demo modal or demo loader from clearing the restored timeline
+        document.getElementById("demoPickerModal")?.classList.add("hidden");
+        document.getElementById("demoLoadingOverlay")?.classList.add("hidden");
+
         this.app.mediaItems = [];
+        const loadPromises = [];
+
         for (const data of itemsList) {
-            const img = await new Promise((resolve) => {
-                const i = new Image();
-                i.onload = () => resolve(i);
-                i.onerror = () => resolve(null);
-                i.src = data.dataUrl || "";
+            const p = new Promise((resolve) => {
+                const img = new Image();
+                img.onload = () => {
+                    const w = data.w || img.naturalWidth || img.width || 1920;
+                    const h = data.h || img.naturalHeight || img.height || 1080;
+
+                    const item = new MediaItem(
+                        data.filename || "Slide",
+                        w,
+                        h,
+                        img,
+                        false
+                    );
+                    Object.assign(item, data);
+                    item.imgElement = img;
+                    item.w = w;
+                    item.h = h;
+                    item.invalidateProcessedCache?.();
+                    item.generateThumbnail(); // Generate thumbnail *after* image data is loaded
+
+                    this.app.mediaItems.push(item);
+                    resolve();
+                };
+                img.onerror = () => {
+                    resolve();
+                };
+                img.src = data.dataUrl || "";
             });
-            if (!img) continue;
-
-            const item = new MediaItem(data.filename || "Slide", data.w || img.width, data.h || img.height, img, false);
-            Object.assign(item, data);
-            item.imgElement = img;
-            item.invalidateProcessedCache();
-            item.generateThumbnail();
-            this.app.mediaItems.push(item);
+            loadPromises.push(p);
         }
 
-        if (this.app.mediaItems.length > 0) {
-            this.app.selectedIndices = [0];
-            this.resizeAllTransitions(this.opts.out_w, this.opts.out_h);
-            this.app.renderFilmstrip();
-            this.app.renderMainStage();
-            if (typeof showToast === "function") {
-                showToast(`Restored ${this.app.mediaItems.length} slides from saved HTML project`, "success");
+        Promise.all(loadPromises).then(() => {
+            if (this.app.mediaItems.length > 0) {
+                this.app.selectedIndices = [0];
+                this.resizeAllTransitions(this.opts.out_w, this.opts.out_h);
+                this.app.renderFilmstrip?.();
+                this.app.renderMainStage?.();
+                if (typeof showToast === "function") {
+                    showToast(`Restored ${this.app.mediaItems.length} slides from saved HTML project`, "success");
+                }
             }
-            return true;
-        }
-        return false;
+        });
+
+        return true;
     }
 }
 
+
+
+
+
 window.VideoSettingsManager = VideoSettingsManager;
+
