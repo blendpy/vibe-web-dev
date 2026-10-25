@@ -151,7 +151,13 @@ class PhotoCollageApp {
             });
         }
 
-        bindBtn("btnLoadDemo", () => this.loadDemoPhotos());
+    bindBtn("btnLoadDemo", () => {
+    if (typeof openDemoPickerModal === "function") {
+        openDemoPickerModal(this);
+    } else {
+        this.loadDemoPhotos();
+    }
+    });
         bindBtn("btnSavePoster", () => this.openSaveModal());
         bindBtn("btnUndo", () => this.select_prev_layout());
         bindBtn("btnRedo", () => this.select_next_layout());
