@@ -436,7 +436,7 @@ async function loadHelioDemo(app, clearCollage = true) {
 
         const planetNames = ["sun", "mercury", "venus", "earth", "mars", "jupiter", "saturn", "uranus", "neptune"];
         for (const name of planetNames) {
-            rawTasks.push(loadMediaFromUrl(`${HELIO_BASE}/planets/${name}.jpg`, formatTitle(name)));
+            rawTasks.push(loadMediaFromUrl(`${HELIO_BASE}/planets/${name}.webp`, formatTitle(name)));
         }
 
         rawTasks.push(Promise.resolve(createChapterSlide("Azure Horizon", "#2563eb", true)));
@@ -446,14 +446,14 @@ async function loadHelioDemo(app, clearCollage = true) {
             "saturn iapetus", "saturn enceladus", "neptune triton", "neptune proteus"
         ];
         for (const name of moonNames) {
-            rawTasks.push(loadMediaFromUrl(`${HELIO_BASE}/moons/${name}.jpg`, formatTitle(name)));
+            rawTasks.push(loadMediaFromUrl(`${HELIO_BASE}/moons/${name}.webp`, formatTitle(name)));
         }
 
         rawTasks.push(Promise.resolve(createChapterSlide("Emerald Canopy", "#059669", true)));
-        rawTasks.push(loadMediaFromUrl(`${HELIO_BASE}/dwarfs/dwarfs.jpg`, "Dwarfs"));
+        rawTasks.push(loadMediaFromUrl(`${HELIO_BASE}/dwarfs/dwarfs.webp`, "Dwarfs"));
 
         rawTasks.push(Promise.resolve(createChapterSlide("Amber Dunes", "#d97706", true)));
-        rawTasks.push(loadMediaFromUrl(`${HELIO_BASE}/comets/comets.jpg`, "Comets"));
+        rawTasks.push(loadMediaFromUrl(`${HELIO_BASE}/comets/comets.webp`, "Comets"));
 
         rawTasks.push(Promise.resolve(createChapterSlide("Purple Aurora", "#7c3aed", true)));
 
@@ -831,14 +831,14 @@ function openDemoPickerModal(app) {
 // ======================================================================
 function createDemoPhotoList() {
     const specs = [
-        { name: "Alpine_Sunset.jpg", w: 1200, h: 800, theme: "mountains" },
-        { name: "Tokyo_Neon_Night.jpg", w: 800, h: 1100, theme: "city" },
-        { name: "Pacific_Coastline.jpg", w: 1200, h: 750, theme: "ocean" },
-        { name: "Botanical_Monstera.jpg", w: 900, h: 900, theme: "botanical" },
-        { name: "Sahara_Dunes.jpg", w: 1100, h: 750, theme: "desert" },
-        { name: "Nordic_Lighthouse.jpg", w: 750, h: 1050, theme: "lighthouse" },
-        { name: "Autumn_Birch_Forest.jpg", w: 1000, h: 800, theme: "forest" },
-        { name: "Modern_Architecture.jpg", w: 850, h: 1050, theme: "architecture" }
+        { name: "Alpine_Sunset.webp", w: 1200, h: 800, theme: "mountains" },
+        { name: "Tokyo_Neon_Night.webp", w: 800, h: 1100, theme: "city" },
+        { name: "Pacific_Coastline.webp", w: 1200, h: 750, theme: "ocean" },
+        { name: "Botanical_Monstera.webp", w: 900, h: 900, theme: "botanical" },
+        { name: "Sahara_Dunes.webp", w: 1100, h: 750, theme: "desert" },
+        { name: "Nordic_Lighthouse.webp", w: 750, h: 1050, theme: "lighthouse" },
+        { name: "Autumn_Birch_Forest.webp", w: 1000, h: 800, theme: "forest" },
+        { name: "Modern_Architecture.webp", w: 850, h: 1050, theme: "architecture" }
     ];
 
     return specs.map(spec => {

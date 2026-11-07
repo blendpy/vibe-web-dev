@@ -10,66 +10,67 @@
 <body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col justify-between font-sans">
     
     <!-- Header -->
-    <header class="w-full py-8 px-6 border-b border-slate-800 bg-slate-900/50 backdrop-blur">
-        <div class="max-w-7xl mx-auto flex items-center justify-between">
-            <h1 class="text-2xl font-bold tracking-tight text-white flex items-center gap-2">
+    <header class="w-full py-4 px-6 border-b border-slate-800 bg-slate-900/50 backdrop-blur">
+        <!-- Changed max-w-7xl to max-w-10xl below -->
+        <div class="max-w-10xl mx-auto flex items-center justify-between">
+            <h1 class="text-xl font-bold tracking-tight text-white flex items-center gap-2">
                 <span class="text-indigo-400">⚡</span> Vibe Web Dev
             </h1>
-            <span class="text-xs px-3 py-1 bg-indigo-500/10 border border-indigo-500/20 text-indigo-300 rounded-full">GitHub Portfolio</span>
+            <a href="https://github.com/blendpy/vibe-web-dev" target="_blank" rel="noopener noreferrer" class="text-xs px-3 py-1 bg-indigo-500/10 border border-indigo-500/20 text-indigo-300 rounded-full hover:bg-indigo-500/20 hover:text-white transition-colors">GitHub Portfolio</a>
         </div>
     </header>
 
     <!-- Main Content Grid -->
-    <main class="max-w-7xl w-full mx-auto px-6 py-12 flex-grow">
+    <main class="max-w-10xl w-full mx-auto px-6 py-6 flex-grow">
 
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             
             <!-- Helio Project Card -->
-            <div class="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden flex flex-col h-full shadow-lg">
+            <div class="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden flex flex-col h-full shadow-lg group">
                 
                 <!-- Clickable Image Header -->
-                <a href="./helio/index.html" class="relative block p-6 flex flex-col justify-end aspect-video group cursor-pointer overflow-hidden border-b border-slate-800">
+                <a href="./helio/index.html" class="relative block p-6 flex flex-col justify-end aspect-video group/img cursor-pointer overflow-hidden border-b border-slate-800">
                     <!-- Background Image -->
                     <div class="absolute inset-0 z-0 bg-slate-950">
-                        <img id="helio-preview-img" src="./helio/infographics/planets/planets.jpg" alt="Helio Preview" class="w-full h-full object-cover opacity-50 transition-opacity duration-300 group-hover:opacity-80">
+                        <img id="helio-preview-img" src="./helio/infographics/planets/planets.webp" alt="Helio Preview" class="w-full h-full object-cover opacity-50 transition-all duration-300 group-hover:opacity-100">
                         <!-- Gradient Overlay -->
-                        <div class="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/70 to-slate-900/20"></div>
+                        <div class="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/70 to-slate-900/25 transition-opacity duration-300 group-hover:opacity-0"></div>
                     </div>
 
                     <!-- Bottom Text Content -->
-                    <div class="relative z-10 mt-auto pt-4">
+                    <div class="relative z-10 mt-auto pt-4 transition-opacity duration-300 group-hover:opacity-0 group-hover:pointer-events-none">
                         <h3 class="text-2xl font-bold text-white drop-shadow-lg mb-2">Helio Solar System</h3>
                         <p class="text-slate-200 text-sm font-medium drop-shadow-md leading-relaxed">Interactive 3D heliocentric solar system visualization featuring planetary orbits, comets, and eclipses.</p>
                     </div>
                 </a>
                 
                 <!-- Card Body & Links -->
-                <div class="px-4 py-5 flex flex-row items-center justify-between flex-grow bg-slate-900/90 gap-3">
+                <div class="px-4 py-1 flex flex-row items-center justify-between flex-grow bg-slate-900/90 gap-3">
                     <!-- Left Side: Links -->
                     <div class="flex-grow min-w-0">
-                        <ul id="helio-link-list" class="space-y-2.5 text-sm">
+                        <ul id="helio-link-list" class="space-y-1.5 text-sm">
                             <li>
-                                <a href="./helio/index.html" data-img="./helio/infographics/planets/planets.jpg" class="helio-link text-indigo-400 hover:text-indigo-300 hover:underline flex items-center gap-1.5 transition-colors whitespace-nowrap">
+                                <a href="./helio/index.html" data-img="./helio/infographics/planets/planets.webp" class="helio-link text-indigo-400 hover:text-white hover:bg-indigo-600/35 hover:font-bold hover:px-3 hover:py-1.5 hover:rounded-lg hover:border hover:border-indigo-500/50 flex items-center gap-1.5 transition-all whitespace-nowrap">
                                     <span class="text-xs">🔹</span> Solar System View
                                 </a>
                             </li>
                             <li>
-                                <a href="./helio/index.html?planet=Earth&date=2027-08-02&time=10:07:00" data-img="./helio/infographics/moons/moons.jpg" class="helio-link text-indigo-400 hover:text-indigo-300 hover:underline flex items-center gap-1.5 transition-colors whitespace-nowrap">
+                                <a href="./helio/index.html?planet=Earth&date=2027-08-02&time=10:07:00" data-img="./helio/infographics/moons/moons.webp" class="helio-link text-indigo-400 hover:text-white hover:bg-indigo-600/35 hover:font-bold hover:px-3 hover:py-1.5 hover:rounded-lg hover:border hover:border-indigo-500/50 flex items-center gap-1.5 transition-all whitespace-nowrap">
                                     <span class="text-xs">🔹</span> 2027 Solar Eclipse View
                                 </a>
                             </li>
                             <li>
-                                <a href="./helio/index.html?planet=Earth" data-img="./helio/infographics/planets/earth.jpg" class="helio-link text-indigo-400 hover:text-indigo-300 hover:underline flex items-center gap-1.5 transition-colors whitespace-nowrap">
+                                <a href="./helio/index.html?planet=Earth" data-img="./helio/infographics/planets/earth.webp" class="helio-link text-indigo-400 hover:text-white hover:bg-indigo-600/35 hover:font-bold hover:px-3 hover:py-1.5 hover:rounded-lg hover:border hover:border-indigo-500/50 flex items-center gap-1.5 transition-all whitespace-nowrap">
                                     <span class="text-xs">🔹</span> Earth 3D View
                                 </a>
                             </li>
                             <li>
-                                <a href="./helio/index.html?planet=Moon" data-img="./helio/infographics/moons/earth moon.jpg" class="helio-link text-indigo-400 hover:text-indigo-300 hover:underline flex items-center gap-1.5 transition-colors whitespace-nowrap">
+                                <a href="./helio/index.html?planet=Moon" data-img="./helio/infographics/moons/earth moon.webp" class="helio-link text-indigo-400 hover:text-white hover:bg-indigo-600/35 hover:font-bold hover:px-3 hover:py-1.5 hover:rounded-lg hover:border hover:border-indigo-500/50 flex items-center gap-1.5 transition-all whitespace-nowrap">
                                     <span class="text-xs">🔹</span> Moon 3D View
                                 </a>
                             </li>
                             <li>
-                                <a href="./helio/index.html?planet=Saturn" data-img="./helio/infographics/planets/saturn.jpg" class="helio-link text-indigo-400 hover:text-indigo-300 hover:underline flex items-center gap-1.5 transition-colors whitespace-nowrap">
+                                <a href="./helio/index.html?planet=Saturn" data-img="./helio/infographics/planets/saturn.webp" class="helio-link text-indigo-400 hover:text-white hover:bg-indigo-600/35 hover:font-bold hover:px-3 hover:py-1.5 hover:rounded-lg hover:border hover:border-indigo-500/50 flex items-center gap-1.5 transition-all whitespace-nowrap">
                                     <span class="text-xs">🔹</span> Saturn 3D View
                                 </a>
                             </li>
@@ -92,51 +93,51 @@
             </div>
 
             <!-- Money & Tax Tools Card -->
-            <div class="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden flex flex-col h-full shadow-lg">
+            <div class="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden flex flex-col h-full shadow-lg group">
                 
                 <!-- Clickable Image Header -->
-                <a href="./money/US_Mortgage_Amortization_Schedule.html" class="relative block p-6 flex flex-col justify-end aspect-video group cursor-pointer overflow-hidden border-b border-slate-800">
+                <a href="./money/US_Mortgage_Amortization_Schedule.html" class="relative block p-6 flex flex-col justify-end aspect-video group/img cursor-pointer overflow-hidden border-b border-slate-800">
                     <!-- Background Image -->
                     <div class="absolute inset-0 z-0 bg-slate-950">
-                        <img id="money-preview-img" src="./money/infographics/US_Mortgage_Amortization_Schedule.jpg" alt="Money Preview" class="w-full h-full object-cover opacity-50 transition-opacity duration-300 group-hover:opacity-80">
+                        <img id="money-preview-img" src="./money/infographics/US_Mortgage_Amortization_Schedule.webp" alt="Money Preview" class="w-full h-full object-cover opacity-50 transition-all duration-300 group-hover:opacity-100">
                         <!-- Gradient Overlay -->
-                        <div class="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/70 to-slate-900/20"></div>
+                        <div class="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/70 to-slate-900/25 transition-opacity duration-300 group-hover:opacity-0"></div>
                     </div>
 
                     <!-- Bottom Text Content -->
-                    <div class="relative z-10 mt-auto pt-4">
+                    <div class="relative z-10 mt-auto pt-4 transition-opacity duration-300 group-hover:opacity-0 group-hover:pointer-events-none">
                         <h3 class="text-2xl font-bold text-white drop-shadow-lg mb-2">Money & Tax Tools</h3>
                         <p class="text-slate-200 text-sm font-medium drop-shadow-md leading-relaxed">Financial calculators, historical tax brackets, and budgetary simulators.</p>
                     </div>
                 </a>
                 
                 <!-- Card Body & Links -->
-                <div class="px-4 py-5 flex flex-row items-center justify-between flex-grow bg-slate-900/90 gap-3">
+                <div class="px-4 py-1 flex flex-row items-center justify-between flex-grow bg-slate-900/90 gap-3">
                     <!-- Left Side: Links -->
                     <div class="flex-grow min-w-0">
-                        <ul id="money-link-list" class="space-y-2.5 text-sm">
+                        <ul id="money-link-list" class="space-y-1.5 text-sm">
                             <li>
-                                <a href="./money/US_Mortgage_Amortization_Schedule.html" data-img="./money/infographics/US_Mortgage_Amortization_Schedule.jpg" class="money-link text-indigo-400 hover:text-indigo-300 hover:underline flex items-center gap-1.5 transition-colors whitespace-nowrap">
+                                <a href="./money/US_Mortgage_Amortization_Schedule.html" data-img="./money/infographics/US_Mortgage_Amortization_Schedule.webp" class="money-link text-indigo-400 hover:text-white hover:bg-indigo-600/35 hover:font-bold hover:px-3 hover:py-1.5 hover:rounded-lg hover:border hover:border-indigo-500/50 flex items-center gap-1.5 transition-all whitespace-nowrap">
                                     <span class="text-xs">🔹</span> Mortgage Amortization
                                 </a>
                             </li>
                             <li>
-                                <a href="./money/US_Federal_Budget_Simulator.html" data-img="./money/infographics/US_Federal_Budget_Simulator.jpg" class="money-link text-indigo-400 hover:text-indigo-300 hover:underline flex items-center gap-1.5 transition-colors whitespace-nowrap">
+                                <a href="./money/US_Federal_Budget_Simulator.html" data-img="./money/infographics/US_Federal_Budget_Simulator.webp" class="money-link text-indigo-400 hover:text-white hover:bg-indigo-600/35 hover:font-bold hover:px-3 hover:py-1.5 hover:rounded-lg hover:border hover:border-indigo-500/50 flex items-center gap-1.5 transition-all whitespace-nowrap">
                                     <span class="text-xs">🔹</span> Federal Budget Simulator
                                 </a>
                             </li>
                             <li>
-                                <a href="./money/US_Taxes.html" data-img="./money/infographics/US_Taxes.jpg" class="money-link text-indigo-400 hover:text-indigo-300 hover:underline flex items-center gap-1.5 transition-colors whitespace-nowrap">
+                                <a href="./money/US_Taxes.html" data-img="./money/infographics/US_Taxes.webp" class="money-link text-indigo-400 hover:text-white hover:bg-indigo-600/35 hover:font-bold hover:px-3 hover:py-1.5 hover:rounded-lg hover:border hover:border-indigo-500/50 flex items-center gap-1.5 transition-all whitespace-nowrap">
                                     <span class="text-xs">🔹</span> US Federal Tax Calculator
                                 </a>
                             </li>
                             <li>
-                                <a href="./money/US_Historical.html" data-img="./money/infographics/US_Historical.jpg" class="money-link text-indigo-400 hover:text-indigo-300 hover:underline flex items-center gap-1.5 transition-colors whitespace-nowrap">
+                                <a href="./money/US_Historical.html" data-img="./money/infographics/US_Historical.webp" class="money-link text-indigo-400 hover:text-white hover:bg-indigo-600/35 hover:font-bold hover:px-3 hover:py-1.5 hover:rounded-lg hover:border hover:border-indigo-500/50 flex items-center gap-1.5 transition-all whitespace-nowrap">
                                     <span class="text-xs">🔹</span> Historical Taxes Comparison
                                 </a>
                             </li>
                             <li>
-                                <a href="./money/US_Social_Security.html" data-img="./money/infographics/US_Social_Security.jpg" class="money-link text-indigo-400 hover:text-indigo-300 hover:underline flex items-center gap-1.5 transition-colors whitespace-nowrap">
+                                <a href="./money/US_Social_Security.html" data-img="./money/infographics/US_Social_Security.webp" class="money-link text-indigo-400 hover:text-white hover:bg-indigo-600/35 hover:font-bold hover:px-3 hover:py-1.5 hover:rounded-lg hover:border hover:border-indigo-500/50 flex items-center gap-1.5 transition-all whitespace-nowrap">
                                     <span class="text-xs">🔹</span> Social Security Calculator
                                 </a>
                             </li>
@@ -159,37 +160,42 @@
             </div>
 
             <!-- Image Processing Card -->
-            <div class="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden flex flex-col h-full shadow-lg">
+            <div class="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden flex flex-col h-full shadow-lg group">
                 
                 <!-- Clickable Image Header -->
-                <a href="./videostudio/videostudio.html" class="relative block p-6 flex flex-col justify-end aspect-video group cursor-pointer overflow-hidden border-b border-slate-800">
+                <a href="./videostudio/videostudio.html" class="relative block p-6 flex flex-col justify-end aspect-video group/img cursor-pointer overflow-hidden border-b border-slate-800">
                     <!-- Background Image -->
                     <div class="absolute inset-0 z-0 bg-slate-950">
-                        <img id="image-preview-img" src="./videostudio/infographics/videostudio.jpg" alt="Image Processing Preview" class="w-full h-full object-cover opacity-50 transition-opacity duration-300 group-hover:opacity-80">
+                        <img id="image-preview-img" src="./videostudio/infographics/videostudio.webp" alt="Image Processing Preview" class="w-full h-full object-cover opacity-50 transition-all duration-300 group-hover:opacity-100">
                         <!-- Gradient Overlay -->
-                        <div class="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/70 to-slate-900/20"></div>
+                        <div class="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/70 to-slate-900/25 transition-opacity duration-300 group-hover:opacity-0"></div>
                     </div>
 
                     <!-- Bottom Text Content -->
-                    <div class="relative z-10 mt-auto pt-4">
+                    <div class="relative z-10 mt-auto pt-4 transition-opacity duration-300 group-hover:opacity-0 group-hover:pointer-events-none">
                         <h3 class="text-2xl font-bold text-white drop-shadow-lg mb-2">Image Processing</h3>
                         <p class="text-slate-200 text-sm font-medium drop-shadow-md leading-relaxed">Interactive photo layout studios, grid generators, and browser-based media tools.</p>
                     </div>
                 </a>
                 
                 <!-- Card Body & Links -->
-                <div class="px-4 py-5 flex flex-row items-center justify-between flex-grow bg-slate-900/90 gap-3">
+                <div class="px-4 py-1 flex flex-row items-center justify-between flex-grow bg-slate-900/90 gap-3">
                     <!-- Left Side: Links -->
                     <div class="flex-grow min-w-0">
-                        <ul id="image-link-list" class="space-y-2.5 text-sm">
+                        <ul id="image-link-list" class="space-y-1.5 text-sm">
                             <li>
-                                <a href="./videostudio/videostudio.html" data-img="./videostudio/infographics/videostudio.jpg" class="image-link text-indigo-400 hover:text-indigo-300 hover:underline flex items-center gap-1.5 transition-colors whitespace-nowrap">
+                                <a href="./videostudio/videostudio.html" data-img="./videostudio/infographics/videostudio.webp" class="image-link text-indigo-400 hover:text-white hover:bg-indigo-600/35 hover:font-bold hover:px-3 hover:py-1.5 hover:rounded-lg hover:border hover:border-indigo-500/50 flex items-center gap-1.5 transition-all whitespace-nowrap">
                                     <span class="text-xs">🔹</span> VideoStudio Media Editor
                                 </a>
                             </li>
                             <li>
-                                <a href="./photocollage/photocollage.html" data-img="./photocollage/infographics/photocollage.png" class="image-link text-indigo-400 hover:text-indigo-300 hover:underline flex items-center gap-1.5 transition-colors whitespace-nowrap">
+                                <a href="./photocollage/photocollage.html" data-img="./photocollage/infographics/photocollage.webp" class="image-link text-indigo-400 hover:text-white hover:bg-indigo-600/35 hover:font-bold hover:px-3 hover:py-1.5 hover:rounded-lg hover:border hover:border-indigo-500/50 flex items-center gap-1.5 transition-all whitespace-nowrap">
                                     <span class="text-xs">🔹</span> PhotoCollage Grid Studio
+                                </a>
+                            </li>
+                            <li>
+                                <a href="https://github.com/adrienverge/PhotoCollage/" data-img="./photocollage/infographics/photocollage.webp" class="image-link text-indigo-400 hover:text-white hover:bg-indigo-600/35 hover:font-bold hover:px-3 hover:py-1.5 hover:rounded-lg hover:border hover:border-indigo-500/50 flex items-center gap-1.5 transition-all whitespace-nowrap">
+                                    <span class="text-xs">🔹</span> ORIGINAL Python Version of PhotoCollage
                                 </a>
                             </li>
                         </ul>
@@ -206,6 +212,53 @@
                         
                         <!-- Creative Studio Badge -->
                         <span class="text-[10px] sm:text-xs font-semibold text-amber-200 bg-amber-900/60 px-2 py-1 rounded border border-amber-500/40 whitespace-nowrap">Creative Studio</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Plant Science Explorer Card -->
+            <div class="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden flex flex-col h-full shadow-lg group">
+                
+                <!-- Clickable Image Header -->
+                <a href="./plants/plants.html" class="relative block p-6 flex flex-col justify-end aspect-video group/img cursor-pointer overflow-hidden border-b border-slate-800">
+                    <!-- Background Image -->
+                    <div class="absolute inset-0 z-0 bg-slate-950">
+                        <img id="plants-preview-img" src="./plants/infographics/zones.webp" alt="Plants Explorer Preview" class="w-full h-full object-cover opacity-50 transition-all duration-300 group-hover:opacity-100">
+                        <!-- Gradient Overlay -->
+                        <div class="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/70 to-slate-900/25 transition-opacity duration-300 group-hover:opacity-0"></div>
+                    </div>
+
+                    <!-- Bottom Text Content -->
+                    <div class="relative z-10 mt-auto pt-4 transition-opacity duration-300 group-hover:opacity-0 group-hover:pointer-events-none">
+                        <h3 class="text-2xl font-bold text-white drop-shadow-lg mb-2">Plant Science Explorer</h3>
+                        <p class="text-slate-200 text-sm font-medium drop-shadow-md leading-relaxed">Interactive botanical guide and explorer detailing plant species, characteristics, and habitats.</p>
+                    </div>
+                </a>
+                
+                <!-- Card Body & Links -->
+                <div class="px-4 py-1 flex flex-row items-center justify-between flex-grow bg-slate-900/90 gap-3">
+                    <!-- Left Side: Links -->
+                    <div class="flex-grow min-w-0">
+                        <ul id="plants-link-list" class="space-y-1.5 text-sm">
+                            <li>
+                                <a href="./plants/plants.html" data-img="./plants/infographics/climate.webp" class="plants-link text-indigo-400 hover:text-white hover:bg-indigo-600/35 hover:font-bold hover:px-3 hover:py-1.5 hover:rounded-lg hover:border hover:border-indigo-500/50 flex items-center gap-1.5 transition-all whitespace-nowrap">
+                                    <span class="text-xs">🔹</span> Botanical Explorer View
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                    
+                    <!-- Right Side: Tech Stack & Badge -->
+                    <div class="flex flex-col items-end justify-center gap-1.5 text-xs text-slate-500 border-l border-slate-800/80 pl-3 py-1 text-right shrink-0 whitespace-nowrap">
+                        <span>Interactive UI</span>
+                        <span>Botanical Data</span>
+                        <span>Tailwind CSS</span>
+                        
+                        <!-- Separator Line -->
+                        <div class="w-full h-px bg-slate-800/80 my-1"></div>
+                        
+                        <!-- Explorer Badge -->
+                        <span class="text-[10px] sm:text-xs font-semibold text-lime-200 bg-lime-900/60 px-2 py-1 rounded border border-lime-500/40 whitespace-nowrap">Explorer</span>
                     </div>
                 </div>
             </div>
@@ -342,7 +395,7 @@
             const helioPreviewImg = document.getElementById('helio-preview-img');
             const helioLinks = document.querySelectorAll('.helio-link');
             const helioLinkList = document.getElementById('helio-link-list');
-            const defaultHelioImgSrc = './helio/infographics/planets/planets.jpg';
+            const defaultHelioImgSrc = './helio/infographics/planets/planets.webp';
             
             helioLinks.forEach(link => {
                 link.addEventListener('mouseenter', (e) => {
@@ -365,7 +418,7 @@
             const moneyPreviewImg = document.getElementById('money-preview-img');
             const moneyLinks = document.querySelectorAll('.money-link');
             const moneyLinkList = document.getElementById('money-link-list');
-            const defaultMoneyImgSrc = './money/infographics/US_Mortgage_Amortization_Schedule.jpg';
+            const defaultMoneyImgSrc = './money/infographics/US_Mortgage_Amortization_Schedule.webp';
             
             moneyLinks.forEach(link => {
                 link.addEventListener('mouseenter', (e) => {
@@ -388,7 +441,7 @@
             const imagePreviewImg = document.getElementById('image-preview-img');
             const imageLinks = document.querySelectorAll('.image-link');
             const imageLinkList = document.getElementById('image-link-list');
-            const defaultImageImgSrc = './videostudio/infographics/videostudio.jpg'; 
+            const defaultImageImgSrc = './videostudio/infographics/videostudio.webp'; 
             
             imageLinks.forEach(link => {
                 link.addEventListener('mouseenter', (e) => {
@@ -403,6 +456,29 @@
                 imageLinkList.addEventListener('mouseleave', () => {
                     if (imagePreviewImg.getAttribute('src') !== defaultImageImgSrc) {
                         imagePreviewImg.setAttribute('src', defaultImageImgSrc);
+                    }
+                });
+            }
+
+            // --- Plant Science Explorer Image Swap ---
+            const plantsPreviewImg = document.getElementById('plants-preview-img');
+            const plantsLinks = document.querySelectorAll('.plants-link');
+            const plantsLinkList = document.getElementById('plants-link-list');
+            const defaultPlantsImgSrc = './plants/infographics/zones.webp';
+            
+            plantsLinks.forEach(link => {
+                link.addEventListener('mouseenter', (e) => {
+                    const newImgSrc = e.currentTarget.getAttribute('data-img');
+                    if (newImgSrc && plantsPreviewImg.getAttribute('src') !== newImgSrc) {
+                        plantsPreviewImg.setAttribute('src', newImgSrc);
+                    }
+                });
+            });
+
+            if (plantsLinkList) {
+                plantsLinkList.addEventListener('mouseleave', () => {
+                    if (plantsPreviewImg.getAttribute('src') !== defaultPlantsImgSrc) {
+                        plantsPreviewImg.setAttribute('src', defaultPlantsImgSrc);
                     }
                 });
             }

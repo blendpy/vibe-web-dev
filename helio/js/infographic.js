@@ -72,21 +72,21 @@ function updateInfographicPanel(rawTarget) {
   imgElement.style.opacity = 0.5;
 
   let folder = 'planets';
-  let fileName = `${targetStr}.jpg`;
-  let fallbackImage = 'planets.jpg';
+  let fileName = `${targetStr}.webp`;
+  let fallbackImage = 'planets.webp';
 
   const validCategories = ['planets', 'dwarfs', 'asteroids', 'comets', 'kbos', 'moons'];
   
   if (validCategories.includes(targetStr) || targetStr === 'dwarf planets') {
       const cat = targetStr === 'dwarf planets' ? 'dwarfs' : targetStr;
       folder = cat === 'kbos' ? 'kbos' : cat;
-      fileName = `${folder}.jpg`;
+      fileName = `${folder}.webp`;
       fallbackImage = fileName;
   } 
   else if (targetStr === 'sun') {
       folder = 'planets'; 
-      fileName = 'sun.jpg'; 
-      fallbackImage = 'planets.jpg';
+      fileName = 'sun.webp'; 
+      fallbackImage = 'planets.webp';
   }
   else {
       let detectedCategory = null;
@@ -121,16 +121,16 @@ function updateInfographicPanel(rawTarget) {
       }
 
       if (detectedCategory) {
-          if (detectedCategory.includes('asteroid')) { folder = 'asteroids'; fallbackImage = 'asteroids.jpg'; } 
-          else if (detectedCategory.includes('comet')) { folder = 'comets'; fallbackImage = 'comets.jpg'; } 
-          else if (detectedCategory.includes('kbo') || detectedCategory.includes('kuiper')) { folder = 'kbos'; fallbackImage = 'kbos.jpg'; } 
-          else if (detectedCategory.includes('dwarf')) { folder = 'dwarfs'; fallbackImage = 'dwarfs.jpg'; } 
-          else if (detectedCategory.includes('moon') || detectedCategory.includes('satellite')) { folder = 'moons'; fallbackImage = 'moons.jpg'; } 
+          if (detectedCategory.includes('asteroid')) { folder = 'asteroids'; fallbackImage = 'asteroids.webp'; } 
+          else if (detectedCategory.includes('comet')) { folder = 'comets'; fallbackImage = 'comets.webp'; } 
+          else if (detectedCategory.includes('kbo') || detectedCategory.includes('kuiper')) { folder = 'kbos'; fallbackImage = 'kbos.webp'; } 
+          else if (detectedCategory.includes('dwarf')) { folder = 'dwarfs'; fallbackImage = 'dwarfs.webp'; } 
+          else if (detectedCategory.includes('moon') || detectedCategory.includes('satellite')) { folder = 'moons'; fallbackImage = 'moons.webp'; } 
       }
 
       if (folder === 'moons') {
-          if (targetStr === 'moon' || targetStr === 'earth moon') fileName = 'earth moon.jpg';
-          else if (parentPlanet) fileName = `${parentPlanet} ${targetStr}.jpg`;
+          if (targetStr === 'moon' || targetStr === 'earth moon') fileName = 'earth moon.webp';
+          else if (parentPlanet) fileName = `${parentPlanet} ${targetStr}.webp`;
       }
   }
 

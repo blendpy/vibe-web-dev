@@ -195,9 +195,9 @@ function loadPlanetTextureOnDemand(rawPlanetName) {
   const dwarfPlanets = ['pluto'];
   const isDwarfPlanet = dwarfPlanets.includes(targetStr);
 
-  const primaryUrl = isActuallyAMoon ? encodeURI(`texture/moons/${parentPlanet.toLowerCase()} ${targetStr}.jpg`)
-    : isDwarfPlanet ? encodeURI(`texture/dwarfs/${targetStr}.jpg`)
-    : encodeURI(`texture/planets/${targetStr}.jpg`);
+  const primaryUrl = isActuallyAMoon ? encodeURI(`texture/moons/${parentPlanet.toLowerCase()} ${targetStr}.webp`)
+    : isDwarfPlanet ? encodeURI(`texture/dwarfs/${targetStr}.webp`)
+    : encodeURI(`texture/planets/${targetStr}.webp`);
 
   let fallbackUrl = null;
   if (targetStr === 'sun') {
@@ -1148,7 +1148,7 @@ function createCelestialObjects() {
   const sunGeo = new THREE.SphereGeometry(1.5, 32, 32);
   const sunMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
   loadTextureWithFallback(
-    'texture/sun.jpg',
+    'texture/planets/sun.webp',
     'https://cdn.jsdelivr.net/gh/mrdoob/three.js@dev/examples/textures/planets/sun.jpg',
     (tex) => {
       sunMat.map = tex;

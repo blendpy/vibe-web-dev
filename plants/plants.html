@@ -1,0 +1,1153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Botanical Zone &amp; Climate Explorer</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:ital,wght@0,600;0,700;1,400&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: #f6f7f4;
+      color: #1e2923;
+    }
+    .font-serif-title {
+      font-family: 'Playfair Display', Georgia, serif;
+    }
+    ::-webkit-scrollbar {
+      width: 7px;
+      height: 7px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #eef0eb;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #bbc4b8;
+      border-radius: 9999px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #94a390;
+    }
+    .climate-pill-active {
+      background-color: #0f766e !important;
+      color: #ffffff !important;
+      border-color: #115e59 !important;
+    }
+    .cat-tab-active {
+      background-color: #1e2923 !important;
+      color: #ffffff !important;
+    }
+    .slider-track-btn-active {
+      background-color: #fef3c7 !important;
+      color: #78350f !important;
+      font-weight: 700 !important;
+      box-shadow: 0 2px 6px rgba(120, 53, 15, 0.18) !important;
+    }
+    .water-track-btn-active {
+      background-color: #e0f2fe !important;
+      color: #0369a1 !important;
+      font-weight: 700 !important;
+      box-shadow: 0 2px 6px rgba(3, 105, 161, 0.2) !important;
+    }
+    .subtype-bar {
+      display: flex;
+      flex-wrap: nowrap;
+      align-items: center;
+      gap: 0.25rem;
+      width: 100%;
+      overflow: hidden;
+    }
+    .subtype-btn {
+      flex: 0 1 auto;
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .subtype-btn-active {
+      background-color: #065f46 !important;
+      color: #ffffff !important;
+      border-color: #047857 !important;
+    }
+    .edit-btn-active {
+      background-color: #059669 !important;
+      color: #ffffff !important;
+      box-shadow: 0 0 0 2px #a7f3d0 !important;
+    }
+    .inv-edit-btn-active {
+      background-color: #d97706 !important;
+      color: #ffffff !important;
+      box-shadow: 0 0 0 2px #fde68a !important;
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col">
+
+  <!-- =========================================================================
+       TOP HEADER (FULL WIDTH)
+       ========================================================================= -->
+  <header class="bg-[#1b2e22] text-white border-b border-emerald-900/60 sticky top-0 z-30 shadow-md">
+    <div class="w-full px-4 sm:px-6 lg:px-8 py-1.5 sm:py-2 flex flex-col md:flex-row md:items-center md:justify-between gap-2.5">
+      <div class="flex items-center gap-2.5">
+        <div class="w-8 h-8 rounded-lg bg-emerald-700/60 border border-emerald-500/40 flex items-center justify-center text-base shrink-0 shadow-inner">
+          🌿
+        </div>
+        <div>
+          <div class="flex flex-wrap items-center gap-2">
+            <h1 class="font-serif-title text-lg sm:text-xl font-bold tracking-tight text-emerald-50 leading-tight">
+              Botanical Zone &amp; Climate Explorer
+            </h1>
+            <span id="header-match-badge" class="text-[11px] font-semibold px-2 py-0.2 rounded-full bg-emerald-800/90 text-emerald-200 border border-emerald-600/50">
+              Loading Plants...
+            </span>
+          </div>
+          <p class="text-[11px] sm:text-xs text-emerald-200/75 leading-tight mt-0">
+            plants by USDA Hardiness Zone or regional climate
+          </p>
+        </div>
+      </div>
+
+      <div class="relative w-full md:w-80 lg:w-96 shrink-0">
+        <span class="absolute left-3 top-1/2 -translate-y-1/2 text-emerald-400 text-xs">🔍</span>
+        <input
+          id="search-input"
+          type="text"
+          oninput="handleSearchInput(this.value)"
+          placeholder="Search plant, flower, origin, or Latin name..."
+          class="w-full pl-8 pr-7 py-1.5 rounded-xl bg-emerald-950/60 border border-emerald-700/60 text-white placeholder-emerald-300/50 text-xs focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:bg-emerald-950 transition"
+        />
+        <button
+          id="clear-search-btn"
+          onclick="handleSearchInput('')"
+          class="hidden absolute right-2.5 top-1/2 -translate-y-1/2 text-emerald-400 hover:text-white text-xs px-1"
+          title="Clear search"
+        >
+          ✕
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- =========================================================================
+       INTERACTIVE FILTER PANEL (FULL WIDTH)
+       ========================================================================= -->
+  <section class="bg-white border-b border-stone-200 shadow-sm">
+    <div class="w-full px-4 sm:px-6 lg:px-8 py-2.5 space-y-2">
+
+      <!-- Row 1: USDA Hardiness Zone -->
+      <div 
+        id="zone-row-area"
+        onmouseenter="triggerButtonHoverOverlay('infographics/zones.webp', 'USDA Hardiness Zones Map')"
+        onmouseleave="clearButtonHoverOverlay()"
+        class="flex flex-wrap items-center gap-1.5 sm:gap-2 rounded-xl transition duration-150"
+      >
+        <span class="text-[11px] font-bold uppercase tracking-wider text-emerald-900 bg-emerald-100 px-2 py-1 rounded-lg whitespace-nowrap shrink-0">
+          USDA Hardiness Zone:
+        </span>
+        <div id="zone-buttons-container" class="flex flex-wrap items-center gap-1"></div>
+      </div>
+
+      <!-- Row 2: Light -> Water -> Show Items -> Filter -> Reset Filters -->
+      <div class="pt-1.5 border-t border-stone-100 flex flex-wrap items-center gap-2.5">
+        <div class="flex items-center gap-1.5 shrink-0">
+          <span class="text-[11px] font-bold text-stone-600 uppercase tracking-wider">Light:</span>
+          <div 
+            id="sun-slider-track"
+            onmouseenter="triggerButtonHoverOverlay('infographics/light.webp', 'Light Requirements')"
+            onmouseleave="clearButtonHoverOverlay()"
+            class="inline-flex p-0.5 rounded-xl bg-stone-200/80 border border-stone-300 gap-0.5 text-xs select-none shadow-inner items-center cursor-pointer"
+          >
+            <button
+              type="button"
+              data-sun="Full Sun"
+              onclick="setSunFilter('Full Sun')"
+              class="sun-slider-btn px-2 py-1 rounded-lg font-medium text-stone-700 hover:text-stone-950 transition flex items-center gap-1 cursor-pointer text-xs"
+              title="Full Sun"
+            >
+              <span>☀️</span> <span class="hidden sm:inline">Full Sun</span>
+            </button>
+            <button
+              type="button"
+              data-sun="Part Sun"
+              onclick="setSunFilter('Part Sun')"
+              class="sun-slider-btn px-2 py-1 rounded-lg font-medium text-stone-700 hover:text-stone-950 transition flex items-center gap-1 cursor-pointer text-xs"
+              title="Part Sun"
+            >
+              <span>🌤️</span> <span class="hidden sm:inline">Part Sun</span>
+            </button>
+            <button
+              type="button"
+              data-sun="Part Shade"
+              onclick="setSunFilter('Part Shade')"
+              class="sun-slider-btn px-2 py-1 rounded-lg font-medium text-stone-700 hover:text-stone-950 transition flex items-center gap-1 cursor-pointer text-xs"
+              title="Part Shade"
+            >
+              <span>⛅</span> <span class="hidden sm:inline">Part Shade</span>
+            </button>
+            <button
+              type="button"
+              data-sun="Full Shade"
+              onclick="setSunFilter('Full Shade')"
+              class="sun-slider-btn px-2 py-1 rounded-lg font-medium text-stone-700 hover:text-stone-950 transition flex items-center gap-1 cursor-pointer text-xs"
+              title="Full Shade"
+            >
+              <span>🌑</span> <span class="hidden sm:inline">Full Shade</span>
+            </button>
+
+            <div class="w-px h-3.5 bg-stone-300 my-auto mx-0.5"></div>
+            <button
+              type="button"
+              id="sort-btn-light"
+              onclick="toggleSort('light')"
+              class="px-1.5 py-1 rounded-lg font-bold text-stone-600 hover:text-stone-950 hover:bg-stone-300/60 transition flex items-center justify-center cursor-pointer text-xs"
+              title="Sort by Light"
+            >
+              <span id="sort-icon-light" class="text-[11px]">⇅</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-1.5 shrink-0">
+          <span class="text-[11px] font-bold text-stone-600 uppercase tracking-wider">Water:</span>
+          <div 
+            id="water-slider-track"
+            onmouseenter="triggerButtonHoverOverlay('infographics/water.webp', 'Water Requirements')"
+            onmouseleave="clearButtonHoverOverlay()"
+            class="inline-flex p-0.5 rounded-xl bg-stone-200/80 border border-stone-300 gap-0.5 text-xs select-none shadow-inner items-center cursor-pointer"
+          >
+            <button
+              type="button"
+              data-water="Low"
+              onclick="setWaterFilter('Low')"
+              class="water-slider-btn px-2 py-1 rounded-lg font-medium text-stone-700 hover:text-stone-950 transition flex items-center gap-1 cursor-pointer text-xs"
+              title="Low (Drought-Tolerant / Dry)"
+            >
+              <span>🌵</span> <span>Low</span>
+            </button>
+            <button
+              type="button"
+              data-water="Medium"
+              onclick="setWaterFilter('Medium')"
+              class="water-slider-btn px-2 py-1 rounded-lg font-medium text-stone-700 hover:text-stone-950 transition flex items-center gap-1 cursor-pointer text-xs"
+              title="Medium (Average Moisture)"
+            >
+              <span>💧</span> <span>Med</span>
+            </button>
+            <button
+              type="button"
+              data-water="High"
+              onclick="setWaterFilter('High')"
+              class="water-slider-btn px-2 py-1 rounded-lg font-medium text-stone-700 hover:text-stone-950 transition flex items-center gap-1 cursor-pointer text-xs"
+              title="High (Moist to Wet Soil)"
+            >
+              <span>💦</span> <span>High</span>
+            </button>
+            <button
+              type="button"
+              data-water="Bog"
+              onclick="setWaterFilter('Bog')"
+              class="water-slider-btn px-2 py-1 rounded-lg font-medium text-stone-700 hover:text-stone-950 transition flex items-center gap-1 cursor-pointer text-xs"
+              title="Bog (Wetland / Standing Water)"
+            >
+              <span>🍄</span> <span>Bog</span>
+            </button>
+
+            <div class="w-px h-3.5 bg-stone-300 my-auto mx-0.5"></div>
+            <button
+              type="button"
+              id="sort-btn-water"
+              onclick="toggleSort('water')"
+              class="px-1.5 py-1 rounded-lg font-bold text-stone-600 hover:text-stone-950 hover:bg-stone-300/60 transition flex items-center justify-center cursor-pointer text-xs"
+              title="Sort by Water"
+            >
+              <span id="sort-icon-water" class="text-[11px]">⇅</span>
+            </button>
+          </div>
+        </div>
+
+        <div 
+          class="flex items-center gap-2 ml-auto pl-1.5 sm:border-l sm:border-stone-200"
+          onmouseenter="event.stopPropagation(); clearButtonHoverOverlay();"
+        >
+          <button
+            type="button"
+            id="open-show-items-modal-btn"
+            onclick="openShowItemsModal()"
+            class="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl border border-teal-700/40 bg-teal-50/90 hover:bg-teal-100 text-teal-950 text-xs font-bold transition shadow-2xs cursor-pointer shrink-0"
+            title="Choose which items to display on plant panels"
+          >
+            <span>👁️</span>
+            <span>Show Items</span>
+          </button>
+
+          <button
+            type="button"
+            id="open-filter-modal-btn"
+            onclick="openFilterModal()"
+            class="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl border border-emerald-700/40 bg-emerald-50/90 hover:bg-emerald-100 text-emerald-950 text-xs font-bold transition shadow-2xs cursor-pointer shrink-0"
+            title="Open Filter &amp; Sort Options"
+          >
+            <span>⚙️</span>
+            <span>Filter</span>
+            <span id="filter-active-count-badge" class="hidden px-1.5 py-0.2 rounded-full bg-emerald-700 text-white text-[10px] font-bold">0</span>
+          </button>
+
+          <!-- Reset Filters Button Placed in Row 2, Right of Filter Button -->
+          <button
+            id="reset-all-btn"
+            onclick="resetAllFilters()"
+            class="hidden text-xs font-semibold px-3 py-1 rounded-xl bg-rose-50 text-rose-700 border border-rose-200 hover:bg-rose-100 transition cursor-pointer shrink-0"
+          >
+            ↺ Reset Filters
+          </button>
+        </div>
+      </div>
+
+      <!-- Row 3: Type Toggle Buttons + Sort Icon Button After Cactus -->
+      <div class="pt-1.5 border-t border-stone-100 flex items-center gap-2">
+        <div class="flex items-center gap-2 overflow-x-auto pb-0.5 min-w-0 flex-1">
+          <span class="text-[11px] font-bold text-stone-600 uppercase tracking-wider whitespace-nowrap shrink-0">Type:</span>
+          <div id="category-tabs-container" class="flex items-center gap-1 flex-nowrap"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- =========================================================================
+       SHOW ITEMS DIALOG MODAL (With Grid View Checkbox under Sample Picture)
+       ========================================================================= -->
+  <div id="show-items-modal" class="fixed inset-0 z-50 hidden bg-black/60 backdrop-blur-sm flex items-center justify-center p-3 sm:p-5" onclick="closeShowItemsModal()">
+    <div class="bg-white rounded-3xl max-w-2xl w-full overflow-hidden shadow-2xl border border-stone-200 flex flex-col" onclick="event.stopPropagation()">
+      <div class="px-5 py-3 bg-[#1b2e22] text-white flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <span class="text-base">👁️</span>
+          <div>
+            <h2 class="font-serif-title text-base sm:text-lg font-bold leading-tight">Show Items</h2>
+            <p class="text-[11px] text-emerald-200/80 leading-tight">Choose which elements and units appear on each plant panel</p>
+          </div>
+        </div>
+        <button onclick="closeShowItemsModal()" class="w-7 h-7 rounded-full bg-emerald-800/70 hover:bg-emerald-700 text-white flex items-center justify-center text-xs font-bold cursor-pointer">✕</button>
+      </div>
+
+      <div class="p-4 sm:p-5 space-y-4 max-h-[85vh] overflow-y-auto">
+        <div class="p-3.5 rounded-2xl border-2 border-dashed border-stone-300 bg-stone-50/70 flex flex-col gap-2.5">
+          <div class="flex flex-col sm:flex-row gap-3 items-stretch">
+            <!-- Left Box: Sample Picture Checkbox + Grid View Checkbox underneath -->
+            <div class="w-full sm:w-[170px] shrink-0 rounded-xl border border-stone-300 bg-white p-3 flex flex-col items-center justify-center gap-1.5 shadow-2xs transition text-center">
+              <label id="lbl-show-sample" class="flex flex-col items-center justify-center gap-1 cursor-pointer select-none w-full hover:bg-emerald-50/60 rounded-lg p-1 transition">
+                <input type="checkbox" id="chk-show-sample" onchange="toggleShowItem('sample', this.checked)" class="w-4 h-4 accent-emerald-700 rounded cursor-pointer" checked />
+                <span class="text-lg leading-none">🖼️</span>
+                <span class="text-xs font-bold text-stone-800 leading-tight">Sample Picture</span>
+                <span class="text-[10px] text-stone-400 font-mono">170px max (≤3 cols)</span>
+              </label>
+
+              <!-- Grid View Checkbox Directly Under "170px max (≤3 cols)" -->
+              <div class="w-full pt-1.5 mt-0.5 border-t border-stone-200">
+                <label class="inline-flex items-center justify-center gap-1.5 px-2.5 py-1 rounded-lg border border-emerald-300 bg-emerald-50/80 hover:bg-emerald-100 text-xs font-bold text-emerald-950 cursor-pointer select-none w-full shadow-2xs transition">
+                  <input type="checkbox" id="chk-show-grid-view" onchange="toggleShowItem('gridView', this.checked)" class="w-3.5 h-3.5 accent-emerald-700 rounded cursor-pointer" />
+                  <span>🔲 Grid View</span>
+                </label>
+              </div>
+            </div>
+
+            <div id="show-items-right-options" class="flex-1 flex flex-col justify-center space-y-2 min-w-0">
+              <div class="flex items-center justify-between px-2.5 py-1 rounded-lg bg-stone-200/60 text-stone-500 text-xs font-semibold select-none">
+                <span>Plant Name</span>
+                <span>🌸 Emoji &amp; ☀️ Light</span>
+              </div>
+
+              <!-- Row 1: [latin] on left + [Metric] right-justified -->
+              <div class="flex items-center justify-between gap-2">
+                <label class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border border-teal-300 bg-teal-50/80 hover:bg-teal-100 text-xs font-bold text-teal-950 cursor-pointer select-none shadow-2xs transition">
+                  <input type="checkbox" id="chk-show-latin" onchange="toggleShowItem('latin', this.checked)" class="w-3.5 h-3.5 accent-teal-700 rounded cursor-pointer" />
+                  <span>🏷️ Latin Name</span>
+                </label>
+
+                <label class="ml-auto inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border border-indigo-300 bg-indigo-50/80 hover:bg-indigo-100 text-xs font-bold text-indigo-950 cursor-pointer select-none shadow-2xs transition" title="Display all zone temperatures in °C and heights in meters/cm">
+                  <input type="checkbox" id="chk-show-metric" onchange="toggleShowItem('metric', this.checked)" class="w-3.5 h-3.5 accent-indigo-700 rounded cursor-pointer" />
+                  <span>📏 Metric (°C / m)</span>
+                </label>
+              </div>
+
+              <!-- Row 2: [zone] . [water] . [cost] . [lifespan] . [Height] . [Flower] -->
+              <div class="flex flex-wrap items-center gap-1.5 py-1.5 px-2 rounded-xl bg-white border border-stone-200">
+                <label class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md border border-emerald-300 bg-emerald-50 hover:bg-emerald-100 text-[11px] font-bold text-emerald-950 cursor-pointer select-none">
+                  <input type="checkbox" id="chk-show-zone" onchange="toggleShowItem('zone', this.checked)" class="w-3.5 h-3.5 accent-emerald-700 rounded cursor-pointer" checked />
+                  <span>Zone</span>
+                </label>
+                <span class="text-stone-400 font-bold">&bull;</span>
+
+                <label class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md border border-sky-300 bg-sky-50 hover:bg-sky-100 text-[11px] font-bold text-sky-950 cursor-pointer select-none">
+                  <input type="checkbox" id="chk-show-water" onchange="toggleShowItem('water', this.checked)" class="w-3.5 h-3.5 accent-sky-700 rounded cursor-pointer" checked />
+                  <span>💧 Water</span>
+                </label>
+                <span class="text-stone-400 font-bold">&bull;</span>
+
+                <label class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md border border-emerald-300 bg-emerald-50/70 hover:bg-emerald-100 text-[11px] font-bold text-emerald-900 cursor-pointer select-none">
+                  <input type="checkbox" id="chk-show-cost" onchange="toggleShowItem('cost', this.checked)" class="w-3.5 h-3.5 accent-emerald-700 rounded cursor-pointer" />
+                  <span>💲 Cost</span>
+                </label>
+                <span class="text-stone-400 font-bold">&bull;</span>
+
+                <label class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md border border-amber-300 bg-amber-50 hover:bg-amber-100 text-[11px] font-bold text-amber-950 cursor-pointer select-none">
+                  <input type="checkbox" id="chk-show-lifespan" onchange="toggleShowItem('lifespan', this.checked)" class="w-3.5 h-3.5 accent-amber-700 rounded cursor-pointer" checked />
+                  <span>⏳ Lifespan</span>
+                </label>
+                <span class="text-stone-400 font-bold">&bull;</span>
+
+                <label class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md border border-stone-300 bg-stone-100 hover:bg-stone-200 text-[11px] font-bold text-stone-800 cursor-pointer select-none">
+                  <input type="checkbox" id="chk-show-height" onchange="toggleShowItem('height', this.checked)" class="w-3.5 h-3.5 accent-stone-700 rounded cursor-pointer" checked />
+                  <span>↕ Height</span>
+                </label>
+                <span class="text-stone-400 font-bold">&bull;</span>
+
+                <label class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md border border-pink-300 bg-pink-50 hover:bg-pink-100 text-[11px] font-bold text-pink-950 cursor-pointer select-none">
+                  <input type="checkbox" id="chk-show-flower" onchange="toggleShowItem('flower', this.checked)" class="w-3.5 h-3.5 accent-pink-600 rounded cursor-pointer" checked />
+                  <span>🌸 Flower</span>
+                </label>
+              </div>
+
+              <!-- Row 3: Origin + Inventory Fields -->
+              <div class="flex flex-wrap items-center gap-1.5">
+                <label class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border border-amber-300 bg-amber-50/80 hover:bg-amber-100 text-xs font-bold text-amber-950 cursor-pointer select-none shadow-2xs transition">
+                  <input type="checkbox" id="chk-show-origin" onchange="toggleShowItem('origin', this.checked)" class="w-3.5 h-3.5 accent-amber-700 rounded cursor-pointer" checked />
+                  <span>📍 Origin</span>
+                </label>
+
+                <label class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border border-amber-400 bg-amber-50/90 hover:bg-amber-100 text-xs font-bold text-amber-950 cursor-pointer select-none shadow-2xs transition">
+                  <input type="checkbox" id="chk-show-inventory" onchange="toggleShowItem('inventory', this.checked)" class="w-3.5 h-3.5 accent-amber-700 rounded cursor-pointer" />
+                  <span>📦 Inventory</span>
+                </label>
+
+                <label class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border border-amber-400 bg-amber-50/90 hover:bg-amber-100 text-xs font-bold text-amber-950 cursor-pointer select-none shadow-2xs transition">
+                  <input type="checkbox" id="chk-show-date-acquired" onchange="toggleShowItem('dateAcquired', this.checked)" class="w-3.5 h-3.5 accent-amber-700 rounded cursor-pointer" />
+                  <span>📅 Date Acquired</span>
+                </label>
+
+                <label class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border border-amber-400 bg-amber-50/90 hover:bg-amber-100 text-xs font-bold text-amber-950 cursor-pointer select-none shadow-2xs transition">
+                  <input type="checkbox" id="chk-show-location" onchange="toggleShowItem('location', this.checked)" class="w-3.5 h-3.5 accent-amber-700 rounded cursor-pointer" />
+                  <span>📌 Location</span>
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <!-- Bottom Section: [warn], [notes], [prop], [climate] -->
+          <div id="show-items-bottom-options" class="space-y-1.5 pt-2 border-t border-stone-200/80">
+            <div class="flex items-center">
+              <label class="w-full flex items-center gap-1.5 px-2.5 py-1 rounded-lg border border-rose-300 bg-rose-50/80 hover:bg-rose-100 text-xs font-bold text-rose-950 cursor-pointer select-none shadow-2xs transition">
+                <input type="checkbox" id="chk-show-warn" onchange="toggleShowItem('warn', this.checked)" class="w-3.5 h-3.5 accent-rose-700 rounded cursor-pointer" />
+                <span>⚠️ Warn (Invasive / Septic)</span>
+              </label>
+            </div>
+
+            <div class="flex items-center">
+              <label class="w-full flex items-center gap-1.5 px-2.5 py-1 rounded-lg border border-sky-300 bg-sky-50/80 hover:bg-sky-100 text-xs font-bold text-sky-950 cursor-pointer select-none shadow-2xs transition">
+                <input type="checkbox" id="chk-show-notes" onchange="toggleShowItem('notes', this.checked)" class="w-3.5 h-3.5 accent-sky-700 rounded cursor-pointer" />
+                <span>📝 Note</span>
+              </label>
+            </div>
+
+            <div class="flex items-center">
+              <label class="w-full flex items-center gap-1.5 px-2.5 py-1 rounded-lg border border-emerald-300 bg-emerald-50/80 hover:bg-emerald-100 text-xs font-bold text-emerald-950 cursor-pointer select-none shadow-2xs transition">
+                <input type="checkbox" id="chk-show-propagation" onchange="toggleShowItem('propagation', this.checked)" class="w-3.5 h-3.5 accent-emerald-700 rounded cursor-pointer" />
+                <span>🌱 Propagate</span>
+              </label>
+            </div>
+
+            <div class="flex items-center">
+              <label class="w-full flex items-center gap-1.5 px-2.5 py-1 rounded-lg border border-teal-300 bg-teal-50/80 hover:bg-teal-100 text-xs font-bold text-teal-950 cursor-pointer select-none shadow-2xs transition">
+                <input type="checkbox" id="chk-show-climate" onchange="toggleShowItem('climate', this.checked)" class="w-3.5 h-3.5 accent-teal-700 rounded cursor-pointer" />
+                <span>🌍 Climate &amp; Habitat</span>
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <div class="pt-3 border-t border-stone-200">
+          <div class="flex items-center justify-between mb-1.5">
+            <span class="text-[11px] font-bold uppercase tracking-wider text-stone-500">Live Example Panel (First Plant in List)</span>
+            <span class="text-[11px] text-stone-400">Updates live as you toggle</span>
+          </div>
+          <div id="show-items-preview-container" class="max-w-md mx-auto"></div>
+        </div>
+      </div>
+
+      <div class="px-5 py-2.5 bg-stone-50 border-t border-stone-200 flex items-center justify-end">
+        <button
+          type="button"
+          onclick="closeShowItemsModal()"
+          class="px-5 py-1.5 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white font-semibold text-xs shadow-xs cursor-pointer transition"
+        >
+          Done
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- =========================================================================
+       FILTER DIALOG MODAL
+       ========================================================================= -->
+  <div id="filter-dialog-modal" class="fixed inset-0 z-50 hidden bg-black/60 backdrop-blur-sm flex items-center justify-center p-3 sm:p-5" onclick="closeFilterModal()">
+    <div class="bg-white rounded-3xl max-w-lg w-full overflow-hidden shadow-2xl border border-stone-200" onclick="event.stopPropagation()">
+      <div class="px-5 py-3 bg-[#1b2e22] text-white flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <span class="text-base">⚙️</span>
+          <div>
+            <h2 class="font-serif-title text-base sm:text-lg font-bold leading-tight">Filter &amp; Sort Options</h2>
+            <p class="text-[11px] text-emerald-200/80 leading-tight">Refine plants by attributes, habitat, height, lifespan, and cost</p>
+          </div>
+        </div>
+        <button onclick="closeFilterModal()" class="w-7 h-7 rounded-full bg-emerald-800/70 hover:bg-emerald-700 text-white flex items-center justify-center text-xs font-bold cursor-pointer">✕</button>
+      </div>
+
+      <div class="p-4 sm:p-5 space-y-3.5 text-xs sm:text-sm">
+        <div>
+          <span class="block text-[11px] font-bold uppercase tracking-wider text-stone-500 mb-1.5">Display &amp; Plant Attributes</span>
+          <div id="attribute-checkboxes-grid" class="grid grid-cols-3 gap-1.5">
+            <!-- Available Checkbox (Only shown when at least 1 plant has inventory > 0) -->
+            <label id="available-filter-label" class="hidden flex items-center justify-center gap-1.5 p-1.5 rounded-xl border border-amber-300 bg-amber-50/70 hover:bg-amber-100/80 cursor-pointer transition select-none shadow-2xs min-w-0">
+              <input
+                id="toggle-available"
+                type="checkbox"
+                onchange="toggleAvailable(this.checked)"
+                class="w-3.5 h-3.5 accent-amber-600 rounded cursor-pointer shrink-0"
+              />
+              <span class="text-[11px] sm:text-xs font-bold text-amber-950 leading-tight truncate">📦 Available</span>
+            </label>
+
+            <label class="flex items-center justify-center gap-1.5 p-1.5 rounded-xl border border-emerald-300 bg-emerald-50/70 hover:bg-emerald-100/80 cursor-pointer transition select-none shadow-2xs min-w-0">
+              <input
+                id="toggle-non-invasive"
+                type="checkbox"
+                onchange="toggleNonInvasive(this.checked)"
+                class="w-3.5 h-3.5 accent-emerald-600 rounded cursor-pointer shrink-0"
+              />
+              <span class="text-[11px] sm:text-xs font-bold text-emerald-950 leading-tight truncate">🛡️ Non-Invasive</span>
+            </label>
+
+            <label class="flex items-center justify-center gap-1.5 p-1.5 rounded-xl border border-teal-300 bg-teal-50/70 hover:bg-teal-100/80 cursor-pointer transition select-none shadow-2xs min-w-0">
+              <input
+                id="toggle-septic-safe"
+                type="checkbox"
+                onchange="toggleSepticSafe(this.checked)"
+                class="w-3.5 h-3.5 accent-teal-700 rounded cursor-pointer shrink-0"
+              />
+              <span class="text-[11px] sm:text-xs font-bold text-teal-950 leading-tight truncate">🚽 Septic Safe</span>
+            </label>
+          </div>
+        </div>
+
+        <div class="pt-2.5 border-t border-stone-200">
+          <div class="flex items-center justify-between mb-1.5">
+            <span class="text-[11px] font-bold uppercase tracking-wider text-teal-900 bg-teal-100 px-2 py-0.5 rounded-md inline-block">
+              🌍 Climate &amp; Habitat:
+            </span>
+          </div>
+          <div id="climate-pills-container" class="flex flex-wrap items-center gap-1"></div>
+        </div>
+
+        <div class="pt-2.5 border-t border-stone-200">
+          <div class="flex items-center justify-between mb-1">
+            <span class="text-[11px] font-bold uppercase tracking-wider text-stone-500">↕️ Mature Height Range</span>
+            <span id="height-value-label" class="text-[11px] font-bold text-emerald-900 bg-emerald-50 px-2 py-0.2 rounded-md border border-emerald-200">
+              0 – Any
+            </span>
+          </div>
+
+          <div class="flex items-center gap-2 bg-stone-100 px-3 py-1.5 rounded-xl border border-stone-300">
+            <div class="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-2">
+              <div class="flex items-center gap-1.5">
+                <span class="text-[10px] font-bold text-stone-600 uppercase w-6">Min</span>
+                <input
+                  id="height-min-slider"
+                  type="range"
+                  min="0"
+                  max="9"
+                  value="0"
+                  step="1"
+                  oninput="handleMinHeightChange(this.value)"
+                  class="w-full accent-emerald-700 cursor-pointer"
+                  title="Minimum height"
+                />
+              </div>
+
+              <div class="flex items-center gap-1.5">
+                <span class="text-[10px] font-bold text-stone-600 uppercase w-6">Max</span>
+                <input
+                  id="height-max-slider"
+                  type="range"
+                  min="0"
+                  max="9"
+                  value="9"
+                  step="1"
+                  oninput="handleMaxHeightChange(this.value)"
+                  class="w-full accent-emerald-700 cursor-pointer"
+                  title="Maximum height"
+                />
+              </div>
+            </div>
+
+            <div class="w-px h-5 bg-stone-300 shrink-0"></div>
+            <button
+              type="button"
+              id="sort-btn-height"
+              onclick="toggleSort('height')"
+              class="px-2 py-1 rounded-lg border border-stone-300 bg-white font-bold text-stone-700 hover:bg-stone-200 transition flex items-center justify-center cursor-pointer text-xs shrink-0 shadow-2xs"
+              title="Sort by Height"
+            >
+              <span id="sort-icon-height" class="text-xs">⇅</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="pt-2.5 border-t border-stone-200">
+          <div class="flex items-center justify-between mb-1">
+            <span class="text-[11px] font-bold uppercase tracking-wider text-stone-500">⏳ Lifespan Range</span>
+            <span id="lifespan-value-label" class="text-[11px] font-bold text-emerald-900 bg-emerald-50 px-2 py-0.2 rounded-md border border-emerald-200">
+              0 – Any
+            </span>
+          </div>
+
+          <div class="flex items-center gap-2 bg-stone-100 px-3 py-1.5 rounded-xl border border-stone-300">
+            <div class="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-2">
+              <div class="flex items-center gap-1.5">
+                <span class="text-[10px] font-bold text-stone-600 uppercase w-6">Min</span>
+                <input
+                  id="lifespan-min-slider"
+                  type="range"
+                  min="0"
+                  max="8"
+                  value="0"
+                  step="1"
+                  oninput="handleMinLifespanChange(this.value)"
+                  class="w-full accent-emerald-700 cursor-pointer"
+                  title="Minimum lifespan"
+                />
+              </div>
+
+              <div class="flex items-center gap-1.5">
+                <span class="text-[10px] font-bold text-stone-600 uppercase w-6">Max</span>
+                <input
+                  id="lifespan-max-slider"
+                  type="range"
+                  min="0"
+                  max="8"
+                  value="8"
+                  step="1"
+                  oninput="handleMaxLifespanChange(this.value)"
+                  class="w-full accent-emerald-700 cursor-pointer"
+                  title="Maximum lifespan"
+                />
+              </div>
+            </div>
+
+            <div class="w-px h-5 bg-stone-300 shrink-0"></div>
+            <button
+              type="button"
+              id="sort-btn-lifespan"
+              onclick="toggleSort('lifespan')"
+              class="px-2 py-1 rounded-lg border border-stone-300 bg-white font-bold text-stone-700 hover:bg-stone-200 transition flex items-center justify-center cursor-pointer text-xs shrink-0 shadow-2xs"
+              title="Sort by Lifespan"
+            >
+              <span id="sort-icon-lifespan" class="text-xs">⇅</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="pt-2.5 border-t border-stone-200">
+          <div class="flex items-center justify-between mb-1">
+            <span class="text-[11px] font-bold uppercase tracking-wider text-stone-500">💲 Plant Cost Range</span>
+            <span id="cost-value-label" class="text-[11px] font-bold text-emerald-900 bg-emerald-50 px-2 py-0.2 rounded-md border border-emerald-200">
+              Any Cost
+            </span>
+          </div>
+
+          <div class="flex items-center gap-2 bg-stone-100 px-3 py-1.5 rounded-xl border border-stone-300">
+            <div class="flex-1 flex items-center gap-2">
+              <span class="text-[10px] font-bold text-stone-600 uppercase whitespace-nowrap">Max</span>
+              <input
+                id="cost-max-slider"
+                type="range"
+                min="0"
+                max="8"
+                value="8"
+                step="1"
+                oninput="handleCostChange(this.value)"
+                class="w-full accent-emerald-700 cursor-pointer"
+                title="Maximum cost"
+              />
+            </div>
+
+            <div class="w-px h-5 bg-stone-300 shrink-0"></div>
+            <button
+              type="button"
+              id="sort-btn-cost"
+              onclick="toggleSort('cost')"
+              class="px-2 py-1 rounded-lg border border-stone-300 bg-white font-bold text-stone-700 hover:bg-stone-200 transition flex items-center justify-center cursor-pointer text-xs shrink-0 shadow-2xs"
+              title="Sort by Cost"
+            >
+              <span id="sort-icon-cost" class="text-xs">⇅</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="px-5 py-2.5 bg-stone-50 border-t border-stone-200 flex items-center justify-between gap-2.5">
+        <button
+          type="button"
+          onclick="resetDialogFilters()"
+          class="px-3 py-1.5 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 font-semibold text-xs cursor-pointer transition"
+        >
+          ↺ Reset Dialog Filters
+        </button>
+        <button
+          type="button"
+          onclick="closeFilterModal()"
+          class="px-4 py-1.5 rounded-lg bg-emerald-700 hover:bg-emerald-800 text-white font-semibold text-xs shadow-xs cursor-pointer transition"
+        >
+          Done
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- =========================================================================
+       MAIN CONTENT (FULL WIDTH)
+       ========================================================================= -->
+  <main class="flex-1 w-full px-4 sm:px-6 lg:px-8 py-4 sm:py-5 relative min-h-[500px]">
+    <div
+      id="button-hover-infographic-overlay"
+      class="fixed inset-x-0 w-full z-40 pointer-events-none bg-black/75 backdrop-blur-[2px] border-y border-stone-800/80 shadow-2xl transition-opacity duration-500 ease-in-out opacity-0 hidden flex justify-center items-center overflow-hidden px-4"
+    >
+      <img
+        id="button-hover-overlay-img"
+        src=""
+        alt="Infographic Reference"
+        class="w-auto h-auto object-contain rounded-xl shadow-2xl block"
+      />
+    </div>
+
+    <div id="active-filter-banner" class="hidden mb-3.5 px-3.5 py-2 rounded-xl bg-emerald-900/5 border border-emerald-800/15 flex flex-wrap items-center justify-between gap-2">
+      <div id="active-filter-text" class="text-xs text-stone-700 font-medium"></div>
+      <button onclick="resetAllFilters()" class="text-xs font-semibold text-emerald-800 hover:underline cursor-pointer">
+        Clear filters
+      </button>
+    </div>
+
+    <div id="three-column-grid" class="grid grid-cols-1 md:grid-cols-2 gap-4 items-start"></div>
+
+    <div id="empty-state" class="hidden text-center py-12 px-4 bg-white rounded-3xl border border-stone-200 shadow-sm my-4">
+      <div class="text-4xl mb-2">🌱</div>
+      <h3 class="text-base font-bold text-stone-800">No plants match those filters</h3>
+      <p class="text-xs text-stone-500 max-w-sm mx-auto mt-1">
+        Try adjusting the Filter options, clearing search, or selecting active types.
+      </p>
+      <div class="mt-4 flex justify-center gap-2">
+        <button onclick="resetAllFilters()" class="px-3.5 py-1.5 rounded-xl bg-emerald-700 text-white text-xs font-semibold hover:bg-emerald-800 transition cursor-pointer">
+          Reset All Filters
+        </button>
+      </div>
+    </div>
+  </main>
+
+  <!-- =========================================================================
+       FULL-SCREEN INFOGRAPHIC LIGHTBOX MODAL
+       ========================================================================= -->
+  <div id="infographic-modal" class="fixed inset-0 z-50 hidden bg-black/80 backdrop-blur-sm flex items-center justify-center p-2 sm:p-5">
+    <div id="infographic-modal-card" class="bg-white rounded-3xl max-w-6xl w-full max-h-[94vh] flex flex-col lg:flex-row overflow-hidden shadow-2xl border border-stone-700/40 transition-all">
+
+      <!-- Left Image Pane -->
+      <div id="lightbox-left-pane" class="flex-1 bg-stone-900 flex flex-col min-h-[260px] lg:min-h-[600px] relative overflow-hidden transition-all duration-200">
+        <div class="flex items-center justify-between px-4 py-2 bg-stone-950/80 border-b border-stone-800 text-stone-200 z-10 gap-2">
+          <div class="flex items-center gap-2 min-w-0">
+            <span class="text-amber-400 text-sm shrink-0">📊</span>
+            <span id="lightbox-TopTitle" class="text-xs sm:text-sm font-semibold truncate max-w-xs sm:max-w-md">Plant Name</span>
+          </div>
+          <div class="flex items-center gap-2 shrink-0">
+            <input
+              id="zoom-slider"
+              type="range"
+              min="100"
+              max="400"
+              step="5"
+              value="100"
+              oninput="setZoomFromSlider(this.value)"
+              class="w-20 sm:w-28 accent-emerald-500 cursor-pointer"
+              title="Zoom (100% to 400%)"
+            />
+            <span id="zoom-level-label" class="text-xs font-mono w-10 text-right text-stone-300">100%</span>
+            <button onclick="resetZoom()" class="px-2 py-0.5 rounded-lg bg-stone-800 hover:bg-stone-700 text-xs font-medium cursor-pointer">Reset</button>
+          </div>
+        </div>
+
+        <div
+          id="lightbox-viewport"
+          class="flex-1 overflow-hidden flex items-center justify-center p-4 select-none cursor-grab relative"
+        >
+          <img
+            id="lightbox-image"
+            src=""
+            alt="Plant"
+            draggable="false"
+            class="max-h-full max-w-full object-contain rounded-xl shadow-2xl origin-center bg-white select-none"
+          />
+        </div>
+
+        <div class="px-4 py-1.5 bg-stone-950/90 border-t border-stone-800 flex items-center justify-center text-xs text-stone-400 z-10">
+          <span class="text-stone-400">Wheel to zoom • Drag to pan • ← (previous) / → (next) or Space</span>
+        </div>
+      </div>
+
+      <!-- Right Sidebar: View Mode / General Edit Mode / Inventory Edit Mode -->
+      <div id="lightbox-right-pane" class="w-full lg:w-80 xl:w-96 bg-stone-50 p-4 sm:p-5 flex flex-col justify-between overflow-y-auto border-t lg:border-t-0 lg:border-l border-stone-200 transition-all duration-200">
+        <div class="space-y-3">
+          <!-- Top Right Header with Inventory Edit, General Edit, Fullscreen, and Close buttons -->
+          <div class="flex items-start justify-between gap-2">
+            <div class="min-w-0 flex-1">
+              <div class="flex items-center gap-1.5 flex-wrap">
+                <span id="lightbox-category" class="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-900">Category</span>
+                <span id="lightbox-edited-badge" class="hidden text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-amber-100 text-amber-900 border border-amber-300">Edited</span>
+              </div>
+              <h2 id="lightbox-name" class="font-serif-title text-xl font-bold text-stone-900 mt-0.5 leading-tight break-words">Plant Name</h2>
+              <p id="lightbox-botanical" class="text-xs italic text-stone-500"></p>
+            </div>
+            <div class="flex items-center gap-1.5 shrink-0">
+              <button
+                id="lightbox-inv-edit-btn"
+                onclick="toggleLightboxInventoryEditMode()"
+                class="w-7 h-7 rounded-full bg-stone-200 hover:bg-stone-300 text-stone-700 flex items-center justify-center font-bold text-xs cursor-pointer transition"
+                title="Toggle Inventory Edit Mode (Inventory, Cost, Date Acquired, Location)"
+              >📦</button>
+              <button
+                id="lightbox-edit-btn"
+                onclick="toggleLightboxEditMode()"
+                class="w-7 h-7 rounded-full bg-stone-200 hover:bg-stone-300 text-stone-700 flex items-center justify-center font-bold text-xs cursor-pointer transition"
+                title="Toggle Botanical Edit Mode (Stays ON until turned off)"
+              >✏️</button>
+              <button
+                id="lightbox-fullscreen-btn"
+                onclick="toggleLightboxFullscreen()"
+                class="w-7 h-7 rounded-full bg-stone-200 hover:bg-stone-300 text-stone-700 flex items-center justify-center font-bold text-xs cursor-pointer"
+                title="Toggle Full Screen"
+              >⛶</button>
+              <button
+                onclick="closeInfographicModal()"
+                class="w-7 h-7 rounded-full bg-stone-200 hover:bg-stone-300 text-stone-700 flex items-center justify-center font-bold text-xs cursor-pointer"
+                title="Close"
+              >✕</button>
+            </div>
+          </div>
+
+          <!-- ==================== VIEW MODE CONTAINER ==================== -->
+          <div id="lightbox-view-content" class="space-y-3">
+            <div class="bg-white p-2.5 rounded-xl border border-stone-200">
+              <div class="flex items-center justify-between text-xs font-semibold text-stone-700 mb-1">
+                <span>USDA Hardiness Range</span>
+                <span id="lightbox-zone-text" class="text-emerald-800 font-bold">Zones 5–8</span>
+              </div>
+              <div id="lightbox-zone-bar" class="grid grid-cols-11 gap-1 text-center text-[10px] font-bold"></div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-2 text-xs">
+              <div class="bg-white p-2 rounded-xl border border-stone-200">
+                <div class="text-stone-400">☀️ Sunlight</div>
+                <div id="lightbox-sun" class="font-bold text-stone-800 mt-0.5">Part Shade</div>
+              </div>
+              <div class="bg-white p-2 rounded-xl border border-stone-200">
+                <div class="text-stone-400">💧 Water</div>
+                <div id="lightbox-water" class="font-bold text-stone-800 mt-0.5">Medium</div>
+              </div>
+              <div class="bg-white p-2 rounded-xl border border-stone-200">
+                <div class="text-stone-400">↕️ Mature Size</div>
+                <div id="lightbox-size" class="font-bold text-stone-800 mt-0.5">15' × 15'</div>
+              </div>
+              <!-- Flower Info Placed Immediately After Mature Size -->
+              <div class="bg-white p-2 rounded-xl border border-stone-200">
+                <div class="text-stone-400">🌸 Flower</div>
+                <div id="lightbox-flower" class="font-bold text-pink-900 mt-0.5 truncate">—</div>
+              </div>
+              <div class="bg-white p-2 rounded-xl border border-stone-200">
+                <div class="text-stone-400">⏳ Lifespan</div>
+                <div id="lightbox-lifespan" class="font-bold text-stone-800 mt-0.5 truncate">—</div>
+              </div>
+              <div class="bg-white p-2 rounded-xl border border-stone-200">
+                <div class="text-stone-400">💲 Est. Cost</div>
+                <div id="lightbox-cost" class="font-bold text-stone-800 mt-0.5 truncate">—</div>
+              </div>
+              <!-- Inventory, Date Acquired, and Location (Hidden in View Mode when inventory is 0 or empty) -->
+              <div id="lightbox-inventory-box" class="hidden bg-white p-2 rounded-xl border border-stone-200">
+                <div class="text-stone-400">📦 Inventory</div>
+                <div id="lightbox-inventory" class="font-bold text-emerald-800 mt-0.5 truncate">0</div>
+              </div>
+              <div id="lightbox-date-acquired-box" class="hidden bg-white p-2 rounded-xl border border-stone-200">
+                <div class="text-stone-400">📅 Date Acquired</div>
+                <div id="lightbox-date-acquired" class="font-bold text-stone-800 mt-0.5 truncate">—</div>
+              </div>
+              <div id="lightbox-location-box" class="hidden bg-white p-2 rounded-xl border border-stone-200 col-span-2">
+                <div class="text-stone-400">📌 Location</div>
+                <div id="lightbox-location" class="font-bold text-stone-800 mt-0.5 truncate">—</div>
+              </div>
+            </div>
+
+            <div id="lightbox-origin-container">
+              <div class="text-[10px] font-semibold text-stone-500 uppercase tracking-wider mb-1">📍 Native Origin</div>
+              <p id="lightbox-origin" class="text-xs text-stone-800 bg-white p-2 rounded-xl border border-stone-200 font-medium">—</p>
+            </div>
+
+            <div>
+              <div class="text-[10px] font-semibold text-stone-500 uppercase tracking-wider mb-1">🌱 Propagation Method</div>
+              <p id="lightbox-propagation" class="text-xs text-emerald-950 leading-relaxed bg-emerald-50/80 p-2.5 rounded-xl border border-emerald-200/80 font-medium"></p>
+            </div>
+
+            <div>
+              <div class="text-[10px] font-semibold text-stone-500 uppercase tracking-wider mb-1">Climates</div>
+              <div id="lightbox-climates" class="flex flex-wrap gap-1"></div>
+            </div>
+
+            <div>
+              <div class="text-[10px] font-semibold text-stone-500 uppercase tracking-wider mb-1">Notes</div>
+              <p id="lightbox-notes" class="text-xs text-stone-700 leading-relaxed bg-white p-2.5 rounded-xl border border-stone-200"></p>
+            </div>
+          </div>
+
+          <!-- ==================== GENERAL EDIT MODE CONTAINER ==================== -->
+          <div id="lightbox-edit-content" class="hidden space-y-3 text-xs">
+            <div class="px-3 py-1.5 rounded-xl bg-emerald-900 text-emerald-50 flex items-center justify-between">
+              <span class="font-bold text-[11px]">✏️ Botanical Edit Mode ON — Auto-saves locally</span>
+              <button
+                type="button"
+                onclick="revertCurrentPlantEdits()"
+                class="text-[10px] font-semibold px-2.5 py-0.5 rounded-lg bg-emerald-800 hover:bg-rose-700 text-white transition cursor-pointer"
+                title="Revert this plant to default database values"
+              >↺ Revert Plant</button>
+            </div>
+
+            <!-- 3-Column Arranged Input Grid -->
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+              <!-- Row 1: Name + Emoji + Subtype Dropdown -->
+              <div>
+                <label class="block text-[10px] font-bold uppercase text-stone-500 mb-0.5">Plant Name</label>
+                <input id="edit-field-name" type="text" oninput="handlePlantEditInput('name', this.value)" class="w-full px-2.5 py-1.5 rounded-lg border border-stone-300 bg-white font-semibold text-stone-900 focus:outline-none focus:ring-2 focus:ring-emerald-500" />
+              </div>
+
+              <div>
+                <label class="block text-[10px] font-bold uppercase text-stone-500 mb-0.5">Emoji</label>
+                <input id="edit-field-emoji" type="text" placeholder="e.g. 🌸" oninput="handlePlantEditInput('emoji', this.value)" class="w-full px-2.5 py-1.5 rounded-lg border border-stone-300 bg-white text-stone-900 focus:outline-none focus:ring-2 focus:ring-emerald-500" />
+              </div>
+
+              <div>
+                <label class="block text-[10px] font-bold uppercase text-stone-500 mb-0.5">Subtype</label>
+                <select id="edit-field-subcategory" onchange="handlePlantEditInput('subcategory', this.value)" class="w-full px-2 py-1.5 rounded-lg border border-stone-300 bg-white font-semibold text-stone-800 focus:outline-none focus:ring-2 focus:ring-emerald-500 cursor-pointer">
+                  <!-- Populated dynamically by category -->
+                </select>
+              </div>
+
+              <!-- Row 2: Latin Name (2 cols) + Origin (1 col) -->
+              <div class="sm:col-span-2">
+                <label class="block text-[10px] font-bold uppercase text-stone-500 mb-0.5">Latin / Botanical Name</label>
+                <input id="edit-field-botanical" type="text" oninput="handlePlantEditInput('botanical', this.value)" class="w-full px-2.5 py-1.5 rounded-lg border border-stone-300 bg-white italic text-stone-800 focus:outline-none focus:ring-2 focus:ring-emerald-500" />
+              </div>
+
+              <div>
+                <label class="block text-[10px] font-bold uppercase text-stone-500 mb-0.5">📍 Origin</label>
+                <input id="edit-field-origin" type="text" placeholder="e.g. Eastern North America" oninput="handlePlantEditInput('origin', this.value)" class="w-full px-2.5 py-1.5 rounded-lg border border-stone-300 bg-white text-stone-800 focus:outline-none focus:ring-2 focus:ring-emerald-500" />
+              </div>
+
+              <!-- Row 3: Zone + Sunlight + Water -->
+              <div>
+                <label class="block text-[10px] font-bold uppercase text-stone-500 mb-0.5">USDA Zone (e.g. 5-9)</label>
+                <input id="edit-field-zone" type="text" oninput="handlePlantEditInput('zone', this.value)" class="w-full px-2.5 py-1.5 rounded-lg border border-stone-300 bg-white font-semibold text-stone-800 focus:outline-none focus:ring-2 focus:ring-emerald-500" />
+              </div>
+
+              <div>
+                <label class="block text-[10px] font-bold uppercase text-stone-500 mb-0.5">☀️ Sunlight</label>
+                <select id="edit-field-sun" onchange="handlePlantEditInput('sun', this.value)" class="w-full px-2 py-1.5 rounded-lg border border-stone-300 bg-white font-semibold text-stone-800 focus:outline-none focus:ring-2 focus:ring-emerald-500 cursor-pointer">
+                  <option value="Full Sun">Full Sun</option>
+                  <option value="Part Sun">Part Sun</option>
+                  <option value="Part Shade">Part Shade</option>
+                  <option value="Full Shade">Full Shade</option>
+                </select>
+              </div>
+
+              <div>
+                <label class="block text-[10px] font-bold uppercase text-stone-500 mb-0.5">💧 Water</label>
+                <select id="edit-field-water" onchange="handlePlantEditInput('water', this.value)" class="w-full px-2 py-1.5 rounded-lg border border-stone-300 bg-white font-semibold text-stone-800 focus:outline-none focus:ring-2 focus:ring-emerald-500 cursor-pointer">
+                  <option value="Low">Low</option>
+                  <option value="Medium">Medium</option>
+                  <option value="High">High</option>
+                  <option value="Bog">Bog</option>
+                </select>
+              </div>
+
+              <!-- Row 4: Mature Size + Flower (Size & Color) + Lifespan -->
+              <div>
+                <label class="block text-[10px] font-bold uppercase text-stone-500 mb-0.5">↕️ Mature Size</label>
+                <input id="edit-field-size" type="text" placeholder="e.g. 12' × 10'" oninput="handlePlantEditInput('size', this.value)" class="w-full px-2.5 py-1.5 rounded-lg border border-stone-300 bg-white text-stone-800 focus:outline-none focus:ring-2 focus:ring-emerald-500" />
+              </div>
+
+              <div>
+                <label class="block text-[10px] font-bold uppercase text-pink-800 mb-0.5">🌸 Flower (Size &amp; Color)</label>
+                <input id="edit-field-flower" type="text" placeholder='e.g. 3" Pink-White Blooms' oninput="handlePlantEditInput('flower', this.value)" class="w-full px-2.5 py-1.5 rounded-lg border border-pink-300 bg-pink-50/40 text-stone-800 focus:outline-none focus:ring-2 focus:ring-pink-500" />
+              </div>
+
+              <div>
+                <label class="block text-[10px] font-bold uppercase text-stone-500 mb-0.5">⏳ Lifespan (Years)</label>
+                <input id="edit-field-lifespan" type="text" placeholder="e.g. 25-50" oninput="handlePlantEditInput('lifespan', this.value)" class="w-full px-2.5 py-1.5 rounded-lg border border-stone-300 bg-white text-stone-800 focus:outline-none focus:ring-2 focus:ring-emerald-500" />
+              </div>
+
+              <!-- Row 5: Multi-Select Climate & Habitat (Full 3 cols) -->
+              <div class="sm:col-span-3">
+                <label class="block text-[10px] font-bold uppercase text-teal-900 mb-1">🌍 Climate &amp; Habitat (Select one or more)</label>
+                <div id="edit-climates-list" class="flex flex-wrap gap-1 p-1.5 rounded-xl bg-white border border-stone-300">
+                  <!-- Multi-select pills populated by JS -->
+                </div>
+              </div>
+            </div>
+
+            <!-- Side-by-Side Textareas for Propagation & Notes -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+              <div>
+                <label class="block text-[10px] font-bold uppercase text-stone-500 mb-0.5">🌱 Propagation Method</label>
+                <textarea id="edit-field-propagation" rows="3" oninput="handlePlantEditInput('propagation', this.value)" class="w-full px-2.5 py-1.5 rounded-lg border border-stone-300 bg-white text-stone-800 focus:outline-none focus:ring-2 focus:ring-emerald-500"></textarea>
+              </div>
+
+              <div>
+                <label class="block text-[10px] font-bold uppercase text-stone-500 mb-0.5">📝 Growing &amp; Landscape Notes</label>
+                <textarea id="edit-field-notes" rows="3" oninput="handlePlantEditInput('notes', this.value)" class="w-full px-2.5 py-1.5 rounded-lg border border-stone-300 bg-white text-stone-800 focus:outline-none focus:ring-2 focus:ring-emerald-500"></textarea>
+              </div>
+            </div>
+
+            <!-- Backup & Restore Local Edits -->
+            <div class="pt-2 border-t border-stone-200 flex flex-wrap items-center justify-between gap-2">
+              <button
+                type="button"
+                onclick="exportUserEditsToFile()"
+                class="flex-1 py-1.5 px-3 rounded-lg bg-emerald-700 hover:bg-emerald-800 text-white font-semibold text-xs text-center cursor-pointer transition"
+                title="Download all edited fields to a JSON file"
+              >💾 Export Edits to File</button>
+
+              <label
+                class="flex-1 py-1.5 px-3 rounded-lg bg-teal-700 hover:bg-teal-800 text-white font-semibold text-xs text-center cursor-pointer transition"
+                title="Restore edits from a saved JSON file"
+              >
+                📂 Upload / Restore Edits
+                <input type="file" accept=".json" onchange="importUserEditsFromFile(event)" class="hidden" />
+              </label>
+            </div>
+          </div>
+
+          <!-- ==================== INVENTORY EDIT MODE CONTAINER ==================== -->
+          <div id="lightbox-inventory-edit-content" class="hidden space-y-3 text-xs">
+            <div class="px-3 py-1.5 rounded-xl bg-amber-800 text-amber-50 flex items-center justify-between">
+              <span class="font-bold text-[11px]">📦 Inventory Edit Mode ON — Auto-saves locally</span>
+              <button
+                type="button"
+                onclick="revertCurrentPlantEdits()"
+                class="text-[10px] font-semibold px-2.5 py-0.5 rounded-lg bg-amber-700 hover:bg-rose-700 text-white transition cursor-pointer"
+                title="Revert this plant to default database values"
+              >↺ Revert Plant</button>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 bg-white p-3.5 rounded-2xl border border-amber-200 shadow-2xs">
+              <div>
+                <label class="block text-[10px] font-bold uppercase text-amber-900 mb-1">📦 Inventory Count / Status</label>
+                <input
+                  id="inv-edit-field-inventory"
+                  type="text"
+                  placeholder="e.g. 5 in stock"
+                  oninput="handlePlantEditInput('inventory', this.value)"
+                  class="w-full px-3 py-2 rounded-xl border border-amber-400 bg-amber-50/40 font-bold text-stone-900 focus:outline-none focus:ring-2 focus:ring-amber-500"
+                />
+              </div>
+
+              <div>
+                <label class="block text-[10px] font-bold uppercase text-emerald-900 mb-1">💲 Cost</label>
+                <input
+                  id="inv-edit-field-cost"
+                  type="text"
+                  placeholder="e.g. $25-$50"
+                  oninput="handlePlantEditInput('cost', this.value)"
+                  class="w-full px-3 py-2 rounded-xl border border-stone-300 bg-white font-semibold text-stone-900 focus:outline-none focus:ring-2 focus:ring-amber-500"
+                />
+              </div>
+
+              <div>
+                <label class="block text-[10px] font-bold uppercase text-stone-600 mb-1">📅 Date Acquired</label>
+                <input
+                  id="inv-edit-field-date-acquired"
+                  type="date"
+                  oninput="handlePlantEditInput('dateAcquired', this.value)"
+                  class="w-full px-3 py-2 rounded-xl border border-stone-300 bg-white font-medium text-stone-800 focus:outline-none focus:ring-2 focus:ring-amber-500"
+                />
+              </div>
+
+              <div>
+                <label class="block text-[10px] font-bold uppercase text-stone-600 mb-1">📌 Location</label>
+                <input
+                  id="inv-edit-field-location"
+                  type="text"
+                  placeholder="e.g. South Garden Bed / Patio"
+                  oninput="handlePlantEditInput('location', this.value)"
+                  class="w-full px-3 py-2 rounded-xl border border-stone-300 bg-white font-medium text-stone-800 focus:outline-none focus:ring-2 focus:ring-amber-500"
+                />
+              </div>
+            </div>
+
+            <!-- Backup & Restore Local Edits -->
+            <div class="pt-2 border-t border-stone-200 flex flex-wrap items-center justify-between gap-2">
+              <button
+                type="button"
+                onclick="exportUserEditsToFile()"
+                class="flex-1 py-1.5 px-3 rounded-lg bg-amber-700 hover:bg-amber-800 text-white font-semibold text-xs text-center cursor-pointer transition"
+                title="Download all edited fields to a JSON file"
+              >💾 Export Inventory &amp; Edits</button>
+
+              <label
+                class="flex-1 py-1.5 px-3 rounded-lg bg-teal-700 hover:bg-teal-800 text-white font-semibold text-xs text-center cursor-pointer transition"
+                title="Restore edits from a saved JSON file"
+              >
+                📂 Upload / Restore Edits
+                <input type="file" accept=".json" onchange="importUserEditsFromFile(event)" class="hidden" />
+              </label>
+            </div>
+          </div>
+
+        </div>
+
+        <div class="pt-3 mt-3 border-t border-stone-200">
+          <button onclick="closeInfographicModal()" class="w-full py-1.5 rounded-xl bg-stone-900 hover:bg-stone-800 text-white font-semibold text-xs cursor-pointer">
+            Close Viewer
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast-notification" class="fixed bottom-5 right-5 z-50 hidden px-3.5 py-2 rounded-xl bg-stone-900 text-white text-xs font-medium shadow-xl border border-stone-700 flex items-center gap-2">
+    <span class="text-emerald-400">✔</span>
+    <span id="toast-message">Saved!</span>
+  </div>
+
+  <!-- Scripts -->
+  <script src="plants_app.js"></script>
+  <script src="databases/tree_data.js"></script>
+  <script src="databases/conifer_data.js"></script>
+  <script src="databases/fruit_data.js"></script>
+  <script src="databases/nut_data.js"></script>
+  <script src="databases/shrub_data.js"></script>
+  <script src="databases/fern_data.js"></script>
+  <script src="databases/cover_data.js"></script>
+  <script src="databases/perennial_data.js"></script>
+  <script src="databases/annual_data.js"></script>
+  <script src="databases/herb_data.js"></script>
+  <script src="databases/fungus_data.js"></script>
+  <script src="databases/specialty_data.js"></script>
+  <script src="databases/cactus_data.js"></script>
+
+</body>
+</html>

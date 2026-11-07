@@ -320,7 +320,7 @@ async function loadHelioDemo(studioApp, clearTimeline = true) {
 
         const planetNames = ["sun", "mercury", "venus", "earth", "mars", "jupiter", "saturn", "uranus", "neptune"];
         for (const name of planetNames) {
-            rawTasks.push(loadMediaFromUrl(`${HELIO_BASE}/planets/${name}.jpg`, formatTitle(name), "LL", true));
+            rawTasks.push(loadMediaFromUrl(`${HELIO_BASE}/planets/${name}.webp`, formatTitle(name), "LL", true));
         }
 
         rawTasks.push(Promise.resolve(createGradientSlide("Azure Horizon", "#2563eb", "CC")));
@@ -330,14 +330,14 @@ async function loadHelioDemo(studioApp, clearTimeline = true) {
             "saturn iapetus", "saturn enceladus", "neptune triton", "neptune proteus"
         ];
         for (const name of moonNames) {
-            rawTasks.push(loadMediaFromUrl(`${HELIO_BASE}/moons/${name}.jpg`, formatTitle(name), "LL", true));
+            rawTasks.push(loadMediaFromUrl(`${HELIO_BASE}/moons/${name}.webp`, formatTitle(name), "LL", true));
         }
 
         rawTasks.push(Promise.resolve(createGradientSlide("Emerald Canopy", "#059669", "CC")));
-        rawTasks.push(loadMediaFromUrl(`${HELIO_BASE}/dwarfs/dwarfs.jpg`, "Dwarfs", "CC", true));
+        rawTasks.push(loadMediaFromUrl(`${HELIO_BASE}/dwarfs/dwarfs.webp`, "Dwarfs", "CC", true));
 
         rawTasks.push(Promise.resolve(createGradientSlide("Amber Dunes", "#d97706", "CC")));
-        rawTasks.push(loadMediaFromUrl(`${HELIO_BASE}/comets/comets.jpg`, "Comets", "CC", true));
+        rawTasks.push(loadMediaFromUrl(`${HELIO_BASE}/comets/comets.webp`, "Comets", "CC", true));
 
         rawTasks.push(Promise.resolve(createGradientSlide("Purple Aurora", "#7c3aed", "CC")));
 

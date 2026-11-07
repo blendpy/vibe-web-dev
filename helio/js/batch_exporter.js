@@ -735,7 +735,7 @@ async function runCinematicExporter(targetsToExport, roundKm = true) {
     }
 
     const link = document.createElement('a');
-    link.download = `Celestial_Comparison_${target}.jpg`;
+    link.download = `Celestial_Comparison_${target}.webp`;
     link.href = canvas.toDataURL('image/jpeg', 0.95);
     link.click();
 

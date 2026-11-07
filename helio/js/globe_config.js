@@ -3,11 +3,11 @@
 // =============================================================
 
 const TEXTURE_URLS_FULL = { // Images stored at 2k because 4k and 8k take a couple seconds to load.
-  blueMarble: 'texture/planets/earth-blue-marble 4096x2048.jpg', 
-  day:        'texture/planets/earth-elevation 5400x2700.jpg',  // file:///home/billx/Downloads/HYP/HYP_HR_SR_W.README.html
-  // dark:       'texture/planets/earth-dark.png',  // NOT USED
-  night:      'texture/planets/earth-night.jpg',
-  water:      'texture/planets/earth-water.png'
+  blueMarble: 'texture/planets/earth-blue-marble 4096x2048.webp', 
+  day:        'texture/planets/earth-elevation 5400x2700.webp',  // file:///home/billx/Downloads/HYP/HYP_HR_SR_W.README.html
+  // dark:       'texture/planets/earth-dark.webp',  // NOT USED
+  night:      'texture/planets/earth-night.webp',
+  water:      'texture/planets/earth-water.webp'
 };
 
 const TEXTURE_URLS_FALLBACK = {
