@@ -170,7 +170,61 @@ const WATER_RANK = {
   "Bog": 4
 };
 
+function applyUrlParameters() {
+  const rawParams = new URLSearchParams(window.location.search);
+  if ([...rawParams.keys()].length === 0) return;
+
+  // Normalize keys to lowercase so ?metric=True, ?Metric=true, and ?metric=1 all work
+  const params = {};
+  for (const [k, v] of rawParams.entries()) {
+    params[k.toLowerCase().trim()] = v.toLowerCase().trim();
+  }
+
+  const parseBool = (val) => val === 'true' || val === '1' || val === 'yes' || val === 'on' || val === '';
+
+  const paramMap = {
+    metric:       (v) => { useMetric = v; },
+    sample:       (v) => { showSamplePicture = v; },
+    picture:      (v) => { showSamplePicture = v; },
+    gridview:     (v) => { showGridView = v; },
+    latin:        (v) => { showLatinName = v; },
+    zone:         (v) => { showZone = v; },
+    climate:      (v) => { showClimate = v; },
+    water:        (v) => { showWater = v; },
+    height:       (v) => { showHeight = v; },
+    flower:       (v) => { showFlower = v; },
+    cost:         (v) => { showCost = v; },
+    lifespan:     (v) => { showLifespan = v; },
+    origin:       (v) => { showOrigin = v; },
+    inventory:    (v) => { showInventory = v; },
+    dateacquired: (v) => { showDateAcquired = v; },
+    location:     (v) => { showLocation = v; },
+    warn:         (v) => { showWarn = v; },
+    notes:        (v) => { showNotes = v; },
+    note:         (v) => { showNotes = v; },
+    prop:         (v) => { showPropagation = v; },
+    propagation:  (v) => { showPropagation = v; }
+  };
+
+  // 1. Handle individual parameters: e.g. ?metric=True&latin=True&origin=False
+  Object.keys(paramMap).forEach((key) => {
+    if (key in params) {
+      paramMap[key](parseBool(params[key]));
+    }
+  });
+
+  // 2. Optional shorthand list: e.g. ?show=metric,latin,cost,notes
+  if (params.show) {
+    params.show.split(',').forEach((item) => {
+      const k = item.trim().toLowerCase();
+      if (paramMap[k]) paramMap[k](true);
+    });
+  }
+}
+
+
 function initExplorer() {
+  applyUrlParameters();
   loadUserEditsFromStorage();
   loadPlantsData();
   sortColumnCategories();
@@ -322,7 +376,7 @@ function normalizePlantRecord(rawPlant, defaultCat) {
     costParsed: costRange,
     lifespan: rawPlant.lifespan || null,
     lifespanParsed: lifeRange,
-    origin: rawPlant.origin || rawPlant.orgin || null,
+    origin: rawPlant.origin || null,
     inventory: rawPlant.inventory !== undefined && rawPlant.inventory !== null ? String(rawPlant.inventory) : "0",
     dateAcquired: rawPlant.dateAcquired || '',
     location: rawPlant.location || '',
@@ -470,7 +524,7 @@ function populateLightboxEditInputs(plant) {
   setVal('edit-field-name', plant.name || '');
   setVal('edit-field-emoji', plant.emoji || '');
   setVal('edit-field-botanical', plant.botanical || '');
-  setVal('edit-field-origin', plant.origin || plant.orgin || '');
+  setVal('edit-field-origin', plant.origin || '');
   setVal('edit-field-zone', plant.zone || '');
   setVal('edit-field-sun', plant.sun || 'Full Sun');
   setVal('edit-field-water', plant.water || 'Medium');
@@ -500,7 +554,6 @@ function handlePlantEditInput(field, rawValue) {
       : String(rawValue).split(',').map(s => s.trim()).filter(Boolean);
   } else if (field === 'origin') {
     userPlantEdits[pid].origin = rawValue;
-    userPlantEdits[pid].orgin = rawValue;
   } else {
     userPlantEdits[pid][field] = rawValue;
   }
@@ -872,7 +925,7 @@ function generatePlantCardHTML(plant, isPreview = false) {
     : '';
 
   let originRowHtml = '';
-  const plantOrigin = plant.origin || plant.orgin;
+  const plantOrigin = plant.origin;
   if (showOrigin && plantOrigin) {
     originRowHtml = `
       <div class="text-[11px] text-stone-600 truncate mt-0.5 flex items-center gap-1">
@@ -1524,7 +1577,7 @@ function doesPlantMatchFilters(p, ignoreDimension = null) {
   }
 
   if (ignoreDimension !== 'search' && searchQuery) {
-    const originStr = p.origin || p.orgin || '';
+    const originStr = p.origin || '';
     const locStr = p.location || '';
     const flowerStr = p.flower || '';
     const text = `${p.name} ${p.botanical || ''} ${flowerStr} ${originStr} ${locStr} ${p.notes || ''} ${p.category} ${p.subcategory || ''}`.toLowerCase();
@@ -2773,7 +2826,7 @@ function refreshLightboxViewFields(plant) {
 
   const originEl = document.getElementById('lightbox-origin');
   if (originEl) {
-    originEl.textContent = plant.origin || plant.orgin || '—';
+    originEl.textContent = plant.origin || '—';
   }
 
   document.getElementById('lightbox-propagation').textContent = plant.propagation || 'Propagation details: Can be grown via seed stratification or division in spring.';
