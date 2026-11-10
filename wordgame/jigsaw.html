@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Jigsaw Solitaire — Cluster Puzzle</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            color-scheme: dark;
+        }
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: radial-gradient(circle at 50% 0%, #1e293b 0%, #0f172a 55%, #090d16 100%);
+            min-height: 100vh;
+            overflow-x: hidden;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+        .mono-num {
+            font-family: 'JetBrains Mono', monospace;
+        }
+        /* Puzzle Board Container & Responsive Canvas */
+        .board-stage {
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #141923;
+            border-radius: 1rem;
+            box-shadow: 
+                0 20px 50px rgba(0, 0, 0, 0.65),
+                inset 0 2px 6px rgba(0, 0, 0, 0.8),
+                0 0 0 1px rgba(255, 255, 255, 0.08);
+            padding: 12px;
+            transition: box-shadow 0.3s ease;
+            width: 100%;
+        }
+        .board-stage.drag-over-file {
+            box-shadow: 0 0 0 3px #38bdf8, 0 20px 50px rgba(56, 189, 248, 0.3);
+        }
+        canvas#puzzleCanvas {
+            display: block;
+            max-width: 100%;
+            max-height: 70vh;
+            width: auto;
+            height: auto;
+            border-radius: 0.5rem;
+            background-color: #1e1e1e;
+            touch-action: none;
+            cursor: grab;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+        }
+        canvas#puzzleCanvas:active {
+            cursor: grabbing;
+        }
+
+        /* Full Screen Mode Styling (keeps top toolbar visible and expands puzzle) */
+        #puzzleSection:fullscreen,
+        #puzzleSection:-webkit-full-screen {
+            background: radial-gradient(circle at 50% 0%, #1e293b 0%, #090d16 100%);
+            width: 100vw;
+            height: 100vh;
+            padding: 12px 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            gap: 12px;
+            overflow: hidden;
+        }
+        #puzzleSection:fullscreen #topToolbar,
+        #puzzleSection:-webkit-full-screen #topToolbar {
+            max-width: 960px;
+            width: 100%;
+            flex-shrink: 0;
+        }
+        #puzzleSection:fullscreen .board-stage,
+        #puzzleSection:-webkit-full-screen .board-stage {
+            flex: 1;
+            width: 100%;
+            max-width: 98vw;
+            max-height: calc(100vh - 82px);
+            background: transparent;
+            box-shadow: none;
+            padding: 4px;
+        }
+        #puzzleSection:fullscreen #footerBar,
+        #puzzleSection:-webkit-full-screen #footerBar {
+            display: none;
+        }
+
+        /* Subtle Game Button Styling */
+        .btn-game {
+            transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .btn-game:hover:not(:disabled) {
+            transform: translateY(-1px);
+        }
+        .btn-game:active:not(:disabled) {
+            transform: translateY(1px);
+        }
+        .btn-game:disabled {
+            opacity: 0.45;
+            cursor: not-allowed;
+        }
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0f172a;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #334155;
+            border-radius: 3px;
+        }
+    </style>
+</head>
+<body class="text-slate-100 flex flex-col min-h-screen">
+
+    <!-- Top Navigation & Header -->
+    <header class="border-b border-slate-800/80 bg-slate-900/75 backdrop-blur-md sticky top-0 z-30">
+        <div class="max-w-7xl mx-auto px-3 sm:px-6 py-2.5 flex flex-wrap items-center justify-between gap-3">
+            <!-- Brand Title -->
+            <div class="flex items-center gap-3">
+                <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 flex items-center justify-center shadow-lg shadow-indigo-500/25">
+                    <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M11 4a2 2 0 114 0v1a1 1 0 001 1h3a1 1 0 011 1v3a1 1 0 01-1 1h-1a2 2 0 100 4h1a1 1 0 011 1v3a1 1 0 01-1 1h-3a1 1 0 01-1-1v-1a2 2 0 10-4 0v1a1 1 0 01-1 1H7a1 1 0 01-1-1v-3a1 1 0 00-1-1H4a2 2 0 110-4h1a1 1 0 001-1V7a1 1 0 011-1h3a1 1 0 001-1V4z"/>
+                    </svg>
+                </div>
+                <div>
+                    <h1 class="text-base sm:text-lg font-extrabold tracking-tight bg-gradient-to-r from-white via-slate-100 to-indigo-300 bg-clip-text text-transparent">
+                        Jigsaw Solitaire
+                    </h1>
+                    <p class="text-[11px] text-slate-400 hidden sm:block">Snap matching neighbor tiles into unified movable clusters</p>
+                </div>
+            </div>
+
+            <!-- Live Status Pill & Quick Audio/Help Controls -->
+            <div class="flex items-center gap-2 sm:gap-3">
+                <div id="statusBadge" class="px-3 py-1.5 rounded-lg bg-slate-800/90 border border-slate-700/80 text-xs sm:text-sm font-semibold text-indigo-300 flex items-center gap-2 shadow-inner">
+                    <span id="statusDot" class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                    <span id="statusText">Casual Mode</span>
+                </div>
+
+                <button id="soundToggleBtn" title="Toggle Sound Effects" class="btn-game p-2 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300">
+                    <svg id="soundOnIcon" class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"/>
+                    </svg>
+                    <svg id="soundOffIcon" class="w-4 h-4 hidden text-rose-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15zM17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2"/>
+                    </svg>
+                </button>
+
+                <button id="helpModalBtn" title="How to Play" class="btn-game px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 text-xs font-medium flex items-center gap-1">
+                    <svg class="w-4 h-4 text-indigo-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
+                    <span class="hidden sm:inline">Rules</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content Layout -->
+    <main class="flex-1 max-w-7xl w-full mx-auto px-3 sm:px-6 py-4 grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
+
+        <!-- Left / Top Control & Progress Column -->
+        <aside class="lg:col-span-4 flex flex-col gap-4 order-2 lg:order-1">
+
+            <!-- Game Setup Card -->
+            <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-4 shadow-xl flex flex-col gap-3.5">
+                <div class="flex items-center justify-between border-b border-slate-800 pb-2.5">
+                    <h2 class="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+                        <svg class="w-4 h-4 text-indigo-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"/>
+                        </svg>
+                        Puzzle Configuration
+                    </h2>
+                    <span id="aspectBadge" class="text-[11px] mono-num text-slate-500 bg-slate-800/80 px-2 py-0.5 rounded">600×600</span>
+                </div>
+
+                <!-- Grid Size Selector -->
+                <div>
+                    <label class="block text-xs font-medium text-slate-300 mb-1.5">Grid Dimensions</label>
+                    <div class="grid grid-cols-4 gap-1.5" id="gridSizeButtons">
+                        <button data-grid="3" class="grid-btn btn-game py-2 rounded-lg text-xs font-bold border border-slate-700 bg-slate-800/80 text-slate-300 hover:bg-slate-700">3×3</button>
+                        <button data-grid="4" class="grid-btn btn-game py-2 rounded-lg text-xs font-bold border border-indigo-500 bg-indigo-600/30 text-white shadow-sm">4×4</button>
+                        <button data-grid="5" class="grid-btn btn-game py-2 rounded-lg text-xs font-bold border border-slate-700 bg-slate-800/80 text-slate-300 hover:bg-slate-700">5×5</button>
+                        <button data-grid="6" class="grid-btn btn-game py-2 rounded-lg text-xs font-bold border border-slate-700 bg-slate-800/80 text-slate-300 hover:bg-slate-700">6×6</button>
+                    </div>
+                </div>
+
+                <!-- Challenge Constraint Mode -->
+                <div>
+                    <label for="modeSelect" class="block text-xs font-medium text-slate-300 mb-1.5">Challenge Mode</label>
+                    <select id="modeSelect" class="w-full rounded-lg bg-slate-800 border border-slate-700 text-xs sm:text-sm text-slate-100 px-3 py-2 focus:outline-none focus:border-indigo-500">
+                        <option value="auto">Standard Rules (3:00 Timer)</option>
+                        <option value="casual">Casual Mode (Untimed, Unlimited Moves)</option>
+                        <option value="timed">Timed Blitz (Countdown Clock)</option>
+                        <option value="moves">Move Limit Challenge (Strategic Swaps)</option>
+                    </select>
+                </div>
+
+                <!-- Built-in & Uploaded Artwork Selector -->
+                <div>
+                    <label for="artSelect" class="block text-xs font-medium text-slate-300 mb-1.5">Puzzle Artwork</label>
+                    <div class="flex gap-2">
+                        <select id="artSelect" class="w-full rounded-lg bg-slate-800 border border-slate-700 text-xs sm:text-sm text-slate-100 px-3 py-2 focus:outline-none focus:border-indigo-500">
+                            <option value="classic">Classic Geometric</option>
+                            <option value="mountains">Sunset Alpine Peaks (Landscape)</option>
+                            <option value="lotus">Stained Glass Mandala (Square)</option>
+                            <option value="synthwave">Neon Synthwave Horizon (Square)</option>
+                            <option value="harbor">Starry Lighthouse Harbor (Portrait)</option>
+                        </select>
+                    </div>
+                    <p class="text-[11px] text-slate-400 mt-1">Tip: Uploaded images and random plants are added to the top of this list.</p>
+                </div>
+            </div>
+
+            <!-- Puzzle Progress Card -->
+            <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-4 shadow-xl flex flex-col gap-3">
+                <div class="flex items-center justify-between">
+                    <h2 class="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+                        <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+                        </svg>
+                        Puzzle Progress
+                    </h2>
+                    <span id="completionPercent" class="text-xs font-bold mono-num text-emerald-400">0% Joined</span>
+                </div>
+
+                <!-- Progress Bar -->
+                <div class="w-full h-2.5 bg-slate-800 rounded-full overflow-hidden p-0.5 border border-slate-700/60">
+                    <div id="progressBar" class="h-full bg-gradient-to-r from-indigo-500 via-sky-400 to-emerald-400 rounded-full transition-all duration-300" style="width: 0%"></div>
+                </div>
+
+                <!-- Top Row: Cluster & Home Tile Metrics -->
+                <div class="grid grid-cols-3 gap-2 pt-1">
+                    <div class="bg-slate-800/70 border border-slate-700/60 rounded-xl p-2.5 text-center">
+                        <div class="text-[10px] uppercase tracking-wider text-slate-400 font-semibold">Merged Clusters</div>
+                        <div id="statClusters" class="text-base sm:text-lg font-extrabold mono-num text-white mt-0.5">16</div>
+                        <div class="text-[10px] text-slate-400">Goal: 1</div>
+                    </div>
+                    <div class="bg-slate-800/70 border border-slate-700/60 rounded-xl p-2.5 text-center">
+                        <div class="text-[10px] uppercase tracking-wider text-slate-400 font-semibold">Largest Cluster</div>
+                        <div id="statLargestCluster" class="text-base sm:text-lg font-extrabold mono-num text-indigo-300 mt-0.5">1</div>
+                        <div id="statLargestClusterSub" class="text-[10px] text-slate-400">of 16 tiles</div>
+                    </div>
+                    <div class="bg-slate-800/70 border border-slate-700/60 rounded-xl p-2.5 text-center">
+                        <div class="text-[10px] uppercase tracking-wider text-slate-400 font-semibold">Home Tiles</div>
+                        <div id="statHomeTiles" class="text-base sm:text-lg font-extrabold mono-num text-emerald-300 mt-0.5">0/16</div>
+                        <div class="text-[10px] text-slate-400">In final spot</div>
+                    </div>
+                </div>
+
+                <!-- Bottom Row: Moves & Time Metrics -->
+                <div class="grid grid-cols-2 gap-2">
+                    <div class="bg-slate-800/70 border border-slate-700/60 rounded-xl p-2.5 text-center">
+                        <div id="statMovesLabel" class="text-[10px] uppercase tracking-wider text-slate-400 font-semibold">Total Moves</div>
+                        <div id="statMoves" class="text-base sm:text-lg font-extrabold mono-num text-sky-300 mt-0.5">0</div>
+                        <div id="statMovesSub" class="text-[10px] text-slate-400">Swaps made</div>
+                    </div>
+                    <div class="bg-slate-800/70 border border-slate-700/60 rounded-xl p-2.5 text-center">
+                        <div id="statTimerLabel" class="text-[10px] uppercase tracking-wider text-slate-400 font-semibold">Elapsed Time</div>
+                        <div id="statTimer" class="text-base sm:text-lg font-extrabold mono-num text-amber-300 mt-0.5">00:00</div>
+                        <div id="statTimerSub" class="text-[10px] text-slate-400">Active clock</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Reference Preview & Legend Card -->
+            <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-4 shadow-xl flex items-center gap-3.5">
+                <div class="relative w-20 h-20 rounded-xl overflow-hidden bg-slate-800 border border-slate-700 shrink-0 flex items-center justify-center shadow-inner">
+                    <canvas id="miniPreviewCanvas" width="120" height="120" class="max-w-full max-h-full object-contain"></canvas>
+                </div>
+                <div class="flex-1 min-w-0">
+                    <h3 class="text-xs font-bold uppercase tracking-wider text-slate-300">Target Reference</h3>
+                    <p class="text-xs text-slate-400 mt-0.5 leading-relaxed">
+                        Adjacent tiles whose original sections match automatically fuse into a single borderless cluster.
+                    </p>
+                    <div class="mt-2 flex flex-wrap gap-2 text-[11px]">
+                        <span class="inline-flex items-center gap-1 text-emerald-400 font-medium">
+                            <span class="w-2 h-2 rounded-full bg-emerald-400"></span> Valid Drop
+                        </span>
+                        <span class="inline-flex items-center gap-1 text-amber-300 font-medium">
+                            <span class="w-2 h-2 rounded-full bg-amber-300"></span> Hint = Misplaced
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+        </aside>
+
+        <!-- Right / Center Board & Action Controls Column (Full Screen Target) -->
+        <section id="puzzleSection" class="lg:col-span-8 flex flex-col items-center gap-3.5 order-1 lg:order-2">
+
+            <!-- Top Action Toolbar (Remains visible in Full Screen: New Puzzle, Hint Wipe, Upload Image, Random Plant, Full Screen Icon) -->
+            <div id="topToolbar" class="w-full flex flex-wrap items-center justify-center sm:justify-between gap-2 bg-slate-900/90 border border-slate-800 rounded-2xl px-3.5 py-2.5 shadow-lg">
+                <div class="flex flex-wrap items-center gap-2">
+                    <!-- New / Next Puzzle Button -->
+                    <button id="restartBtn" class="btn-game px-3.5 py-2 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white text-xs sm:text-sm font-bold shadow-md shadow-indigo-600/25 flex items-center gap-1.5">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+                        </svg>
+                        <span>New Puzzle</span>
+                    </button>
+
+                    <!-- Diagonal Wipe Hint Button -->
+                    <button id="hintBtn" class="btn-game px-3.5 py-2 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/40 text-amber-200 text-xs sm:text-sm font-semibold flex items-center gap-1.5">
+                        <svg class="w-4 h-4 text-amber-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/>
+                        </svg>
+                        <span>Hint Wipe</span>
+                    </button>
+
+                    <!-- Upload Image Button -->
+                    <label for="imageUploadInput" title="Upload your own photo" class="btn-game cursor-pointer px-3 py-2 rounded-xl bg-emerald-600/25 hover:bg-emerald-600/35 border border-emerald-500/40 text-emerald-200 text-xs sm:text-sm font-semibold flex items-center gap-1.5">
+                        <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/>
+                        </svg>
+                        <span>Upload Image</span>
+                    </label>
+                    <input id="imageUploadInput" type="file" accept="image/*" multiple class="hidden">
+
+                    <!-- Add Random Plant Image Button -->
+                    <button id="randomPlantBtn" title="Load a random plant photo (fruit, fern, cactus, fungus) and add it to the top of the list" class="btn-game px-3 py-2 rounded-xl bg-lime-500/20 hover:bg-lime-500/30 border border-lime-500/40 text-lime-200 text-xs sm:text-sm font-semibold flex items-center gap-1.5">
+                        <span>🌿 Random Plant</span>
+                    </button>
+
+                    <!-- Full Screen Icon Button next to Random Plant -->
+                    <button id="fullscreenBtn" title="Toggle Full Screen" class="btn-game p-2 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 flex items-center justify-center">
+                        <svg id="fullscreenEnterIcon" class="w-4 h-4 text-sky-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"/>
+                        </svg>
+                        <svg id="fullscreenExitIcon" class="w-4 h-4 text-amber-400 hidden" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M9 9V4.5M9 9H4.5M9 9L3.75 3.75M9 15v4.5M9 15H4.5M9 15l-5.25 5.25M15 9h4.5M15 9V4.5M15 9l5.25-5.25M15 15h4.5M15 15v4.5m0-4.5l5.25 5.25"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Puzzle Canvas Stage -->
+            <div id="boardStage" class="board-stage w-full flex items-center justify-center">
+                <canvas id="puzzleCanvas" width="600" height="600"></canvas>
+
+                <!-- Zero Correct Tiles Hint Warning Banner -->
+                <div id="hintWarningBanner" class="hidden absolute top-5 left-1/2 -translate-x-1/2 z-20 max-w-md w-[92%] bg-rose-950/95 border-2 border-rose-500 text-rose-100 px-4 py-3 rounded-xl shadow-2xl flex items-center gap-3 pointer-events-none">
+                    <div class="w-8 h-8 rounded-lg bg-rose-500/20 border border-rose-400/40 flex items-center justify-center shrink-0 text-rose-300 font-extrabold">
+                        !
+                    </div>
+                    <div class="text-xs sm:text-sm leading-snug">
+                        <strong class="font-bold text-white block">No Tiles Correctly Placed!</strong>
+                        <span>None of the tiles are currently in their final home locations (0 correct).</span>
+                    </div>
+                </div>
+
+                <!-- Floating Victory / Defeat Banner Overlay -->
+                <div id="gameOverModal" class="hidden absolute inset-0 bg-slate-950/75 backdrop-blur-sm rounded-2xl flex items-center justify-center p-4 z-20">
+                    <div class="bg-slate-900 border border-slate-700 rounded-2xl max-w-sm w-full p-6 text-center shadow-2xl transform transition-all">
+                        <div id="modalIconWrap" class="w-14 h-14 rounded-2xl mx-auto mb-3 flex items-center justify-center bg-rose-500/20 border border-rose-500/40 text-rose-400">
+                            <svg class="w-8 h-8" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                            </svg>
+                        </div>
+                        <h3 id="modalTitle" class="text-xl font-extrabold text-white">Time Ran Out!</h3>
+                        <p id="modalReason" class="text-sm text-slate-300 mt-1.5">You formed 85% of the puzzle before the clock expired.</p>
+                        <div class="mt-5 flex gap-2.5 justify-center">
+                            <button id="modalRetryBtn" class="btn-game flex-1 py-2.5 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-sm shadow-lg shadow-indigo-600/30">
+                                Play Again
+                            </button>
+                            <button id="modalContinueCasualBtn" class="btn-game py-2.5 px-4 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 font-semibold text-sm">
+                                Keep Solving
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Interactive Footer Bar -->
+            <div id="footerBar" class="w-full flex flex-wrap items-center justify-between text-xs text-slate-400 px-2 gap-2">
+                <div class="flex items-center gap-2">
+                    <span class="inline-block w-2 h-2 rounded-full bg-indigo-400"></span>
+                    <span id="footerTip">Drag any tile or merged cluster to swap positions with displaced tiles.</span>
+                </div>
+                <div class="mono-num text-[11px] text-slate-400">
+                    Shortcuts: <kbd class="px-1.5 py-0.5 bg-slate-800 border border-slate-700 rounded text-slate-300">H</kbd> Hint
+                    <kbd class="px-1.5 py-0.5 bg-slate-800 border border-slate-700 rounded text-slate-300 ml-1">Z</kbd> Undo
+                    <kbd class="px-1.5 py-0.5 bg-slate-800 border border-slate-700 rounded text-slate-300 ml-1">Space</kbd> Pause &amp; Hide
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- How to Play Rules Modal -->
+    <div id="rulesModal" class="hidden fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div class="bg-slate-900 border border-slate-700 rounded-2xl max-w-lg w-full p-6 shadow-2xl">
+            <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+                <h2 class="text-lg font-extrabold text-white flex items-center gap-2">
+                    <span class="w-2.5 h-2.5 rounded-full bg-indigo-400"></span>
+                    How to Play Jigsaw Solitaire
+                </h2>
+                <button id="closeRulesBtn" class="text-slate-400 hover:text-white p-1">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+                    </svg>
+                </button>
+            </div>
+            <div class="mt-4 space-y-3 text-xs sm:text-sm text-slate-300 leading-relaxed">
+                <p>
+                    <strong class="text-white">1. Core Objective:</strong> Drag tiles or connected clusters to swap positions. Adjacent tiles with matching original sections automatically fuse into a single movable cluster.
+                </p>
+                <p>
+                    <strong class="text-white">2. Winning the Game:</strong> Form all correct adjacencies to solve the puzzle and trigger the victory animation and confetti.
+                </p>
+                <p>
+                    <strong class="text-white">3. Diagonal Wipe Hint:</strong> Clicking <span class="text-amber-300 font-semibold">Hint Wipe</span> sweeps a diagonal color wave across the board. Misplaced tiles change color, while correctly placed tiles remain unaffected. If zero tiles are in the right place, a warning alert notifies you.
+                </p>
+                <p>
+                    <strong class="text-white">4. Pause &amp; Hide (Spacebar):</strong> Press <span class="text-indigo-300 font-semibold">Space</span> at any time to pause the timer and conceal the board.
+                </p>
+                <p>
+                    <strong class="text-white">5. Custom Photos &amp; Plants:</strong> Click <span class="text-emerald-300 font-semibold">Upload Image</span> or <span class="text-lime-300 font-semibold">Random Plant</span> (featuring fruit, fern, cactus, and fungus specimens) to add images to the top of your puzzle list.
+                </p>
+            </div>
+            <div class="mt-6 flex justify-end">
+                <button id="gotItRulesBtn" class="btn-game px-5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-bold">
+                    Got It, Let's Play!
+                </button>
+            </div>
+        </div>
+    </div>
+
+<script src="common_artwork.js"></script>
+<script src="common_plants.js"></script>
+<script src="jigsaw.js"></script>
+</body>
+</html>

@@ -1,0 +1,1778 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Linguistic Word Mechanics Puzzle</title>
+    <style>
+        :root {
+            --bg-dark: #141518;
+            --panel-bg: #23262e;
+            --instr-bg: #1c1e23;
+            --border-color: #363b47;
+            --text-main: #e6ebf5;
+            --text-muted: #aab4c3;
+            --accent-blue: #8cbeff;
+            --highlight-red: #ff4444;
+            --btn-bg: #2e3440;
+            --btn-hover: #3b4252;
+            --btn-active: #4c566a;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: #0e1013;
+            color: var(--text-main);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            padding: 14px;
+            user-select: none;
+            overflow-y: auto;
+        }
+
+        .app-container {
+            max-width: 1080px;
+            width: 100%;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        /* Top Control Bar */
+        .control-bar {
+            background: var(--panel-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 10px 14px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            flex: 0 0 auto;
+        }
+
+        .control-row {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 12px;
+            width: 100%;
+        }
+
+        .control-group {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        label {
+            font-size: 0.88rem;
+            color: var(--text-muted);
+            font-weight: 600;
+        }
+
+        select, button {
+            background: var(--btn-bg);
+            color: var(--text-main);
+            border: 1px solid #454c5c;
+            border-radius: 6px;
+            padding: 6px 11px;
+            font-size: 0.88rem;
+            cursor: pointer;
+            transition: background 0.15s, border-color 0.15s;
+        }
+
+        select:hover, button:hover:not(:disabled) {
+            background: var(--btn-hover);
+            border-color: var(--accent-blue);
+        }
+
+        button:active:not(:disabled) {
+            background: var(--btn-active);
+        }
+
+        button:disabled {
+            opacity: 0.45;
+            cursor: not-allowed;
+        }
+
+        .checkbox-label {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            cursor: pointer;
+            font-size: 0.88rem;
+            color: var(--text-main);
+        }
+
+        .status-banner {
+            margin-left: auto;
+            font-weight: 700;
+            font-size: 0.9rem;
+            color: #9be2b0;
+            text-align: right;
+        }
+
+        /* Metadata Card - Fixed height to prevent vertical layout shift */
+        .meta-panel {
+            background: var(--panel-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 12px 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            height: 132px;
+            min-height: 132px;
+            max-height: 132px;
+            flex: 0 0 132px;
+            overflow-y: auto;
+        }
+
+        .meta-top-row {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+        }
+
+        .meta-badges {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .txt-pronounce {
+            color: var(--text-muted);
+            font-size: 0.95rem;
+        }
+
+        .txt-pos {
+            color: var(--accent-blue);
+            font-weight: 600;
+            font-size: 0.92rem;
+        }
+
+        .txt-complexity {
+            background: #2f3848;
+            color: #bbd6ff;
+            font-size: 0.78rem;
+            padding: 2px 8px;
+            border-radius: 999px;
+            border: 1px solid #4c5d78;
+        }
+
+        .speech-controls {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .btn-audio {
+            padding: 4px 9px;
+            font-size: 0.8rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .speaking-indicator {
+            font-size: 0.78rem;
+            color: #ffd479;
+            font-weight: 600;
+            min-width: 110px;
+            text-align: right;
+        }
+
+        .txt-meaning {
+            color: var(--text-main);
+            font-size: 0.98rem;
+            line-height: 1.35;
+        }
+
+        .txt-sample {
+            color: #e1f5d2;
+            font-size: 0.98rem;
+            line-height: 1.35;
+        }
+
+        .highlight-word {
+            color: var(--highlight-red);
+            font-weight: 700;
+        }
+
+        /* Canvas Board - Fixed height so the board never jumps */
+        .board-wrapper {
+            height: 260px;
+            min-height: 260px;
+            max-height: 260px;
+            flex: 0 0 260px;
+            background: var(--bg-dark);
+            border: 2px inset #262930;
+            border-radius: 8px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+            cursor: pointer;
+        }
+
+        /* Bottom Instructions / Victory Sentence Panel - Fixed height */
+        .instruction-panel {
+            background: var(--instr-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 10px 20px;
+            text-align: center;
+            height: 78px;
+            min-height: 78px;
+            max-height: 78px;
+            flex: 0 0 78px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        .txt-instruction {
+            color: #d2d7e1;
+            font-size: 1.0rem;
+            font-style: italic;
+            line-height: 1.35;
+            white-space: pre-line;
+        }
+
+        .txt-instruction.victory-sample {
+            font-size: 1.14rem;
+            font-style: normal;
+            line-height: 1.35;
+        }
+    </style>
+
+    <!-- 1. Load external word list BEFORE the main script -->
+    <script src="linguistic_words.js"></script>
+</head>
+<body>
+
+<div class="app-container">
+    <!-- Top Dashboard Control Bar -->
+    <div class="control-bar">
+        <!-- Row 1: Complexity, Next Word, Show Hint, Auto-Speak, Auto-Advance -->
+        <div class="control-row">
+            <div class="control-group">
+                <label for="complexitySelect">Complexity:</label>
+                <select id="complexitySelect"></select>
+            </div>
+
+            <button id="nextBtn" type="button">Next Word</button>
+
+            <label class="checkbox-label">
+                <input type="checkbox" id="hintCheckbox" checked>
+                Show Hint
+            </label>
+
+            <label class="checkbox-label">
+                <input type="checkbox" id="autoSpeakCheckbox" checked>
+                Auto-Speak
+            </label>
+
+            <label class="checkbox-label">
+                <input type="checkbox" id="autoAdvanceCheckbox">
+                Auto-Advance
+            </label>
+        </div>
+
+        <!-- Row 2: Mode Dropdown, Auto-Solve, and Status Display -->
+        <div class="control-row">
+            <div class="control-group">
+                <label for="modeSelect">Mode:</label>
+                <select id="modeSelect">
+                    <option value="0">Level 0: Flash Card Reveal</option>
+                    <option value="1">Level 1: Send to End</option>
+                    <option value="2">Level 2: Slide-Swap</option>
+                    <option value="3">Level 3: Reverse-Rotation</option>
+                    <option value="4">Level 4: Reverse then Slide</option>
+                </select>
+            </div>
+
+            <button id="solveBtn" type="button">Auto-Solve</button>
+
+            <div id="statusDisplay" class="status-banner"></div>
+        </div>
+    </div>
+
+    <!-- Metadata Display Card -->
+    <div class="meta-panel">
+        <div class="meta-top-row">
+            <div class="meta-badges">
+                <span id="txtPronounce" class="txt-pronounce"></span>
+                <span id="txtPos" class="txt-pos"></span>
+                <span id="txtComplexity" class="txt-complexity"></span>
+            </div>
+            <div class="speech-controls">
+                <span id="speakingIndicator" class="speaking-indicator"></span>
+                <button id="speakWordBtn" class="btn-audio" type="button" title="Sound out current word">🔊 Word</button>
+                <button id="speakSentenceBtn" class="btn-audio" type="button" title="Read sample sentence">🔊 Sentence</button>
+                <button id="speakBothBtn" class="btn-audio" type="button" title="Sound out word then sentence">🔊 Both</button>
+            </div>
+        </div>
+        <div id="txtMeaning" class="txt-meaning"></div>
+        <div id="txtSample" class="txt-sample"></div>
+    </div>
+
+    <!-- Interactive Graphic Canvas -->
+    <div class="board-wrapper" id="boardWrapper">
+        <canvas id="gameCanvas"></canvas>
+    </div>
+
+    <!-- Under-canvas Descriptive Instructions Panel -->
+    <div class="instruction-panel">
+        <div id="txtInstruction" class="txt-instruction"></div>
+    </div>
+</div>
+
+<script>
+const FALLBACK_WORD_DATABASE = {
+    beginner: {
+        label: "Level 1: Beginner (Fallback)",
+        words: [ { word: "speech",pronunciation: "speech",pos: "noun",meaning: "The expression of thoughts and feelings by articulate sounds; a formal address or discourse delivered to an audience.",sample: "The mayor gave a passionate speech about community unity." }
+        ]
+    }
+};
+
+/* ==========================================================================
+   1. DATA MODELS & REPOSITORY
+   ========================================================================== */
+class WordData {
+    constructor(raw, groupKey, groupLabel) {
+        this.word = String(raw.word || "").trim().toUpperCase();
+        this.pronunciation = raw.pronunciation || "";
+        this.pos = raw.pos || "";
+        this.meaning = raw.meaning || "";
+        this.sample = raw.sample || "";
+        this.groupKey = groupKey;
+        this.groupLabel = groupLabel;
+    }
+}
+
+class AnimatedTile {
+    constructor(letter, index) {
+        this.letter = letter;
+        this.currentIdx = index;
+        this.targetIdx = index;
+        this.x = index;
+        this.y = 0.0;
+        this.targetX = index;
+        this.targetY = 0.0;
+    }
+}
+
+class WordRepository {
+    constructor() {
+        const rawDb = window.WORD_DATABASE ||
+            (typeof WORD_DATABASE !== "undefined" ? WORD_DATABASE : FALLBACK_WORD_DATABASE);
+
+        this.groups = {};
+        this.allWords = [];
+
+        for (const [key, groupObj] of Object.entries(rawDb)) {
+            if (!groupObj || !Array.isArray(groupObj.words)) continue;
+            const label = groupObj.label || key;
+            const parsedWords = groupObj.words
+                .filter(w => w && w.word)
+                .map(w => new WordData(w, key, label));
+
+            if (parsedWords.length > 0) {
+                this.groups[key] = {
+                    label,
+                    description: groupObj.description || "",
+                    words: parsedWords
+                };
+                this.allWords.push(...parsedWords);
+            }
+        }
+    }
+
+    getGroupKeys() {
+        return Object.keys(this.groups);
+    }
+
+    getWordsByFilter(filterKey) {
+        if (filterKey === "all" || !this.groups[filterKey]) {
+            return this.allWords;
+        }
+        return this.groups[filterKey].words;
+    }
+}
+
+/* ==========================================================================
+   2. WEB SPEECH API AUDIO ENGINE
+   ========================================================================== */
+class SpeechEngine {
+    constructor(indicatorEl, autoSpeakCheckbox) {
+        this.synth = "speechSynthesis" in window ? window.speechSynthesis : null;
+        this.indicatorEl = indicatorEl;
+        this.autoSpeakCheckbox = autoSpeakCheckbox;
+        this.currentUtterance = null;
+        this.isSpeaking = false;
+        this.safetyTimer = null;
+    }
+
+    get isAutoEnabled() {
+        return this.autoSpeakCheckbox ? this.autoSpeakCheckbox.checked : true;
+    }
+
+    isBusy() {
+        if (!this.synth) return false;
+        return this.isSpeaking || this.synth.speaking;
+    }
+
+    stop() {
+        if (this.safetyTimer) {
+            clearTimeout(this.safetyTimer);
+            this.safetyTimer = null;
+        }
+        if (this.currentUtterance) {
+            this.currentUtterance.onstart = null;
+            this.currentUtterance.onend = null;
+            this.currentUtterance.onerror = null;
+            this.currentUtterance = null;
+        }
+        this.isSpeaking = false;
+        if (this.synth) {
+            this.synth.cancel();
+        }
+        this.setIndicator("");
+    }
+
+    setIndicator(text) {
+        if (this.indicatorEl) {
+            this.indicatorEl.textContent = text;
+        }
+    }
+
+    speakText(text, rate = 0.92, statusText = "🔊 Speaking...") {
+        if (!this.synth || !text) return;
+
+        this.stop();
+
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.rate = rate;
+        utterance.pitch = 1.0;
+        this.currentUtterance = utterance;
+        this.isSpeaking = true;
+
+        const clearCurrent = () => {
+            if (this.safetyTimer) {
+                clearTimeout(this.safetyTimer);
+                this.safetyTimer = null;
+            }
+            if (this.currentUtterance === utterance) {
+                this.currentUtterance = null;
+                this.isSpeaking = false;
+                this.setIndicator("");
+            }
+        };
+
+        utterance.onstart = () => {
+            if (this.currentUtterance === utterance) {
+                this.isSpeaking = true;
+                this.setIndicator(statusText);
+            }
+        };
+
+        utterance.onend = clearCurrent;
+        utterance.onerror = clearCurrent;
+
+        // Safety fallback so isSpeaking never gets stuck if a browser drops onend
+        const maxDurationMs = Math.max(4000, text.length * 130);
+        this.safetyTimer = setTimeout(clearCurrent, maxDurationMs);
+
+        if (this.synth.paused) {
+            this.synth.resume();
+        }
+        this.synth.speak(utterance);
+    }
+
+    speakWordOnly(wordData, force = false) {
+        if (!force && !this.isAutoEnabled) return;
+        this.speakText(wordData.word.toLowerCase(), 0.88, `🔊 "${wordData.word}"`);
+    }
+
+    speakSentenceOnly(wordData, force = false) {
+        if (!force && !this.isAutoEnabled) return;
+        this.speakText(wordData.sample, 0.95, "🔊 Reading sentence...");
+    }
+
+    speakWordThenSentence(wordData, force = false) {
+        if (!force && !this.isAutoEnabled) return;
+        // Single synchronous utterance so cancel() never drops the sentence handover
+        const combined = `${wordData.word.toLowerCase()}. ${wordData.sample}`;
+        this.speakText(combined, 0.92, `🔊 "${wordData.word}" & Sentence`);
+    }
+}
+
+/* ==========================================================================
+   3. PURE MECHANICAL SIMULATORS & AUTO-SOLVERS
+   ========================================================================== */
+class MechanicsSimulator {
+    static sendToEnd(arr, clickIdx) {
+        return [
+            ...arr.slice(0, clickIdx),
+            ...arr.slice(clickIdx + 1),
+            arr[clickIdx]
+        ];
+    }
+
+    static slideSwap(arr, clickIdx) {
+        const len = arr.length;
+        const temp = new Array(len);
+        for (let pos = 0; pos < len; pos++) {
+            let newPos;
+            if (pos < clickIdx) {
+                newPos = pos + (len - 1 - clickIdx) + 1;
+            } else if (pos > clickIdx) {
+                newPos = pos - clickIdx - 1;
+            } else {
+                newPos = len - 1 - clickIdx;
+            }
+            temp[newPos] = arr[pos];
+        }
+        return temp;
+    }
+
+    static reverseRotation(arr, clickIdx) {
+        const left = arr.slice(0, clickIdx).reverse();
+        const pivot = [arr[clickIdx]];
+        const right = arr.slice(clickIdx + 1).reverse();
+        return [...left, ...pivot, ...right];
+    }
+
+    static comboMove(arr, clickIdx) {
+        const interim = this.reverseRotation(arr, clickIdx);
+        return this.slideSwap(interim, clickIdx);
+    }
+
+    static simulateByMode(arr, clickIdx, mode) {
+        if (mode === 1) return this.sendToEnd(arr, clickIdx);
+        if (mode === 2) return this.slideSwap(arr, clickIdx);
+        if (mode === 3) return this.reverseRotation(arr, clickIdx);
+        if (mode === 4) return this.comboMove(arr, clickIdx);
+        return [...arr];
+    }
+}
+
+class MinHeap {
+    constructor() {
+        this.data = [];
+    }
+    push(item) {
+        this.data.push(item);
+        this.bubbleUp(this.data.length - 1);
+    }
+    pop() {
+        if (this.data.length === 0) return null;
+        const top = this.data[0];
+        const bottom = this.data.pop();
+        if (this.data.length > 0) {
+            this.data[0] = bottom;
+            this.sinkDown(0);
+        }
+        return top;
+    }
+    get size() {
+        return this.data.length;
+    }
+    compare(a, b) {
+        if (a.f !== b.f) return a.f - b.f;
+        return a.counter - b.counter;
+    }
+    bubbleUp(idx) {
+        while (idx > 0) {
+            const parent = (idx - 1) >> 1;
+            if (this.compare(this.data[idx], this.data[parent]) < 0) {
+                [this.data[idx], this.data[parent]] = [this.data[parent], this.data[idx]];
+                idx = parent;
+            } else break;
+        }
+    }
+    sinkDown(idx) {
+        const len = this.data.length;
+        while (true) {
+            let left = 2 * idx + 1;
+            let right = 2 * idx + 2;
+            let smallest = idx;
+            if (left < len && this.compare(this.data[left], this.data[smallest]) < 0) smallest = left;
+            if (right < len && this.compare(this.data[right], this.data[smallest]) < 0) smallest = right;
+            if (smallest !== idx) {
+                [this.data[idx], this.data[smallest]] = [this.data[smallest], this.data[idx]];
+                idx = smallest;
+            } else break;
+        }
+    }
+}
+
+class PuzzleSolver {
+    static solve(startLetters, targetWord, mode) {
+        if (mode === 0) return [];
+        const target = targetWord.split("");
+        if (startLetters.join("") === targetWord) return [];
+
+        if (mode === 1) return this.solveLevel1BFS(startLetters, targetWord);
+        if (mode === 2) return this.solveLevel2SlideSwap(startLetters, target);
+        if (mode === 3) return this.solveLevel3ReverseRotation(startLetters, target);
+        if (mode === 4) return this.solveLevel4Combo(startLetters, target);
+        return [];
+    }
+
+    static solveLevel1BFS(startLetters, targetWord) {
+        const queue = [{ state: [...startLetters], path: [] }];
+        const visited = new Set([startLetters.join("")]);
+
+        while (queue.length > 0) {
+            const { state, path } = queue.shift();
+            if (state.join("") === targetWord) return path;
+
+            for (let i = 0; i < state.length; i++) {
+                const nextState = MechanicsSimulator.sendToEnd(state, i);
+                const key = nextState.join("");
+                if (!visited.has(key)) {
+                    visited.add(key);
+                    queue.push({ state: nextState, path: [...path, i] });
+                }
+            }
+        }
+        return [];
+    }
+
+    static solveLevel2SlideSwap(startLetters, target) {
+        let state = [...startLetters];
+        const n = state.length;
+        const targetStr = target.join("");
+        const path = [];
+        let limit = 0;
+
+        while (state.join("") !== targetStr && limit < 300) {
+            limit++;
+            let k = 0;
+            for (let checkK = n; checkK > 0; checkK--) {
+                if (state.slice(n - checkK).join("") === target.slice(0, checkK).join("")) {
+                    k = checkK;
+                    break;
+                }
+            }
+            if (state.join("") === targetStr) break;
+
+            const neededChar = target[k];
+            let p = -1;
+            for (let idx = n - k - 1; idx >= 0; idx--) {
+                if (state[idx] === neededChar) {
+                    p = idx;
+                    break;
+                }
+            }
+            if (p === -1) break;
+
+            if (k === 0) {
+                const clickIdx = p + 1;
+                path.push(clickIdx);
+                state = MechanicsSimulator.slideSwap(state, clickIdx);
+            } else {
+                path.push(p);
+                state = MechanicsSimulator.slideSwap(state, p);
+                if (state.join("") === targetStr) break;
+                const rightClickIdx = n - p;
+                if (rightClickIdx < n) {
+                    path.push(rightClickIdx);
+                    state = MechanicsSimulator.slideSwap(state, rightClickIdx);
+                }
+            }
+        }
+        return path;
+    }
+
+    static solveLevel3ReverseRotation(startLetters, target) {
+        let state = [...startLetters];
+        const n = state.length;
+        const fullPath = [];
+
+        for (let k = 1; k <= n; k++) {
+            const stagePath = this.solveReverseRotationStage(state, target, k);
+            if (stagePath === null) return [];
+            for (const step of stagePath) {
+                state = MechanicsSimulator.reverseRotation(state, step);
+                fullPath.push(step);
+            }
+        }
+        return fullPath;
+    }
+
+    static solveReverseRotationStage(startState, target, k) {
+        const length = startState.length;
+        const getHeuristic = (curr) => {
+            let score = 0;
+            for (let i = 0; i < k; i++) {
+                if (curr[i] !== target[i]) score++;
+            }
+            return score;
+        };
+
+        if (getHeuristic(startState) === 0) return [];
+
+        let counter = 0;
+        const openSet = new MinHeap();
+        openSet.push({ f: getHeuristic(startState), counter, state: startState, path: [] });
+        const gScore = new Map([[startState.join(""), 0]]);
+        let iterations = 0;
+
+        while (openSet.size > 0 && iterations < 4000) {
+            iterations++;
+            const current = openSet.pop();
+            if (getHeuristic(current.state) === 0) return current.path;
+
+            const currentKey = current.state.join("");
+            const currentG = gScore.get(currentKey) ?? Infinity;
+
+            for (let clickIdx = 0; clickIdx < length; clickIdx++) {
+                const nextState = MechanicsSimulator.reverseRotation(current.state, clickIdx);
+                const nextKey = nextState.join("");
+                const tentativeG = currentG + 1;
+
+                if (tentativeG < (gScore.get(nextKey) ?? Infinity)) {
+                    gScore.set(nextKey, tentativeG);
+                    counter++;
+                    openSet.push({
+                        f: tentativeG + getHeuristic(nextState),
+                        counter,
+                        state: nextState,
+                        path: [...current.path, clickIdx]
+                    });
+                }
+            }
+        }
+        return null;
+    }
+
+    static solveLevel4Combo(startLetters, target) {
+        const getHeuristic = (curr) => {
+            let diff = 0;
+            for (let i = 0; i < curr.length; i++) {
+                if (curr[i] !== target[i]) diff++;
+            }
+            return diff;
+        };
+
+        let counter = 0;
+        const openSet = new MinHeap();
+        openSet.push({ f: getHeuristic(startLetters), counter, state: startLetters, path: [] });
+        const gScore = new Map([[startLetters.join(""), 0]]);
+        const targetStr = target.join("");
+
+        while (openSet.size > 0 && counter < 6000) {
+            const current = openSet.pop();
+            if (current.state.join("") === targetStr) return current.path;
+
+            const currentKey = current.state.join("");
+            const currentG = gScore.get(currentKey) ?? Infinity;
+
+            for (let clickIdx = 0; clickIdx < current.state.length; clickIdx++) {
+                const nextState = MechanicsSimulator.comboMove(current.state, clickIdx);
+                const nextKey = nextState.join("");
+                const tentativeG = currentG + 1;
+
+                if (tentativeG < (gScore.get(nextKey) ?? Infinity)) {
+                    gScore.set(nextKey, tentativeG);
+                    counter++;
+                    openSet.push({
+                        f: tentativeG + getHeuristic(nextState),
+                        counter,
+                        state: nextState,
+                        path: [...current.path, clickIdx]
+                    });
+                }
+            }
+        }
+        return [];
+    }
+}
+
+/* ==========================================================================
+   4. MAIN GAME CONTROLLER & RENDER ENGINE
+   ========================================================================== */
+class WordPuzzleGame {
+    constructor() {
+        this.repo = new WordRepository();
+
+        this.complexitySelect = document.getElementById("complexitySelect");
+        this.modeSelect = document.getElementById("modeSelect");
+        this.solveBtn = document.getElementById("solveBtn");
+        this.nextBtn = document.getElementById("nextBtn");
+        this.hintCheckbox = document.getElementById("hintCheckbox");
+        this.autoSpeakCheckbox = document.getElementById("autoSpeakCheckbox");
+        this.autoAdvanceCheckbox = document.getElementById("autoAdvanceCheckbox");
+        this.statusDisplay = document.getElementById("statusDisplay");
+
+        this.txtPronounce = document.getElementById("txtPronounce");
+        this.txtPos = document.getElementById("txtPos");
+        this.txtComplexity = document.getElementById("txtComplexity");
+        this.txtMeaning = document.getElementById("txtMeaning");
+        this.txtSample = document.getElementById("txtSample");
+        this.txtInstruction = document.getElementById("txtInstruction");
+
+        this.speakWordBtn = document.getElementById("speakWordBtn");
+        this.speakSentenceBtn = document.getElementById("speakSentenceBtn");
+        this.speakBothBtn = document.getElementById("speakBothBtn");
+        this.speakingIndicator = document.getElementById("speakingIndicator");
+
+        this.canvas = document.getElementById("gameCanvas");
+        this.ctx = this.canvas.getContext("2d");
+
+        this.speech = new SpeechEngine(this.speakingIndicator, this.autoSpeakCheckbox);
+
+        this.currentComplexity = "all";
+        this.wordPool = [];
+        this.currentWordIdx = 0;
+        this.currentMode = 0;
+        this.tiles = [];
+        this.lockInput = false;
+        this.keyQueue = [];
+        this.clickHistory = [];
+
+        this.autoSolveMode = false;
+        this.solvedPathSteps = [];
+
+        this.animPhase = 0;
+        this.animStep = 0.0;
+        this.selectedTileIdx = -1;
+        this.flashcardElapsed = 0.0;
+        this.hoveredIdx = null;
+
+        this.victoryPhase = false;
+        this.victoryTimestamp = 0;
+        this.speechIdleSince = 0;
+        this.victoryWords = [];
+        this.fontOptions = ["Arial", "Times New Roman", "Courier New", "Verdana", "Georgia", "Impact", "Trebuchet MS"];
+
+        this.populateComplexityDropdown();
+        this.bindEvents();
+        this.resizeCanvas();
+        this.startWordChallenge();
+
+        setInterval(() => this.onEngineTick(), 20);
+    }
+
+    populateComplexityDropdown() {
+        this.complexitySelect.innerHTML = "";
+        const allOpt = document.createElement("option");
+        allOpt.value = "all";
+        allOpt.textContent = `All Complexity Levels (${this.repo.allWords.length} Words)`;
+        this.complexitySelect.appendChild(allOpt);
+
+        for (const key of this.repo.getGroupKeys()) {
+            const grp = this.repo.groups[key];
+            const opt = document.createElement("option");
+            opt.value = key;
+            opt.textContent = `${grp.label} (${grp.words.length})`;
+            this.complexitySelect.appendChild(opt);
+        }
+
+        this.wordPool = this.repo.getWordsByFilter("all");
+    }
+
+    bindEvents() {
+        window.addEventListener("resize", () => {
+            this.resizeCanvas();
+            this.render();
+        });
+
+        this.complexitySelect.addEventListener("change", () => {
+            this.currentComplexity = this.complexitySelect.value;
+            this.wordPool = this.repo.getWordsByFilter(this.currentComplexity);
+            this.currentWordIdx = 0;
+            this.startWordChallenge();
+        });
+
+        this.modeSelect.addEventListener("change", () => {
+            this.currentMode = parseInt(this.modeSelect.value, 10);
+            this.startWordChallenge();
+        });
+
+        this.solveBtn.addEventListener("click", () => this.triggerAutoSolver());
+        this.nextBtn.addEventListener("click", () => this.cycleWord());
+        this.hintCheckbox.addEventListener("change", () => this.render());
+
+        this.autoAdvanceCheckbox.addEventListener("change", () => {
+            if (this.victoryPhase && this.autoAdvanceCheckbox.checked) {
+                this.victoryTimestamp = performance.now() - 1200;
+            }
+        });
+
+        this.speakWordBtn.addEventListener("click", () => {
+            const wd = this.wordPool[this.currentWordIdx];
+            if (wd) this.speech.speakWordOnly(wd, true);
+        });
+        this.speakSentenceBtn.addEventListener("click", () => {
+            const wd = this.wordPool[this.currentWordIdx];
+            if (wd) this.speech.speakSentenceOnly(wd, true);
+        });
+        this.speakBothBtn.addEventListener("click", () => {
+            const wd = this.wordPool[this.currentWordIdx];
+            if (wd) this.speech.speakWordThenSentence(wd, true);
+        });
+
+        this.canvas.addEventListener("mousedown", (e) => this.onMouseDown(e));
+        this.canvas.addEventListener("mousemove", (e) => this.onMouseMove(e));
+        this.canvas.addEventListener("mouseleave", () => this.onMouseLeave());
+
+        window.addEventListener("keydown", (e) => this.onKeyDown(e));
+    }
+
+    resizeCanvas() {
+        const rect = this.canvas.parentElement.getBoundingClientRect();
+        this.canvas.width = Math.max(300, Math.floor(rect.width));
+        this.canvas.height = Math.max(200, Math.floor(rect.height));
+    }
+
+    formatSampleMarkup(wd) {
+        const escapedWord = wd.word.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        let regex = new RegExp(`\\b(${escapedWord})\\b`, "gi");
+        if (!regex.test(wd.sample)) {
+            regex = new RegExp(`(${escapedWord})`, "gi");
+        }
+        const highlighted = wd.sample.replace(regex, `<span class="highlight-word">$1</span>`);
+        return `Sample: "${highlighted}"`;
+    }
+
+    enterVictoryPhase(statusMessage) {
+        this.statusDisplay.textContent = statusMessage;
+        this.victoryPhase = true;
+        this.victoryTimestamp = performance.now();
+        this.speechIdleSince = 0;
+        this.keyQueue = [];
+        this.showVictorySample();
+    }
+
+    showVictorySample() {
+        const wd = this.wordPool[this.currentWordIdx];
+        this.txtInstruction.classList.add("victory-sample");
+        this.txtInstruction.innerHTML = this.formatSampleMarkup(wd);
+    }
+
+    startWordChallenge() {
+        if (!this.wordPool || this.wordPool.length === 0) return;
+
+        this.lockInput = false;
+        this.animPhase = 0;
+        this.animStep = 0.0;
+        this.selectedTileIdx = -1;
+        this.clickHistory = [];
+        this.autoSolveMode = false;
+        this.solvedPathSteps = [];
+        this.keyQueue = [];
+        this.hoveredIdx = null;
+
+        this.victoryPhase = false;
+        this.victoryTimestamp = 0;
+        this.speechIdleSince = 0;
+        this.victoryWords = [];
+
+        const wd = this.wordPool[this.currentWordIdx];
+
+        this.txtPronounce.textContent = `Pronunciation: "${wd.pronunciation}"`;
+        this.txtPos.textContent = `Part of Speech: ${wd.pos.toUpperCase()}`;
+        this.txtComplexity.textContent = wd.groupLabel;
+        this.txtMeaning.textContent = `Meaning: ${wd.meaning}`;
+        this.txtSample.innerHTML = this.formatSampleMarkup(wd);
+
+        let letterOrder;
+        if (this.currentMode === 0) {
+            this.solveBtn.disabled = true;
+            // this.txtInstruction.textContent =
+            //    "Mode: Flash Card Reveal. Watch the word construct itself cleanly from left to right.";
+            letterOrder = wd.word.split("");
+            this.animPhase = 50;
+            this.flashcardElapsed = 0.0;
+            this.lockInput = true;
+        } else {
+            this.txtInstruction.classList.remove("victory-sample");
+            this.solveBtn.disabled = false;
+            if (this.currentMode === 1) {
+                this.txtInstruction.textContent =
+                    "Instructions: Click a tile, press a letter key, or press Backspace to reverse.\n" +
+                    "Chosen letters slide to the end; Backspace pulls the last tile to the front.";
+            } else if (this.currentMode === 2) {
+                this.txtInstruction.textContent =
+                    "Instructions: Click a tile, press a letter key, or press Backspace to repeat.\n" +
+                    "Chosen tiles slide-swap; Backspace clicks the previous tile again.";
+            } else if (this.currentMode === 3) {
+                this.txtInstruction.textContent =
+                    "Instructions: Click a tile, press a letter key, or press Backspace to repeat.\n" +
+                    "Chosen tiles act as anchors; Backspace clicks the previous tile again.";
+            } else {
+                this.txtInstruction.textContent =
+                    "Instructions: Click a tile, press a letter key, or press Backspace to repeat.\n" +
+                    "Combines Reverse-Rotation and Slide-Swap; Backspace clicks the previous tile again.";
+            }
+
+            const indices = Array.from({ length: wd.word.length }, (_, i) => i);
+            if (indices.length > 1) {
+                let isIdentical = true;
+                while (isIdentical) {
+                    for (let i = indices.length - 1; i > 0; i--) {
+                        const j = Math.floor(Math.random() * (i + 1));
+                        [indices[i], indices[j]] = [indices[j], indices[i]];
+                    }
+                    isIdentical = indices.every((val, idx) => val === idx);
+                }
+            }
+            letterOrder = indices.map(idx => wd.word[idx]);
+        }
+
+        this.tiles = letterOrder.map((letter, position) => {
+            const tile = new AnimatedTile(letter, position);
+            if (this.currentMode === 0) {
+                tile.y = -12.0;
+            }
+            return tile;
+        });
+
+        this.statusDisplay.textContent = this.currentMode === 0
+            ? "Reviewing structural flash card arrangement..."
+            : "Rearrange the tiles to build the correct word target!";
+
+        // Sound out the word followed by the sentence in one uninterrupted utterance
+        this.speech.speakWordThenSentence(wd, false);
+
+        this.render();
+    }
+
+    triggerAutoSolver() {
+        if (this.animPhase > 0 || this.autoSolveMode || this.victoryPhase || this.currentMode === 0) {
+            return;
+        }
+        const wd = this.wordPool[this.currentWordIdx];
+        const startState = this.tiles.map(t => t.letter);
+
+        this.statusDisplay.textContent = "Solving layout...";
+        this.solvedPathSteps = PuzzleSolver.solve(startState, wd.word, this.currentMode);
+
+        if (this.solvedPathSteps.length > 0) {
+            this.autoSolveMode = true;
+            this.lockInput = true;
+            this.solveBtn.disabled = true;
+        } else {
+            this.statusDisplay.textContent = "No direct path found within limits.";
+        }
+    }
+
+    cycleWord() {
+        this.currentWordIdx = (this.currentWordIdx + 1) % this.wordPool.length;
+        this.startWordChallenge();
+    }
+
+    executeMechanicalShift(tileIndex, isUndo = false) {
+        if (this.victoryPhase || this.currentMode === 0) return;
+        this.selectedTileIdx = tileIndex;
+        const clickedTile = this.tiles[tileIndex];
+
+        if (!isUndo && !this.autoSolveMode) {
+            this.clickHistory.push(clickedTile);
+        }
+
+        this.animStep = 0.0;
+
+        if (this.currentMode === 1) {
+            this.animPhase = 41;
+            for (const t of this.tiles) {
+                t.targetX = t.x;
+                t.targetY = (t.currentIdx === this.selectedTileIdx) ? -1.2 : 0.0;
+            }
+        } else if (this.currentMode === 2) {
+            this.animPhase = 1;
+            for (const t of this.tiles) {
+                t.targetX = t.x;
+                if (t.currentIdx < this.selectedTileIdx) t.targetY = 1.2;
+                else if (t.currentIdx > this.selectedTileIdx) t.targetY = -1.2;
+                else t.targetY = 0.0;
+            }
+        } else {
+            this.animPhase = 10;
+            for (const t of this.tiles) {
+                if (t.currentIdx < this.selectedTileIdx) {
+                    t.targetIdx = this.selectedTileIdx - 1 - t.currentIdx;
+                } else if (t.currentIdx > this.selectedTileIdx) {
+                    const startR = this.selectedTileIdx + 1;
+                    const sizeR = this.tiles.length - startR;
+                    const localIdx = t.currentIdx - startR;
+                    t.targetIdx = startR + (sizeR - 1 - localIdx);
+                } else {
+                    t.targetIdx = t.currentIdx;
+                }
+            }
+        }
+    }
+
+    executeLevel1Backspace() {
+        if (this.victoryPhase || this.currentMode !== 1) return;
+        this.selectedTileIdx = this.tiles.length - 1;
+        this.animStep = 0.0;
+        this.animPhase = 61;
+        for (const t of this.tiles) {
+            t.targetX = t.x;
+            t.targetY = (t.currentIdx === this.selectedTileIdx) ? -1.2 : 0.0;
+        }
+    }
+
+    triggerAutoReversal() {
+        this.lockInput = true;
+        this.selectedTileIdx = -1;
+        this.animStep = 0.0;
+        this.animPhase = 30;
+        for (const t of this.tiles) {
+            t.targetIdx = this.tiles.length - 1 - t.currentIdx;
+        }
+    }
+
+    checkVictoryConditions(wordLayout, wd) {
+        const reversedTarget = wd.word.split("").reverse().join("");
+        if (wordLayout === wd.word) {
+            this.enterVictoryPhase("Correct! Puzzle Complete! (Click board or press any key to advance)");
+        } else if (wordLayout === reversedTarget) {
+            this.statusDisplay.textContent = "Correct (Spelled Backwards)! Auto-reversing layout...";
+            this.triggerAutoReversal();
+        }
+    }
+
+    processKeyQueue() {
+        if (this.victoryPhase) {
+            this.keyQueue = [];
+            return;
+        }
+        if (this.lockInput || this.animPhase > 0) return;
+
+        while (this.keyQueue.length > 0) {
+            const charToProcess = this.keyQueue.shift();
+
+            if (charToProcess === "BACKSPACE") {
+                if (this.currentMode === 1) {
+                    this.lockInput = true;
+                    this.hoveredIdx = null;
+                    this.executeLevel1Backspace();
+                    break;
+                } else if (this.currentMode >= 2 && this.clickHistory.length > 0) {
+                    const lastTile = this.clickHistory.pop();
+                    const currentLocation = this.tiles.indexOf(lastTile);
+                    if (currentLocation !== -1) {
+                        this.lockInput = true;
+                        this.hoveredIdx = null;
+                        this.executeMechanicalShift(currentLocation, true);
+                        break;
+                    }
+                }
+                continue;
+            }
+
+            const matchedIdx = this.tiles.findIndex(t => t.letter === charToProcess);
+            if (matchedIdx !== -1) {
+                this.lockInput = true;
+                this.hoveredIdx = null;
+                this.executeMechanicalShift(matchedIdx);
+                break;
+            }
+        }
+    }
+
+    onEngineTick() {
+        let refreshNeeded = false;
+        const wd = this.wordPool[this.currentWordIdx];
+        if (!wd) return;
+
+        if (this.victoryPhase) {
+            if (this.victoryWords.length < 160) {
+                const w = this.canvas.width;
+                const h = this.canvas.height;
+                const r = Math.floor(Math.random() * 80) + 30;
+                const g = Math.floor(Math.random() * 80) + 30;
+                const b = Math.floor(Math.random() * 80) + 30;
+                this.victoryWords.push({
+                    text: wd.word,
+                    x: Math.floor(Math.random() * Math.max(10, w - 40)) - 20,
+                    y: Math.floor(Math.random() * Math.max(10, h - 20)) + 20,
+                    color: `rgb(${r}, ${g}, ${b})`,
+                    size: Math.floor(Math.random() * 34) + 14,
+                    fontName: this.fontOptions[Math.floor(Math.random() * this.fontOptions.length)]
+                });
+                refreshNeeded = true;
+            }
+
+            // Auto-Advance evaluation: wait for minimum display time AND for speech to finish
+            if (this.autoAdvanceCheckbox && this.autoAdvanceCheckbox.checked) {
+                const now = performance.now();
+                if (this.speech.isBusy()) {
+                    this.speechIdleSince = 0;
+                } else if (this.speechIdleSince === 0) {
+                    this.speechIdleSince = now;
+                }
+
+                const minVictoryElapsed = (now - this.victoryTimestamp) >= 1800;
+                const postSpeechPauseElapsed = !this.speech.isBusy() && (now - this.speechIdleSince) >= 600;
+
+                if (minVictoryElapsed && postSpeechPauseElapsed) {
+                    this.cycleWord();
+                    return;
+                }
+            }
+        }
+
+        if (this.autoSolveMode && this.animPhase === 0 && !this.victoryPhase) {
+            const rebuiltStr = this.tiles.map(t => t.letter).join("");
+            if (rebuiltStr !== wd.word && this.solvedPathSteps.length > 0) {
+                const nextClickIdx = this.solvedPathSteps.shift();
+                this.executeMechanicalShift(nextClickIdx);
+                refreshNeeded = true;
+            } else if (rebuiltStr === wd.word) {
+                this.autoSolveMode = false;
+                this.solveBtn.disabled = false;
+                this.enterVictoryPhase("Correct! Word solved flawlessly. (Click board to advance)");
+            }
+        }
+
+        if (this.animPhase === 50) {
+            refreshNeeded = true;
+            this.flashcardElapsed += 0.14;
+
+            let allDone = true;
+            this.tiles.forEach((tile, idx) => {
+                if (this.flashcardElapsed < idx) {
+                    tile.y = -12.0;
+                    allDone = false;
+                } else if (this.flashcardElapsed >= idx + 1.0) {
+                    tile.y = 0.0;
+                } else {
+                    allDone = false;
+                    const t = this.flashcardElapsed - idx;
+                    const easeFactor = 1.0 - Math.pow(1.0 - t, 3);
+                    tile.y = -12.0 * (1.0 - easeFactor);
+                }
+            });
+
+            if (this.flashcardElapsed < this.tiles.length) {
+                allDone = false;
+            }
+
+            if (allDone) {
+                this.animPhase = 0;
+                this.enterVictoryPhase("Flash card arrangement finalized. (Click board to advance)");
+            }
+        }
+
+        if (this.animPhase > 40 && this.animPhase < 50) {
+            refreshNeeded = true;
+            this.animStep += 0.08;
+
+            if (this.animStep >= 1.0) {
+                this.animStep = 0.0;
+                this.animPhase += 1;
+
+                if (this.animPhase === 42) {
+                    for (const t of this.tiles) {
+                        t.x = t.targetX;
+                        t.y = t.targetY;
+                        if (t.currentIdx === this.selectedTileIdx) t.targetX = this.tiles.length - 1;
+                        else if (t.currentIdx > this.selectedTileIdx) t.targetX = t.currentIdx - 1;
+                        else t.targetX = t.currentIdx;
+                    }
+                } else if (this.animPhase === 43) {
+                    for (const t of this.tiles) {
+                        t.x = t.targetX;
+                        t.y = t.targetY;
+                        t.targetY = 0.0;
+                    }
+                } else if (this.animPhase === 44) {
+                    this.finalizeLinearArrangement(wd);
+                }
+            }
+
+            for (const t of this.tiles) {
+                if (this.animPhase === 41 && t.currentIdx === this.selectedTileIdx) {
+                    t.y = -(1.2 * this.animStep);
+                } else if (this.animPhase === 42) {
+                    t.x = t.x + (t.targetX - t.x) * this.animStep;
+                } else if (this.animPhase === 43) {
+                    t.y = t.y + (t.targetY - t.y) * this.animStep;
+                }
+            }
+        }
+
+        if (this.animPhase > 60 && this.animPhase < 70) {
+            refreshNeeded = true;
+            this.animStep += 0.08;
+
+            if (this.animStep >= 1.0) {
+                this.animStep = 0.0;
+                this.animPhase += 1;
+
+                if (this.animPhase === 62) {
+                    for (const t of this.tiles) {
+                        t.x = t.targetX;
+                        t.y = t.targetY;
+                        t.targetX = (t.currentIdx === this.tiles.length - 1) ? 0.0 : t.currentIdx + 1;
+                    }
+                } else if (this.animPhase === 63) {
+                    for (const t of this.tiles) {
+                        t.x = t.targetX;
+                        t.y = t.targetY;
+                        t.targetY = 0.0;
+                    }
+                } else if (this.animPhase === 64) {
+                    this.finalizeLinearArrangement(wd);
+                }
+            }
+
+            for (const t of this.tiles) {
+                if (this.animPhase === 61 && t.currentIdx === this.tiles.length - 1) {
+                    t.y = -(1.2 * this.animStep);
+                } else if (this.animPhase === 62) {
+                    t.x = t.x + (t.targetX - t.x) * this.animStep;
+                } else if (this.animPhase === 63) {
+                    t.y = t.y + (t.targetY - t.y) * this.animStep;
+                }
+            }
+        }
+
+        if (this.animPhase > 0 && this.animPhase < 10) {
+            refreshNeeded = true;
+            this.animStep += 0.08;
+
+            if (this.animStep >= 1.0) {
+                this.animStep = 0.0;
+                this.animPhase += 1;
+
+                if (this.animPhase === 2) {
+                    for (const t of this.tiles) {
+                        t.x = t.targetX;
+                        t.y = t.targetY;
+                        if (t.currentIdx < this.selectedTileIdx) {
+                            t.targetX = t.currentIdx + (this.tiles.length - 1 - this.selectedTileIdx) + 1;
+                        } else if (t.currentIdx > this.selectedTileIdx) {
+                            t.targetX = t.currentIdx - this.selectedTileIdx - 1;
+                        } else {
+                            t.targetX = this.tiles.length - 1 - this.selectedTileIdx;
+                        }
+                    }
+                } else if (this.animPhase === 3) {
+                    for (const t of this.tiles) {
+                        t.x = t.targetX;
+                        t.y = t.targetY;
+                        t.targetY = 0.0;
+                    }
+                } else if (this.animPhase === 4) {
+                    this.finalizeLinearArrangement(wd);
+                }
+            }
+
+            for (const t of this.tiles) {
+                if (this.animPhase === 1) {
+                    if (t.currentIdx < this.selectedTileIdx) t.y = 1.2 * this.animStep;
+                    else if (t.currentIdx > this.selectedTileIdx) t.y = -(1.2 * this.animStep);
+                } else if (this.animPhase === 2) {
+                    t.x = t.x + (t.targetX - t.x) * this.animStep;
+                    if (t.currentIdx === this.selectedTileIdx) {
+                        t.y = Math.sin(this.animStep * Math.PI) * 0.2;
+                    }
+                } else if (this.animPhase === 3) {
+                    t.y = t.y + (t.targetY - t.y) * this.animStep;
+                }
+            }
+        }
+
+        if (this.animPhase >= 10 && this.animPhase < 20) {
+            refreshNeeded = true;
+            this.animStep += 0.04;
+
+            if (this.animStep >= 1.0) {
+                const finalArrangement = new Array(this.tiles.length);
+                for (const t of this.tiles) {
+                    t.currentIdx = t.targetIdx;
+                    t.x = t.targetIdx;
+                    t.y = 0.0;
+                    finalArrangement[t.targetIdx] = t;
+                }
+                this.tiles = finalArrangement;
+
+                if (this.currentMode === 4) {
+                    this.animPhase = 1;
+                    this.animStep = 0.0;
+                    for (const t of this.tiles) {
+                        t.targetX = t.x;
+                        if (t.currentIdx < this.selectedTileIdx) t.targetY = 1.2;
+                        else if (t.currentIdx > this.selectedTileIdx) t.targetY = -1.2;
+                        else t.targetY = 0.0;
+                    }
+                } else {
+                    this.animPhase = 0;
+                    this.animStep = 0.0;
+                    if (!this.autoSolveMode) {
+                        this.lockInput = false;
+                        const rebuiltStr = this.tiles.map(t => t.letter).join("");
+                        this.checkVictoryConditions(rebuiltStr, wd);
+                        if (!this.victoryPhase) this.processKeyQueue();
+                    }
+                }
+            } else {
+                const numTiles = this.tiles.length;
+                const leftSize = this.selectedTileIdx;
+                const rightSize = numTiles - (this.selectedTileIdx + 1);
+                const midLeft = leftSize > 0 ? (leftSize - 1) / 2.0 : 0.0;
+                const midRight = rightSize > 0 ? this.selectedTileIdx + 1 + (rightSize - 1) / 2.0 : 0.0;
+
+                for (const t of this.tiles) {
+                    if (t.currentIdx < this.selectedTileIdx) {
+                        t.x = t.currentIdx + (t.targetIdx - t.currentIdx) * this.animStep;
+                        let vFactor = leftSize > 1 && midLeft > 0 ? 1.0 - (Math.abs(t.currentIdx - midLeft) / midLeft) : 1.0;
+                        vFactor = Math.max(0.0, Math.min(1.0, vFactor));
+                        t.y = -1.2 * vFactor * Math.sin(this.animStep * Math.PI);
+                    } else if (t.currentIdx > this.selectedTileIdx) {
+                        t.x = t.currentIdx + (t.targetIdx - t.currentIdx) * this.animStep;
+                        const halfSpan = (rightSize - 1) / 2.0;
+                        let vFactor = rightSize > 1 && halfSpan > 0 ? 1.0 - (Math.abs(t.currentIdx - midRight) / halfSpan) : 1.0;
+                        vFactor = Math.max(0.0, Math.min(1.0, vFactor));
+                        t.y = 1.2 * vFactor * Math.sin(this.animStep * Math.PI);
+                    } else {
+                        t.x = t.currentIdx;
+                        t.y = 0.0;
+                    }
+                }
+            }
+        }
+
+        if (this.animPhase === 30) {
+            refreshNeeded = true;
+            this.animStep += 0.05;
+
+            if (this.animStep >= 1.0) {
+                const finalArrangement = new Array(this.tiles.length);
+                for (const t of this.tiles) {
+                    t.currentIdx = t.targetIdx;
+                    t.x = t.targetIdx;
+                    t.y = 0.0;
+                    finalArrangement[t.targetIdx] = t;
+                }
+                this.tiles = finalArrangement;
+                this.animPhase = 0;
+                this.animStep = 0.0;
+                this.enterVictoryPhase("Correct! Puzzle Complete! (Click board or press any key to advance)");
+            } else {
+                const midpoint = (this.tiles.length - 1) / 2.0;
+                for (const t of this.tiles) {
+                    t.x = t.currentIdx + (t.targetIdx - t.currentIdx) * this.animStep;
+                    const direction = t.currentIdx < midpoint ? 1 : -1;
+                    t.y = direction * 1.0 * Math.sin(this.animStep * Math.PI);
+                }
+            }
+        }
+
+        if (refreshNeeded) {
+            this.render();
+        }
+    }
+
+    finalizeLinearArrangement(wd) {
+        const finalArrangement = new Array(this.tiles.length);
+        for (const t of this.tiles) {
+            const logIdx = Math.round(t.targetX);
+            t.currentIdx = logIdx;
+            t.x = logIdx;
+            t.y = 0.0;
+            finalArrangement[logIdx] = t;
+        }
+        this.tiles = finalArrangement;
+        this.animPhase = 0;
+
+        if (!this.autoSolveMode) {
+            this.lockInput = false;
+            const rebuiltStr = this.tiles.map(t => t.letter).join("");
+            this.checkVictoryConditions(rebuiltStr, wd);
+            if (!this.victoryPhase) {
+                this.processKeyQueue();
+            }
+        }
+    }
+
+    getBoardMetrics() {
+        const w = this.canvas.width;
+        const h = this.canvas.height;
+        const numTiles = this.tiles.length;
+        const tileW = numTiles > 0 ? Math.min(64, Math.floor(w / (numTiles + 2))) : 56;
+        const totalGridW = tileW * numTiles;
+        const startX = Math.floor((w - totalGridW) / 2);
+        const centerY = Math.floor(h / 2);
+        return { w, h, numTiles, tileW, totalGridW, startX, centerY };
+    }
+
+    onMouseDown(event) {
+        if (this.victoryPhase) {
+            this.cycleWord();
+            return;
+        }
+        if (this.lockInput || this.autoSolveMode || this.animPhase > 0 || this.currentMode === 0) {
+            return;
+        }
+
+        const rect = this.canvas.getBoundingClientRect();
+        const ptX = event.clientX - rect.left;
+        const ptY = event.clientY - rect.top;
+        const { numTiles, tileW, startX, centerY } = this.getBoardMetrics();
+        if (numTiles === 0) return;
+
+        if (ptY >= centerY - tileW / 2 && ptY <= centerY + tileW / 2) {
+            const clickedCol = Math.floor((ptX - startX) / tileW);
+            if (clickedCol >= 0 && clickedCol < numTiles) {
+                this.lockInput = true;
+                this.hoveredIdx = null;
+                this.executeMechanicalShift(clickedCol);
+                this.render();
+            }
+        }
+    }
+
+    onMouseMove(event) {
+        if (this.lockInput || this.autoSolveMode || this.animPhase > 0 || this.victoryPhase || this.currentMode === 0) {
+            if (this.hoveredIdx !== null) {
+                this.hoveredIdx = null;
+                this.render();
+            }
+            return;
+        }
+
+        const rect = this.canvas.getBoundingClientRect();
+        const ptX = event.clientX - rect.left;
+        const ptY = event.clientY - rect.top;
+        const { numTiles, tileW, startX, centerY } = this.getBoardMetrics();
+        if (numTiles === 0) return;
+
+        let targetHover = null;
+        if (ptY >= centerY - tileW / 2 && ptY <= centerY + tileW / 2) {
+            const col = Math.floor((ptX - startX) / tileW);
+            if (col >= 0 && col < numTiles) {
+                targetHover = col;
+            }
+        }
+
+        if (this.hoveredIdx !== targetHover) {
+            this.hoveredIdx = targetHover;
+            this.render();
+        }
+    }
+
+    onMouseLeave() {
+        if (this.hoveredIdx !== null) {
+            this.hoveredIdx = null;
+            this.render();
+        }
+    }
+
+    onKeyDown(event) {
+        if (event.target && ["SELECT", "INPUT", "TEXTAREA"].includes(event.target.tagName)) {
+            return;
+        }
+
+        if (this.victoryPhase) {
+            event.preventDefault();
+            this.keyQueue = [];
+            this.cycleWord();
+            return;
+        }
+
+        if (this.autoSolveMode || this.currentMode === 0) return;
+
+        if (event.key === "Backspace") {
+            event.preventDefault();
+            this.keyQueue.push("BACKSPACE");
+            if (this.animPhase === 0 && !this.lockInput) {
+                this.processKeyQueue();
+            }
+            return;
+        }
+
+        if (event.key.length === 1) {
+            const charPressed = event.key.toUpperCase();
+            const hasLetter = this.tiles.some(t => t.letter === charPressed);
+            if (hasLetter) {
+                event.preventDefault();
+                this.keyQueue.push(charPressed);
+                if (this.animPhase === 0 && !this.lockInput) {
+                    this.processKeyQueue();
+                }
+            }
+        }
+    }
+
+    computePrefixMatchIndices(lettersArr, targetWord) {
+        const flags = new Array(lettersArr.length).fill(false);
+        if (!this.hintCheckbox.checked || !targetWord) return flags;
+
+        const currentStr = lettersArr.join("");
+        let bestLen = 0;
+        let bestStartIdx = -1;
+
+        for (let len = 1; len <= targetWord.length; len++) {
+            const subStr = targetWord.slice(0, len);
+            const idx = currentStr.indexOf(subStr);
+            if (idx !== -1 && len > bestLen) {
+                bestLen = len;
+                bestStartIdx = idx;
+            }
+        }
+
+        if (bestStartIdx !== -1) {
+            for (let i = bestStartIdx; i < bestStartIdx + bestLen; i++) {
+                flags[i] = true;
+            }
+        }
+        return flags;
+    }
+
+    render() {
+        const ctx = this.ctx;
+        const { w, h, numTiles, tileW, totalGridW, startX, centerY } = this.getBoardMetrics();
+        ctx.clearRect(0, 0, w, h);
+
+        for (const vw of this.victoryWords) {
+            ctx.font = `bold ${vw.size}px "${vw.fontName}", sans-serif`;
+            ctx.fillStyle = vw.color;
+            ctx.textAlign = "left";
+            ctx.textBaseline = "alphabetic";
+            ctx.fillText(vw.text, vw.x, vw.y);
+        }
+
+        const wd = this.wordPool[this.currentWordIdx];
+        if (!wd || numTiles === 0) return;
+
+        ctx.save();
+        ctx.strokeStyle = "#2d3037";
+        ctx.lineWidth = 2;
+        ctx.setLineDash([4, 4]);
+        ctx.beginPath();
+        ctx.moveTo(startX, centerY);
+        ctx.lineTo(startX + totalGridW, centerY);
+        ctx.stroke();
+        ctx.restore();
+
+        let primaryBlueIndices = new Array(numTiles).fill(false);
+        if (this.currentMode !== 0 && this.animPhase === 0 && this.hintCheckbox.checked) {
+            primaryBlueIndices = this.computePrefixMatchIndices(
+                this.tiles.map(t => t.letter),
+                wd.word
+            );
+        }
+
+        const fontSize = Math.max(12, Math.floor(tileW * 0.45));
+        ctx.font = `bold ${fontSize}px sans-serif`;
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+
+        this.tiles.forEach((tile, idx) => {
+            if (this.currentMode === 0 && this.animPhase === 50 && this.flashcardElapsed < idx) {
+                return;
+            }
+
+            const drawX = Math.floor(startX + tile.x * tileW);
+            const drawY = Math.floor(centerY - tileW / 2 + tile.y * tileW);
+            const boxSize = tileW - 6;
+
+            let bgColor, borderColor;
+            if (this.currentMode === 0) {
+                bgColor = "rgb(70, 110, 190)";
+                borderColor = "rgb(140, 180, 255)";
+            } else if (this.animPhase === 0) {
+                if (this.hintCheckbox.checked && primaryBlueIndices[idx]) {
+                    bgColor = "rgb(38, 55, 75)";
+                    borderColor = "rgb(110, 180, 255)";
+                } else {
+                    const isCorrect = wd.word[tile.currentIdx] === tile.letter;
+                    bgColor = isCorrect ? "rgb(40, 140, 80)" : "rgb(180, 50, 50)";
+                    borderColor = isCorrect ? "rgb(100, 255, 150)" : "rgb(255, 110, 110)";
+                }
+            } else {
+                if (tile.currentIdx === this.selectedTileIdx) {
+                    bgColor = "rgb(40, 160, 120)";
+                    borderColor = "rgb(150, 255, 200)";
+                } else {
+                    bgColor = "rgb(55, 60, 72)";
+                    borderColor = "rgb(90, 100, 120)";
+                }
+            }
+
+            ctx.fillStyle = bgColor;
+            ctx.strokeStyle = borderColor;
+            ctx.lineWidth = 2;
+            ctx.fillRect(drawX, drawY, boxSize, boxSize);
+            ctx.strokeRect(drawX, drawY, boxSize, boxSize);
+
+            ctx.fillStyle = "#ffffff";
+            ctx.fillText(tile.letter, drawX + boxSize / 2, drawY + boxSize / 2);
+        });
+
+        if (
+            this.currentMode !== 0 &&
+            this.hoveredIdx !== null &&
+            this.animPhase === 0 &&
+            !this.autoSolveMode &&
+            !this.victoryPhase
+        ) {
+            const currentLetters = this.tiles.map(t => t.letter);
+            const previewState = MechanicsSimulator.simulateByMode(
+                currentLetters,
+                this.hoveredIdx,
+                this.currentMode
+            );
+            const previewBlue = this.computePrefixMatchIndices(previewState, wd.word);
+            const previewY = Math.floor(centerY + tileW / 2 + 18);
+            const boxSize = tileW - 6;
+
+            ctx.save();
+            ctx.setLineDash([4, 3]);
+            ctx.lineWidth = 1.5;
+
+            previewState.forEach((letter, i) => {
+                const drawX = Math.floor(startX + i * tileW);
+                if (previewBlue[i]) {
+                    ctx.fillStyle = "rgb(38, 55, 75)";
+                    ctx.strokeStyle = "rgb(110, 180, 255)";
+                } else {
+                    ctx.fillStyle = "rgb(38, 41, 48)";
+                    ctx.strokeStyle = "rgb(85, 92, 105)";
+                }
+
+                ctx.fillRect(drawX, previewY, boxSize, boxSize);
+                ctx.strokeRect(drawX, previewY, boxSize, boxSize);
+
+                ctx.fillStyle = previewBlue[i] ? "rgb(180, 220, 255)" : "rgb(165, 172, 185)";
+                ctx.fillText(letter, drawX + boxSize / 2, previewY + boxSize / 2);
+            });
+
+            ctx.restore();
+        }
+    }
+}
+
+window.addEventListener("DOMContentLoaded", () => {
+    new WordPuzzleGame();
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,577 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vibe Web Dev Projects</title>
+    <!-- Tailwind CSS Play CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col justify-between font-sans">
+    
+    <!-- Header -->
+    <header class="w-full py-4 px-6 border-b border-slate-800 bg-slate-900/50 backdrop-blur">
+        <!-- Changed max-w-7xl to max-w-10xl below -->
+        <div class="max-w-10xl mx-auto flex items-center justify-between">
+            <h1 class="text-xl font-bold tracking-tight text-white flex items-center gap-2">
+                <span class="text-indigo-400">⚡</span> Vibe Web Dev
+            </h1>
+            <a href="https://github.com/blendpy/vibe-web-dev" target="_blank" rel="noopener noreferrer" class="text-xs px-3 py-1 bg-indigo-500/10 border border-indigo-500/20 text-indigo-300 rounded-full hover:bg-indigo-500/20 hover:text-white transition-colors">GitHub Portfolio</a>
+        </div>
+    </header>
+
+    <!-- Main Content Grid -->
+    <main class="max-w-10xl w-full mx-auto px-6 py-6 flex-grow">
+
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            
+            <!-- Helio Project Card -->
+            <div class="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden flex flex-col h-full shadow-lg group">
+                
+                <!-- Clickable Image Header -->
+                <a href="./helio/index.html" class="relative block p-6 flex flex-col justify-end aspect-video group/img cursor-pointer overflow-hidden border-b border-slate-800">
+                    <!-- Background Image -->
+                    <div class="absolute inset-0 z-0 bg-slate-950">
+                        <img id="helio-preview-img" src="./helio/infographics/planets/planets.webp" alt="Helio Preview" class="w-full h-full object-cover opacity-50 transition-all duration-300 group-hover:opacity-100">
+                        <!-- Gradient Overlay -->
+                        <div class="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/70 to-slate-900/25 transition-opacity duration-300 group-hover:opacity-0"></div>
+                    </div>
+
+                    <!-- Bottom Text Content -->
+                    <div class="relative z-10 mt-auto pt-4 transition-opacity duration-300 group-hover:opacity-0 group-hover:pointer-events-none">
+                        <h3 class="text-2xl font-bold text-white drop-shadow-lg mb-2">Helio Solar System</h3>
+                        <p class="text-slate-200 text-sm font-medium drop-shadow-md leading-relaxed">Interactive 3D heliocentric solar system visualization featuring planetary orbits, comets, and eclipses.</p>
+                    </div>
+                </a>
+                
+                <!-- Card Body & Links -->
+                <div class="px-4 py-1 flex flex-row items-center justify-between flex-grow bg-slate-900/90 gap-3">
+                    <!-- Left Side: Links -->
+                    <div class="flex-grow min-w-0">
+                        <ul id="helio-link-list" class="space-y-1.5 text-sm">
+                            <li>
+                                <a href="./helio/index.html" data-img="./helio/infographics/planets/planets.webp" class="helio-link text-indigo-400 hover:text-white hover:bg-indigo-600/35 hover:font-bold hover:px-3 hover:py-1.5 hover:rounded-lg hover:border hover:border-indigo-500/50 flex items-center gap-1.5 transition-all whitespace-nowrap">
+                                    <span class="text-xs">🔹</span> Solar System View
+                                </a>
+                            </li>
+                            <li>
+                                <a href="./helio/index.html?planet=Earth&date=2027-08-02&time=10:07:00" data-img="./helio/infographics/moons/moons.webp" class="helio-link text-indigo-400 hover:text-white hover:bg-indigo-600/35 hover:font-bold hover:px-3 hover:py-1.5 hover:rounded-lg hover:border hover:border-indigo-500/50 flex items-center gap-1.5 transition-all whitespace-nowrap">
+                                    <span class="text-xs">🔹</span> 2027 Solar Eclipse View
+                                </a>
+                            </li>
+                            <li>
+                                <a href="./helio/index.html?planet=Earth" data-img="./helio/infographics/planets/earth.webp" class="helio-link text-indigo-400 hover:text-white hover:bg-indigo-600/35 hover:font-bold hover:px-3 hover:py-1.5 hover:rounded-lg hover:border hover:border-indigo-500/50 flex items-center gap-1.5 transition-all whitespace-nowrap">
+                                    <span class="text-xs">🔹</span> Earth 3D View
+                                </a>
+                            </li>
+                            <li>
+                                <a href="./helio/index.html?planet=Moon" data-img="./helio/infographics/moons/earth moon.webp" class="helio-link text-indigo-400 hover:text-white hover:bg-indigo-600/35 hover:font-bold hover:px-3 hover:py-1.5 hover:rounded-lg hover:border hover:border-indigo-500/50 flex items-center gap-1.5 transition-all whitespace-nowrap">
+                                    <span class="text-xs">🔹</span> Moon 3D View
+                                </a>
+                            </li>
+                            <li>
+                                <a href="./helio/index.html?planet=Saturn" data-img="./helio/infographics/planets/saturn.webp" class="helio-link text-indigo-400 hover:text-white hover:bg-indigo-600/35 hover:font-bold hover:px-3 hover:py-1.5 hover:rounded-lg hover:border hover:border-indigo-500/50 flex items-center gap-1.5 transition-all whitespace-nowrap">
+                                    <span class="text-xs">🔹</span> Saturn 3D View
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                    
+                    <!-- Right Side: Tech Stack & Badge -->
+                    <div class="flex flex-col items-end justify-center gap-1.5 text-xs text-slate-500 border-l border-slate-800/80 pl-3 py-1 text-right shrink-0 whitespace-nowrap">
+                        <span>Three.js</span>
+                        <span>WebGL</span>
+                        <span>Tailwind CSS</span>
+                        
+                        <!-- Separator Line -->
+                        <div class="w-full h-px bg-slate-800/80 my-1"></div>
+                        
+                        <!-- Simulations Badge -->
+                        <span class="text-[10px] sm:text-xs font-semibold text-indigo-200 bg-indigo-900/60 px-2 py-1 rounded border border-indigo-500/40 whitespace-nowrap">Simulations</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Money & Tax Tools Card -->
+            <div class="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden flex flex-col h-full shadow-lg group">
+                
+                <!-- Clickable Image Header -->
+                <a href="./money/US_Mortgage_Amortization_Schedule.html" class="relative block p-6 flex flex-col justify-end aspect-video group/img cursor-pointer overflow-hidden border-b border-slate-800">
+                    <!-- Background Image -->
+                    <div class="absolute inset-0 z-0 bg-slate-950">
+                        <img id="money-preview-img" src="./money/infographics/US_Mortgage_Amortization_Schedule.webp" alt="Money Preview" class="w-full h-full object-cover opacity-50 transition-all duration-300 group-hover:opacity-100">
+                        <!-- Gradient Overlay -->
+                        <div class="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/70 to-slate-900/25 transition-opacity duration-300 group-hover:opacity-0"></div>
+                    </div>
+
+                    <!-- Bottom Text Content -->
+                    <div class="relative z-10 mt-auto pt-4 transition-opacity duration-300 group-hover:opacity-0 group-hover:pointer-events-none">
+                        <h3 class="text-2xl font-bold text-white drop-shadow-lg mb-2">Money & Tax Tools</h3>
+                        <p class="text-slate-200 text-sm font-medium drop-shadow-md leading-relaxed">Financial calculators, historical tax brackets, and budgetary simulators.</p>
+                    </div>
+                </a>
+                
+                <!-- Card Body & Links -->
+                <div class="px-4 py-1 flex flex-row items-center justify-between flex-grow bg-slate-900/90 gap-3">
+                    <!-- Left Side: Links -->
+                    <div class="flex-grow min-w-0">
+                        <ul id="money-link-list" class="space-y-1.5 text-sm">
+                            <li>
+                                <a href="./money/US_Mortgage_Amortization_Schedule.html" data-img="./money/infographics/US_Mortgage_Amortization_Schedule.webp" class="money-link text-indigo-400 hover:text-white hover:bg-indigo-600/35 hover:font-bold hover:px-3 hover:py-1.5 hover:rounded-lg hover:border hover:border-indigo-500/50 flex items-center gap-1.5 transition-all whitespace-nowrap">
+                                    <span class="text-xs">🔹</span> Mortgage Amortization
+                                </a>
+                            </li>
+                            <li>
+                                <a href="./money/US_Federal_Budget_Simulator.html" data-img="./money/infographics/US_Federal_Budget_Simulator.webp" class="money-link text-indigo-400 hover:text-white hover:bg-indigo-600/35 hover:font-bold hover:px-3 hover:py-1.5 hover:rounded-lg hover:border hover:border-indigo-500/50 flex items-center gap-1.5 transition-all whitespace-nowrap">
+                                    <span class="text-xs">🔹</span> Federal Budget Simulator
+                                </a>
+                            </li>
+                            <li>
+                                <a href="./money/US_Taxes.html" data-img="./money/infographics/US_Taxes.webp" class="money-link text-indigo-400 hover:text-white hover:bg-indigo-600/35 hover:font-bold hover:px-3 hover:py-1.5 hover:rounded-lg hover:border hover:border-indigo-500/50 flex items-center gap-1.5 transition-all whitespace-nowrap">
+                                    <span class="text-xs">🔹</span> US Federal Tax Calculator
+                                </a>
+                            </li>
+                            <li>
+                                <a href="./money/US_Historical.html" data-img="./money/infographics/US_Historical.webp" class="money-link text-indigo-400 hover:text-white hover:bg-indigo-600/35 hover:font-bold hover:px-3 hover:py-1.5 hover:rounded-lg hover:border hover:border-indigo-500/50 flex items-center gap-1.5 transition-all whitespace-nowrap">
+                                    <span class="text-xs">🔹</span> Historical Taxes Comparison
+                                </a>
+                            </li>
+                            <li>
+                                <a href="./money/US_Social_Security.html" data-img="./money/infographics/US_Social_Security.webp" class="money-link text-indigo-400 hover:text-white hover:bg-indigo-600/35 hover:font-bold hover:px-3 hover:py-1.5 hover:rounded-lg hover:border hover:border-indigo-500/50 flex items-center gap-1.5 transition-all whitespace-nowrap">
+                                    <span class="text-xs">🔹</span> Social Security Calculator
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                    
+                    <!-- Right Side: Tech Stack & Badge -->
+                    <div class="flex flex-col items-end justify-center gap-1.5 text-xs text-slate-500 border-l border-slate-800/80 pl-3 py-1 text-right shrink-0 whitespace-nowrap">
+                        <span>Chart.js</span>
+                        <span>Financial Modeling</span>
+                        <span>Tailwind CSS</span>
+                        
+                        <!-- Separator Line -->
+                        <div class="w-full h-px bg-slate-800/80 my-1"></div>
+                        
+                        <!-- Tool Suite Badge -->
+                        <span class="text-[10px] sm:text-xs font-semibold text-emerald-200 bg-emerald-900/60 px-2 py-1 rounded border border-emerald-500/40 whitespace-nowrap">Tool Suite</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Image Processing Card -->
+            <div class="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden flex flex-col h-full shadow-lg group">
+                
+                <!-- Clickable Image Header -->
+                <a href="./videostudio/videostudio.html" class="relative block p-6 flex flex-col justify-end aspect-video group/img cursor-pointer overflow-hidden border-b border-slate-800">
+                    <!-- Background Image -->
+                    <div class="absolute inset-0 z-0 bg-slate-950">
+                        <img id="image-preview-img" src="./videostudio/infographics/videostudio.webp" alt="Image Processing Preview" class="w-full h-full object-cover opacity-50 transition-all duration-300 group-hover:opacity-100">
+                        <!-- Gradient Overlay -->
+                        <div class="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/70 to-slate-900/25 transition-opacity duration-300 group-hover:opacity-0"></div>
+                    </div>
+
+                    <!-- Bottom Text Content -->
+                    <div class="relative z-10 mt-auto pt-4 transition-opacity duration-300 group-hover:opacity-0 group-hover:pointer-events-none">
+                        <h3 class="text-2xl font-bold text-white drop-shadow-lg mb-2">Image Processing</h3>
+                        <p class="text-slate-200 text-sm font-medium drop-shadow-md leading-relaxed">Interactive photo layout studios, grid generators, and browser-based media tools.</p>
+                    </div>
+                </a>
+                
+                <!-- Card Body & Links -->
+                <div class="px-4 py-1 flex flex-row items-center justify-between flex-grow bg-slate-900/90 gap-3">
+                    <!-- Left Side: Links -->
+                    <div class="flex-grow min-w-0">
+                        <ul id="image-link-list" class="space-y-1.5 text-sm">
+                            <li>
+                                <a href="./videostudio/videostudio.html" data-img="./videostudio/infographics/videostudio.webp" class="image-link text-indigo-400 hover:text-white hover:bg-indigo-600/35 hover:font-bold hover:px-3 hover:py-1.5 hover:rounded-lg hover:border hover:border-indigo-500/50 flex items-center gap-1.5 transition-all whitespace-nowrap">
+                                    <span class="text-xs">🔹</span> VideoStudio Media Editor
+                                </a>
+                            </li>
+                            <li>
+                                <a href="./photocollage/photocollage.html" data-img="./photocollage/infographics/photocollage.webp" class="image-link text-indigo-400 hover:text-white hover:bg-indigo-600/35 hover:font-bold hover:px-3 hover:py-1.5 hover:rounded-lg hover:border hover:border-indigo-500/50 flex items-center gap-1.5 transition-all whitespace-nowrap">
+                                    <span class="text-xs">🔹</span> PhotoCollage Grid Studio
+                                </a>
+                            </li>
+                            <li>
+                                <a href="https://github.com/adrienverge/PhotoCollage/" data-img="./photocollage/infographics/photocollage.webp" class="image-link text-indigo-400 hover:text-white hover:bg-indigo-600/35 hover:font-bold hover:px-3 hover:py-1.5 hover:rounded-lg hover:border hover:border-indigo-500/50 flex items-center gap-1.5 transition-all whitespace-nowrap">
+                                    <span class="text-xs">🔹</span> ORIGINAL Python Version of PhotoCollage
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                    
+                    <!-- Right Side: Tech Stack & Badge -->
+                    <div class="flex flex-col items-end justify-center gap-1.5 text-xs text-slate-500 border-l border-slate-800/80 pl-3 py-1 text-right shrink-0 whitespace-nowrap">
+                        <span>HTML5 Canvas</span>
+                        <span>Layout Algorithms</span>
+                        <span>Tailwind CSS</span>
+                        
+                        <!-- Separator Line -->
+                        <div class="w-full h-px bg-slate-800/80 my-1"></div>
+                        
+                        <!-- Creative Studio Badge -->
+                        <span class="text-[10px] sm:text-xs font-semibold text-amber-200 bg-amber-900/60 px-2 py-1 rounded border border-amber-500/40 whitespace-nowrap">Creative Studio</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Plant Science Explorer Card -->
+            <div class="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden flex flex-col h-full shadow-lg group">
+                
+                <!-- Clickable Image Header -->
+                <a href="./plants/plants.html" class="relative block p-6 flex flex-col justify-end aspect-video group/img cursor-pointer overflow-hidden border-b border-slate-800">
+                    <!-- Background Image -->
+                    <div class="absolute inset-0 z-0 bg-slate-950">
+                        <img id="plants-preview-img" src="./plants/infographics/zones.webp" alt="Plants Explorer Preview" class="w-full h-full object-cover opacity-50 transition-all duration-300 group-hover:opacity-100">
+                        <!-- Gradient Overlay -->
+                        <div class="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/70 to-slate-900/25 transition-opacity duration-300 group-hover:opacity-0"></div>
+                    </div>
+
+                    <!-- Bottom Text Content -->
+                    <div class="relative z-10 mt-auto pt-4 transition-opacity duration-300 group-hover:opacity-0 group-hover:pointer-events-none">
+                        <h3 class="text-2xl font-bold text-white drop-shadow-lg mb-2">Plant Science Explorer</h3>
+                        <p class="text-slate-200 text-sm font-medium drop-shadow-md leading-relaxed">Interactive botanical guide and explorer detailing plant species, characteristics, and habitats.</p>
+                    </div>
+                </a>
+                
+                <!-- Card Body & Links -->
+                <div class="px-4 py-1 flex flex-row items-center justify-between flex-grow bg-slate-900/90 gap-3">
+                    <!-- Left Side: Links -->
+                    <div class="flex-grow min-w-0">
+                        <ul id="plants-link-list" class="space-y-1.5 text-sm">
+                            <li>
+                                <a href="./plants/plants.html" data-img="./plants/infographics/climate.webp" class="plants-link text-indigo-400 hover:text-white hover:bg-indigo-600/35 hover:font-bold hover:px-3 hover:py-1.5 hover:rounded-lg hover:border hover:border-indigo-500/50 flex items-center gap-1.5 transition-all whitespace-nowrap">
+                                    <span class="text-xs">🔹</span> Botanical Explorer View
+                                </a>
+                            </li>
+                            <li>
+                                <a href="./plants/plants.html?gridview=true&metric=true" data-img="./plants/infographics/climate.webp" class="plants-link text-indigo-400 hover:text-white hover:bg-indigo-600/35 hover:font-bold hover:px-3 hover:py-1.5 hover:rounded-lg hover:border hover:border-indigo-500/50 flex items-center gap-1.5 transition-all whitespace-nowrap">
+                                    <span class="text-xs">🔹</span> Botanical Explorer (Gridview & Metric)
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+
+                    
+                    <!-- Right Side: Tech Stack & Badge -->
+                    <div class="flex flex-col items-end justify-center gap-1.5 text-xs text-slate-500 border-l border-slate-800/80 pl-3 py-1 text-right shrink-0 whitespace-nowrap">
+                        <span>Interactive UI</span>
+                        <span>Botanical Data</span>
+                        <span>Tailwind CSS</span>
+                        
+                        <!-- Separator Line -->
+                        <div class="w-full h-px bg-slate-800/80 my-1"></div>
+                        
+                        <!-- Explorer Badge -->
+                        <span class="text-[10px] sm:text-xs font-semibold text-lime-200 bg-lime-900/60 px-2 py-1 rounded border border-lime-500/40 whitespace-nowrap">Explorer</span>
+                    </div>
+                </div>
+            </div>
+            
+
+
+<!-- Sudoku Card -->
+            <div class="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden flex flex-col h-full shadow-lg group">
+                
+                <!-- Clickable Image Header -->
+                <a href="./wordgame/sudoku.html?size=9&difficulty=medium" class="relative block p-6 flex flex-col justify-end aspect-video group/img cursor-pointer overflow-hidden border-b border-slate-800">
+                    <!-- Background Image -->
+                    <div class="absolute inset-0 z-0 bg-slate-950">
+                        <img id="sudoku-preview-img" src="./wordgame/infographics/sudoku12.webp" alt="Sudoku Preview" class="w-full h-full object-cover opacity-50 transition-all duration-300 group-hover:opacity-100">
+                        <!-- Gradient Overlay -->
+                        <div class="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/70 to-slate-900/25 transition-opacity duration-300 group-hover:opacity-0"></div>
+                    </div>
+
+                    <!-- Bottom Text Content -->
+                    <div class="relative z-10 mt-auto pt-4 transition-opacity duration-300 group-hover:opacity-0 group-hover:pointer-events-none">
+                        <h3 class="text-2xl font-bold text-white drop-shadow-lg mb-2">Sudoku Puzzles</h3>
+                        <p class="text-slate-200 text-sm font-medium drop-shadow-md leading-relaxed">Interactive grid puzzles with custom grid sizes, randomized board generation, and helpful hints.</p>
+                    </div>
+                </a>
+                
+                <!-- Card Body & Links -->
+                <div class="px-4 py-1 flex flex-row items-center justify-between flex-grow bg-slate-900/90 gap-3">
+                    <!-- Left Side: Links -->
+                    <div class="flex-grow min-w-0">
+                        <ul id="sudoku-link-list" class="space-y-1.5 text-sm">
+                            <li>
+                                <a href="wordgame/sudoku.html?size=9&difficulty=medium" data-img="./wordgame/infographics/sudoku9.webp" class="sudoku-link text-indigo-400 hover:text-white hover:bg-indigo-600/35 hover:font-bold hover:px-3 hover:py-1.5 hover:rounded-lg hover:border hover:border-indigo-500/50 flex items-center gap-1.5 transition-all whitespace-nowrap">
+                                    <span class="text-xs">🔹</span> Medium Sudoku (9x9)
+                                </a>
+                            </li>
+                            <li>
+                                <a href="wordgame/sudoku.html?size=12&random=1&bighint=1&difficulty=hard" data-img="./wordgame/infographics/sudoku12.webp" class="sudoku-link text-indigo-400 hover:text-white hover:bg-indigo-600/35 hover:font-bold hover:px-3 hover:py-1.5 hover:rounded-lg hover:border hover:border-indigo-500/50 flex items-center gap-1.5 transition-all whitespace-nowrap">
+                                    <span class="text-xs">🔹</span> Giant Hard Sudoku (12x12)
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                    
+                    <!-- Right Side: Tech Stack & Badge -->
+                    <div class="flex flex-col items-end justify-center gap-1.5 text-xs text-slate-500 border-l border-slate-800/80 pl-3 py-1 text-right shrink-0 whitespace-nowrap">
+                        <span>HTML5 Canvas</span>
+                        <span>Game Logic</span>
+                        <span>Tailwind CSS</span>
+                        
+                        <!-- Separator Line -->
+                        <div class="w-full h-px bg-slate-800/80 my-1"></div>
+                        
+                        <!-- Puzzle Game Badge -->
+                        <span class="text-[10px] sm:text-xs font-semibold text-purple-200 bg-purple-900/60 px-2 py-1 rounded border border-purple-500/40 whitespace-nowrap">Puzzle Game</span>
+                    </div>
+                </div>
+            </div>
+
+
+
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="w-full py-6 px-6 border-t border-slate-900 text-center text-xs text-slate-600">
+        Hosted on GitHub Pages • blendpy/vibe-web-dev
+    </footer>
+
+
+    <!-- ============================================================== -->
+    <!-- DEMO & MEDIA GENERATOR MODAL                                   -->
+    <!-- ============================================================== -->
+    <div id="demoPickerModal" class="hidden fixed inset-0 z-[80] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-slate-900 border border-slate-700/80 rounded-2xl w-full max-w-2xl overflow-hidden shadow-2xl flex flex-col max-h-[90vh]">
+            
+            <!-- Modal Header -->
+            <div class="px-6 py-4 border-b border-slate-800 flex items-center justify-between bg-slate-950/60">
+                <div class="flex items-center gap-2.5">
+                    <span class="text-xl">🚀</span>
+                    <h2 class="text-base font-bold text-white">Load Media & Slideshow Demos</h2>
+                </div>
+                <button id="btnDemoModalClose" class="text-slate-400 hover:text-white text-xl leading-none">&times;</button>
+            </div>
+
+            <!-- Tab Buttons -->
+            <div class="flex border-b border-slate-800 bg-slate-950/40 px-6 pt-3 gap-2">
+                <button id="tabDemoHelio" class="px-4 py-2 text-xs sm:text-sm font-semibold rounded-t-lg bg-blue-600 text-white shadow">🪐 Helio Planets</button>
+                <button id="tabDemoBing" class="px-4 py-2 text-xs sm:text-sm font-medium rounded-t-lg bg-slate-800 hover:bg-slate-700 text-slate-300">🖼️ Bing Photos</button>
+                <button id="tabDemoColor" class="px-4 py-2 text-xs sm:text-sm font-medium rounded-t-lg bg-slate-800 hover:bg-slate-700 text-slate-300">🎨 Color / Gradient</button>
+            </div>
+
+            <!-- Tab Panels Content -->
+            <div class="p-6 overflow-y-auto space-y-4 flex-1">
+                
+                <!-- Panel 1: Helio Planets -->
+                <div id="panelDemoHelio" class="space-y-4">
+                    <p class="text-xs sm:text-sm text-slate-300">
+                        Loads the full educational astronomical collection, featuring 32 high-resolution slides of planets, moons, dwarf planets, and comets with gradient chapter titles.
+                    </p>
+                    <div class="grid grid-cols-4 gap-2 bg-slate-950 p-3 rounded-xl border border-slate-800">
+                        <div class="text-center text-[11px] text-slate-400 p-2 bg-slate-900 rounded border border-slate-800">9 Planets</div>
+                        <div class="text-center text-[11px] text-slate-400 p-2 bg-slate-900 rounded border border-slate-800">9 Moons</div>
+                        <div class="text-center text-[11px] text-slate-400 p-2 bg-slate-900 rounded border border-slate-800">Dwarfs & Comets</div>
+                        <div class="text-center text-[11px] text-slate-400 p-2 bg-slate-900 rounded border border-slate-800">5 Chapter Dividers</div>
+                    </div>
+                    <label class="flex items-center gap-2 text-xs text-slate-400 cursor-pointer pt-1">
+                        <input type="checkbox" id="chkHelioClearTimeline" checked class="rounded bg-slate-800 border-slate-700">
+                        <span>Clear current timeline before loading</span>
+                    </label>
+                </div>
+
+                <!-- Panel 2: Bing Photos -->
+                <div id="panelDemoBing" class="hidden space-y-4">
+                    <p class="text-xs sm:text-sm text-slate-300">
+                        Pulls 1920×1080 high-resolution daily Bing wallpapers and nature landscapes directly from the web.
+                    </p>
+                    <div class="flex items-center gap-4 bg-slate-950 p-4 rounded-xl border border-slate-800">
+                        <label class="text-xs font-semibold text-slate-400">Number of Images:</label>
+                        <select id="selBingCount" class="bg-slate-800 border border-slate-700 rounded-lg px-3 py-1.5 text-xs font-bold text-white outline-none">
+                            <option value="5">5 Images</option>
+                            <option value="8" selected>8 Images</option>
+                            <option value="12">12 Images</option>
+                        </select>
+                    </div>
+                    <label class="flex items-center gap-2 text-xs text-slate-400 cursor-pointer">
+                        <input type="checkbox" id="chkBingClearTimeline" checked class="rounded bg-slate-800 border-slate-700">
+                        <span>Clear current timeline before loading</span>
+                    </label>
+                </div>
+
+                <!-- Panel 3: Color / Gradient Slide -->
+                <div id="panelDemoColor" class="hidden space-y-4">
+                    <p class="text-xs sm:text-sm text-slate-300">
+                        Generate a solid or two-color linear gradient slide with customizable title text.
+                    </p>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-slate-950 p-4 rounded-xl border border-slate-800">
+                        <!-- Left: Colors & Gradient Option -->
+                        <div class="space-y-3">
+                            <div class="flex items-center justify-between">
+                                <label class="text-xs font-semibold text-slate-400">Color 1 (Start):</label>
+                                <input type="color" id="pickerColor1" value="#1e3a8a" class="w-10 h-8 rounded border border-slate-700 cursor-pointer bg-transparent">
+                            </div>
+                            <label class="flex items-center gap-2 text-xs text-slate-300 cursor-pointer">
+                                <input type="checkbox" id="chkEnableGradient" checked class="rounded bg-slate-800 border-slate-700">
+                                <span class="font-semibold">Enable Linear Gradient</span>
+                            </label>
+                            <div id="rowColor2" class="flex items-center justify-between">
+                                <label class="text-xs font-semibold text-slate-400">Color 2 (End):</label>
+                                <input type="color" id="pickerColor2" value="#020617" class="w-10 h-8 rounded border border-slate-700 cursor-pointer bg-transparent">
+                            </div>
+                        </div>
+
+                        <!-- Right: Slide Title & Placement -->
+                        <div class="space-y-3">
+                            <div>
+                                <label class="text-xs font-semibold text-slate-400 block mb-1">Slide Title:</label>
+                                <input type="text" id="txtColorSlideTitle" value="Chapter Title" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-white outline-none">
+                            </div>
+                            <div>
+                                <label class="text-xs font-semibold text-slate-400 block mb-1">Title Placement:</label>
+                                <select id="selColorTitlePos" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-white outline-none">
+                                    <option value="CC" selected>Center (CC)</option>
+                                    <option value="LL">Lower Left (LL)</option>
+                                    <option value="LR">Lower Right (LR)</option>
+                                    <option value="UL">Upper Left (UL)</option>
+                                    <option value="UR">Upper Right (UR)</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Modal Footer -->
+            <div class="px-6 py-4 border-t border-slate-800 bg-slate-950/60 flex items-center justify-end gap-3">
+                <button id="btnDemoCancel" class="px-4 py-2 rounded-xl text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-300 transition">Cancel</button>
+                <button id="btnDemoConfirmLoad" class="px-5 py-2 rounded-xl text-xs font-bold bg-blue-600 hover:bg-blue-500 text-white shadow-lg transition flex items-center gap-2">
+                    <span id="lblDemoConfirmText">Load Helio Slides</span>
+                </button>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Interactive Image Swap Script -->
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // --- Helio Project Image Swap ---
+            const helioPreviewImg = document.getElementById('helio-preview-img');
+            const helioLinks = document.querySelectorAll('.helio-link');
+            const helioLinkList = document.getElementById('helio-link-list');
+            const defaultHelioImgSrc = './helio/infographics/planets/planets.webp';
+            
+            helioLinks.forEach(link => {
+                link.addEventListener('mouseenter', (e) => {
+                    const newImgSrc = e.currentTarget.getAttribute('data-img');
+                    if (newImgSrc && helioPreviewImg.getAttribute('src') !== newImgSrc) {
+                        helioPreviewImg.setAttribute('src', newImgSrc);
+                    }
+                });
+            });
+
+            if (helioLinkList) {
+                helioLinkList.addEventListener('mouseleave', () => {
+                    if (helioPreviewImg.getAttribute('src') !== defaultHelioImgSrc) {
+                        helioPreviewImg.setAttribute('src', defaultHelioImgSrc);
+                    }
+                });
+            }
+
+            // --- Money & Tax Tools Image Swap ---
+            const moneyPreviewImg = document.getElementById('money-preview-img');
+            const moneyLinks = document.querySelectorAll('.money-link');
+            const moneyLinkList = document.getElementById('money-link-list');
+            const defaultMoneyImgSrc = './money/infographics/US_Mortgage_Amortization_Schedule.webp';
+            
+            moneyLinks.forEach(link => {
+                link.addEventListener('mouseenter', (e) => {
+                    const newImgSrc = e.currentTarget.getAttribute('data-img');
+                    if (newImgSrc && moneyPreviewImg.getAttribute('src') !== newImgSrc) {
+                        moneyPreviewImg.setAttribute('src', newImgSrc);
+                    }
+                });
+            });
+
+            if (moneyLinkList) {
+                moneyLinkList.addEventListener('mouseleave', () => {
+                    if (moneyPreviewImg.getAttribute('src') !== defaultMoneyImgSrc) {
+                        moneyPreviewImg.setAttribute('src', defaultMoneyImgSrc);
+                    }
+                });
+            }
+
+            // --- Image Processing Image Swap ---
+            const imagePreviewImg = document.getElementById('image-preview-img');
+            const imageLinks = document.querySelectorAll('.image-link');
+            const imageLinkList = document.getElementById('image-link-list');
+            const defaultImageImgSrc = './videostudio/infographics/videostudio.webp'; 
+            
+            imageLinks.forEach(link => {
+                link.addEventListener('mouseenter', (e) => {
+                    const newImgSrc = e.currentTarget.getAttribute('data-img');
+                    if (newImgSrc && imagePreviewImg.getAttribute('src') !== newImgSrc) {
+                        imagePreviewImg.setAttribute('src', newImgSrc);
+                    }
+                });
+            });
+
+            if (imageLinkList) {
+                imageLinkList.addEventListener('mouseleave', () => {
+                    if (imagePreviewImg.getAttribute('src') !== defaultImageImgSrc) {
+                        imagePreviewImg.setAttribute('src', defaultImageImgSrc);
+                    }
+                });
+            }
+
+            // --- Plant Science Explorer Image Swap ---
+            const plantsPreviewImg = document.getElementById('plants-preview-img');
+            const plantsLinks = document.querySelectorAll('.plants-link');
+            const plantsLinkList = document.getElementById('plants-link-list');
+            const defaultPlantsImgSrc = './plants/infographics/zones.webp';
+            
+            plantsLinks.forEach(link => {
+                link.addEventListener('mouseenter', (e) => {
+                    const newImgSrc = e.currentTarget.getAttribute('data-img');
+                    if (newImgSrc && plantsPreviewImg.getAttribute('src') !== newImgSrc) {
+                        plantsPreviewImg.setAttribute('src', newImgSrc);
+                    }
+                });
+            });
+
+
+            if (plantsLinkList) {
+                plantsLinkList.addEventListener('mouseleave', () => {
+                    if (plantsPreviewImg.getAttribute('src') !== defaultPlantsImgSrc) {
+                        plantsPreviewImg.setAttribute('src', defaultPlantsImgSrc);
+                    }
+                });
+            }
+
+
+            // --- Sudoku Image Swap ---
+            const sudokuPreviewImg = document.getElementById('sudoku-preview-img');
+            const sudokuLinks = document.querySelectorAll('.sudoku-link');
+            const sudokuLinkList = document.getElementById('sudoku-link-list');
+            const defaultSudokuImgSrc = './wordgame/infographics/sudoku12.webp';
+            
+            sudokuLinks.forEach(link => {
+                link.addEventListener('mouseenter', (e) => {
+                    const newImgSrc = e.currentTarget.getAttribute('data-img');
+                    if (newImgSrc && sudokuPreviewImg.getAttribute('src') !== newImgSrc) {
+                        sudokuPreviewImg.setAttribute('src', newImgSrc);
+                    }
+                });
+            });
+
+            if (sudokuLinkList) {
+                sudokuLinkList.addEventListener('mouseleave', () => {
+                    if (sudokuPreviewImg.getAttribute('src') !== defaultSudokuImgSrc) {
+                        sudokuPreviewImg.setAttribute('src', defaultSudokuImgSrc);
+                    }
+                });
+            }
+
+
+        });
+    </script>
+</body>
+</html>

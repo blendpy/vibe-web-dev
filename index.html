@@ -269,6 +269,73 @@
                 </div>
             </div>
             
+            <!-- Logic & Word Puzzles Card -->
+            <div class="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden flex flex-col h-full shadow-lg group">
+                
+                <!-- Clickable Image Header -->
+                <a href="./wordgame/linguistic_word_mechanics_puzzle.html" class="relative block p-6 flex flex-col justify-end aspect-video group/img cursor-pointer overflow-hidden border-b border-slate-800">
+                    <!-- Background Image -->
+                    <div class="absolute inset-0 z-0 bg-slate-950">
+                        <img id="sudoku-preview-img" src="./wordgame/infographics/words_flash_cards.webp" alt="Logic & Word Puzzles Preview" class="w-full h-full object-cover opacity-50 transition-all duration-300 group-hover:opacity-100">
+                        <!-- Gradient Overlay -->
+                        <div class="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/70 to-slate-900/25 transition-opacity duration-300 group-hover:opacity-0"></div>
+                    </div>
+
+                    <!-- Bottom Text Content -->
+                    <div class="relative z-10 mt-auto pt-4 transition-opacity duration-300 group-hover:opacity-0 group-hover:pointer-events-none">
+                        <h3 class="text-2xl font-bold text-white drop-shadow-lg mb-2">Logic & Word Puzzles</h3>
+                        <p class="text-slate-200 text-sm font-medium drop-shadow-md leading-relaxed">Interactive logic grids, word puzzles, jigsaws, and emoji challenges with custom difficulty levels.</p>
+                    </div>
+                </a>
+                
+                <!-- Card Body & Links -->
+                <div class="px-4 py-1 flex flex-row items-center justify-between flex-grow bg-slate-900/90 gap-3">
+                    <!-- Left Side: Links -->
+                    <div class="flex-grow min-w-0">
+                        <ul id="sudoku-link-list" class="space-y-1.5 text-sm">
+                            <li>
+                                <a href="wordgame/linguistic_word_mechanics_puzzle.html" data-img="./wordgame/infographics/words_flash_cards.webp" class="sudoku-link text-indigo-400 hover:text-white hover:bg-indigo-600/35 hover:font-bold hover:px-3 hover:py-1.5 hover:rounded-lg hover:border hover:border-indigo-500/50 flex items-center gap-1.5 transition-all whitespace-nowrap">
+                                    <span class="text-xs">🔹</span> Linguistic Word Mechanics Puzzle
+                                </a>
+                            </li>
+                            <li>
+                                <a href="wordgame/jigsaw.html" data-img="./wordgame/infographics/jigsaw.webp" class="sudoku-link text-indigo-400 hover:text-white hover:bg-indigo-600/35 hover:font-bold hover:px-3 hover:py-1.5 hover:rounded-lg hover:border hover:border-indigo-500/50 flex items-center gap-1.5 transition-all whitespace-nowrap">
+                                    <span class="text-xs">🔹</span> Jigsaw Puzzle Studio
+                                </a>
+                            </li>
+                            <li>
+                                <a href="wordgame/emoji_match.html" data-img="./wordgame/infographics/emoji_memory_match.webp" class="sudoku-link text-indigo-400 hover:text-white hover:bg-indigo-600/35 hover:font-bold hover:px-3 hover:py-1.5 hover:rounded-lg hover:border hover:border-indigo-500/50 flex items-center gap-1.5 transition-all whitespace-nowrap">
+                                    <span class="text-xs">🔹</span> Emoji Match Game
+                                </a>
+                            </li>
+                            <li>
+                                <a href="wordgame/sudoku.html?size=9&difficulty=medium" data-img="./wordgame/infographics/sudoku9.webp" class="sudoku-link text-indigo-400 hover:text-white hover:bg-indigo-600/35 hover:font-bold hover:px-3 hover:py-1.5 hover:rounded-lg hover:border hover:border-indigo-500/50 flex items-center gap-1.5 transition-all whitespace-nowrap">
+                                    <span class="text-xs">🔹</span> Medium Sudoku (9x9)
+                                </a>
+                            </li>
+                            <li>
+                                <a href="wordgame/sudoku.html?size=12&random=1&bighint=1&difficulty=hard" data-img="./wordgame/infographics/sudoku12.webp" class="sudoku-link text-indigo-400 hover:text-white hover:bg-indigo-600/35 hover:font-bold hover:px-3 hover:py-1.5 hover:rounded-lg hover:border hover:border-indigo-500/50 flex items-center gap-1.5 transition-all whitespace-nowrap">
+                                    <span class="text-xs">🔹</span> Giant Hard Sudoku (12x12)
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                    
+                    <!-- Right Side: Tech Stack & Badge -->
+                    <div class="flex flex-col items-end justify-center gap-1.5 text-xs text-slate-500 border-l border-slate-800/80 pl-3 py-1 text-right shrink-0 whitespace-nowrap">
+                        <span>HTML5 Canvas</span>
+                        <span>Game Logic</span>
+                        <span>Tailwind CSS</span>
+                        
+                        <!-- Separator Line -->
+                        <div class="w-full h-px bg-slate-800/80 my-1"></div>
+                        
+                        <!-- Puzzle Game Badge -->
+                        <span class="text-[10px] sm:text-xs font-semibold text-purple-200 bg-purple-900/60 px-2 py-1 rounded border border-purple-500/40 whitespace-nowrap">Puzzle Game</span>
+                    </div>
+                </div>
+            </div>
+
         </div>
     </main>
 
@@ -481,6 +548,7 @@
                 });
             });
 
+
             if (plantsLinkList) {
                 plantsLinkList.addEventListener('mouseleave', () => {
                     if (plantsPreviewImg.getAttribute('src') !== defaultPlantsImgSrc) {
@@ -488,6 +556,32 @@
                     }
                 });
             }
+
+
+            // --- Sudoku Image Swap ---
+            const sudokuPreviewImg = document.getElementById('sudoku-preview-img');
+            const sudokuLinks = document.querySelectorAll('.sudoku-link');
+            const sudokuLinkList = document.getElementById('sudoku-link-list');
+            const defaultSudokuImgSrc = './wordgame/infographics/words_flash_cards.webp';
+            
+            sudokuLinks.forEach(link => {
+                link.addEventListener('mouseenter', (e) => {
+                    const newImgSrc = e.currentTarget.getAttribute('data-img');
+                    if (newImgSrc && sudokuPreviewImg.getAttribute('src') !== newImgSrc) {
+                        sudokuPreviewImg.setAttribute('src', newImgSrc);
+                    }
+                });
+            });
+
+            if (sudokuLinkList) {
+                sudokuLinkList.addEventListener('mouseleave', () => {
+                    if (sudokuPreviewImg.getAttribute('src') !== defaultSudokuImgSrc) {
+                        sudokuPreviewImg.setAttribute('src', defaultSudokuImgSrc);
+                    }
+                });
+            }
+
+
         });
     </script>
 </body>

@@ -19,7 +19,7 @@ let filterNonInvasive = false;
 let filterSepticSafe = false;
 
 let isAllPlantsMode = false;
-let columnCategories = ['Tree','Fruit','Fern'];
+let columnCategories = ['Tree','Fern','Fungus'];
 
 // Active subtype per category (Single-select: at most 1 subtype per category, or empty for all)
 let selectedSubtypesByCategory = {};
@@ -1861,7 +1861,7 @@ function renderCategoryToggleButtons() {
       onclick="handleAllPlantsClick()"
       class="cat-tab px-2.5 py-1 rounded-xl border border-stone-300 bg-stone-100 text-xs font-semibold text-stone-700 hover:bg-stone-200 transition cursor-pointer whitespace-nowrap flex items-center gap-1 shrink-0"
     >
-      <span>🌐 All Plants</span>
+      <span>🌐 All</span>
     </button>
   `;
 
@@ -1950,7 +1950,7 @@ function renderColumnList(colIndex, plantList, colTitle) {
   const catKey = getCategoryFileKey(colTitle);
   let html = '';
 
-  if (filterInfographics && colTitle !== 'All Plants' && !showGridView) {
+  if (filterInfographics && colTitle !== 'All' && !showGridView) {
     html += `
       <div class="mb-2.5 rounded-2xl overflow-hidden border border-amber-300/80 bg-stone-900 shadow-xs relative group">
         <div class="aspect-[16/9] w-full bg-stone-950 flex items-center justify-center overflow-hidden">
@@ -2594,7 +2594,7 @@ function handleSearchInput(val) {
 
 function resetAllFilters() {
   isAllPlantsMode = false;
-  columnCategories = ['Tree','Fruit','Fern'];
+  columnCategories = ['Tree','Fern','Fungus'];
   selectedZone = 'all';
   selectedClimate = 'all';
   searchQuery = '';
