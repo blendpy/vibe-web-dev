@@ -1,16 +1,8 @@
 /**
- * JIGSAW SOLITAIRE — Standalone Artwork Generator (jigsaw_artwork.js)
- * Contains all procedural puzzle artworks and non-distorting image clipping.
- */
-/**
- * JIGSAW & EMOJI SOLITAIRE — Shared Plant Image Loader & Config (jigsaw_plants.js)
+ * JIGSAW & EMOJI SOLITAIRE — Shared Plant Image Loader & Config (common_plants.js)
  * Manages plant image categories, URL resolution, and dynamic dropdown insertion.
  */
 
-// ============================================================================
-// PLANT IMAGE LIST (Supports fruit, fern, cactus, and fungus folders)
-// Simply add filenames like "fern-boston.webp" or full URLs to PLANT_IMAGES.
-// ============================================================================
 const PLANT_BASE_URL = "https://blendpy.github.io/vibe-web-dev/plants/sample/fruit/";
 const PLANT_IMAGES = [
     "fruit-calamondin-orange.webp",
@@ -29,9 +21,7 @@ const PLANT_IMAGES = [
     "fungus-indigo-milk-cap.webp",
     "fungus-pink-oyster.webp",
     "fungus-wine-cap.webp",
-    "fungus-blue-oyster.webp",
-
-    // Add more fruit-*, fern-*, cactus-*, or fungus-* filenames here
+    "fungus-blue-oyster.webp"
 ];
 
 function resolvePlantUrl(entry) {
@@ -40,7 +30,6 @@ function resolvePlantUrl(entry) {
     const prefix = cleanFile.split('-')[0].toLowerCase();
     const validFolders = ['fruit', 'fern', 'cactus', 'fungus'];
 
-    // Replace the trailing folder in PLANT_BASE_URL if the filename starts with fruit-, fern-, cactus-, or fungus-
     if (validFolders.includes(prefix)) {
         const rootSampleUrl = PLANT_BASE_URL.replace(/\/(fruit|fern|cactus|fungus)\/?$/i, '/');
         return `${rootSampleUrl}${prefix}/${cleanFile}`;
@@ -50,7 +39,24 @@ function resolvePlantUrl(entry) {
 
 function loadSharedRandomPlant(appInstance, selectElementId = 'artSelect') {
     if (!PLANT_IMAGES || PLANT_IMAGES.length === 0) return;
-    const rawEntry = PLANT_IMAGES[Math.floor(Math.random() * PLANT_IMAGES.length)];
+    const artSelect = document.getElementById(selectElementId);
+    if (!artSelect) return;
+
+    // Check which plant files are already in the dropdown
+    const existingOptions = Array.from(artSelect.options);
+    const availablePlants = PLANT_IMAGES.filter(entry => {
+        const cleanFile = entry.split('/').pop().replace(/\.[^/.]+$/, '');
+        const plantTitle = cleanFile.split('-').slice(1).map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+        // Check if display name or key already exists
+        return !existingOptions.some(opt => opt.textContent.includes(plantTitle));
+    });
+
+    if (availablePlants.length === 0) {
+        alert("All available random plant specimens have already been loaded into your dropdown!");
+        return;
+    }
+
+    const rawEntry = availablePlants[Math.floor(Math.random() * availablePlants.length)];
     const url = resolvePlantUrl(rawEntry);
 
     const cleanFile = rawEntry.split('/').pop().replace(/\.[^/.]+$/, '');
@@ -68,14 +74,11 @@ function loadSharedRandomPlant(appInstance, selectElementId = 'artSelect') {
         const plantKey = `plant_${appInstance.uploadCounter}`;
         appInstance.uploadedImages.set(plantKey, img);
 
-        const artSelect = document.getElementById(selectElementId);
-        if (artSelect) {
-            const opt = document.createElement('option');
-            opt.value = plantKey;
-            opt.textContent = displayName;
-            artSelect.insertBefore(opt, artSelect.firstChild);
-            artSelect.value = plantKey;
-        }
+        const opt = document.createElement('option');
+        opt.value = plantKey;
+        opt.textContent = displayName;
+        artSelect.insertBefore(opt, artSelect.firstChild);
+        artSelect.value = plantKey;
 
         appInstance.artType = plantKey;
         appInstance.startNewGame(false);
@@ -86,9 +89,6 @@ function loadSharedRandomPlant(appInstance, selectElementId = 'artSelect') {
     img.src = url;
 }
 
-
-
-
 (function () {
     function buildArtworkCanvas(type, customImg = null, targetCanvas = null) {
         const offCanvas = targetCanvas || document.createElement('canvas');
@@ -98,7 +98,6 @@ function loadSharedRandomPlant(appInstance, selectElementId = 'artSelect') {
 
         const artKey = (type || 'classic').toString().toLowerCase().trim();
 
-        // 1. Custom User Uploaded or Plant Image (Center-clipped to 600x600 without distortion)
         if (customImg) {
             const origW = customImg.naturalWidth || customImg.width || 600;
             const origH = customImg.naturalHeight || customImg.height || 600;
@@ -109,13 +108,10 @@ function loadSharedRandomPlant(appInstance, selectElementId = 'artSelect') {
             let offsetX = 0;
             let offsetY = 0;
 
-            // Center-crop scale (object-fit: cover) to fill 600x600 cleanly
             if (aspect > 1.0) {
-                // Wider than tall
                 drawW = 600 * aspect;
                 offsetX = (600 - drawW) / 2;
             } else {
-                // Taller than wide
                 drawH = 600 / aspect;
                 offsetY = (600 - drawH) / 2;
             }
@@ -128,7 +124,6 @@ function loadSharedRandomPlant(appInstance, selectElementId = 'artSelect') {
             return offCanvas;
         }
 
-        // 2. Classic Geometric Picture (600x600)
         if (artKey === 'classic') {
             ctx.fillStyle = 'rgb(235, 235, 242)';
             ctx.fillRect(0, 0, 600, 600);
@@ -179,7 +174,6 @@ function loadSharedRandomPlant(appInstance, selectElementId = 'artSelect') {
             return offCanvas;
         }
 
-        // 3. Sunset Alpine Peaks (600x600 Center Clipped)
         if (artKey === 'mountains' || artKey === 'sunset') {
             const sky = ctx.createLinearGradient(0, 0, 0, 320);
             sky.addColorStop(0, '#1e1b4b');
@@ -221,7 +215,6 @@ function loadSharedRandomPlant(appInstance, selectElementId = 'artSelect') {
             return offCanvas;
         }
 
-        // 4. Stained Glass Mandala (Square 600x600)
         if (artKey === 'lotus' || artKey === 'mandala') {
             const bg = ctx.createRadialGradient(300, 300, 20, 300, 300, 420);
             bg.addColorStop(0, '#fef08a');
@@ -285,7 +278,6 @@ function loadSharedRandomPlant(appInstance, selectElementId = 'artSelect') {
             return offCanvas;
         }
 
-        // 5. Neon Synthwave Horizon (Square 600x600)
         if (artKey === 'synthwave') {
             const sky = ctx.createLinearGradient(0, 0, 0, 350);
             sky.addColorStop(0, '#090514');
@@ -330,7 +322,6 @@ function loadSharedRandomPlant(appInstance, selectElementId = 'artSelect') {
             return offCanvas;
         }
 
-        // 6. Starry Lighthouse Harbor (600x600 Center Clipped)
         if (artKey === 'harbor' || artKey === 'lighthouse') {
             const sky = ctx.createLinearGradient(0, 0, 0, 400);
             sky.addColorStop(0, '#020617');
