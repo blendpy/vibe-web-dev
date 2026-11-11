@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Linguistic Word Mechanics Puzzle</title>
+    <style>
+        :root {
+            --bg-dark: #141518;
+            --panel-bg: #23262e;
+            --instr-bg: #1c1e23;
+            --border-color: #363b47;
+            --text-main: #e6ebf5;
+            --text-muted: #aab4c3;
+            --accent-blue: #8cbeff;
+            --highlight-red: #ff4444;
+            --btn-bg: #2e3440;
+            --btn-hover: #3b4252;
+            --btn-active: #4c566a;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: #0e1013;
+            color: var(--text-main);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            padding: 14px;
+            user-select: none;
+            overflow-y: auto;
+        }
+
+        .app-container {
+            max-width: 1080px;
+            width: 100%;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        /* Top Control Bar */
+        .control-bar {
+            background: var(--panel-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 10px 14px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            flex: 0 0 auto;
+        }
+
+        .control-row {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 12px;
+            width: 100%;
+        }
+
+        .control-group {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        label {
+            font-size: 0.88rem;
+            color: var(--text-muted);
+            font-weight: 600;
+        }
+
+        select, button {
+            background: var(--btn-bg);
+            color: var(--text-main);
+            border: 1px solid #454c5c;
+            border-radius: 6px;
+            padding: 6px 11px;
+            font-size: 0.88rem;
+            cursor: pointer;
+            transition: background 0.15s, border-color 0.15s;
+        }
+
+        select:hover, button:hover:not(:disabled) {
+            background: var(--btn-hover);
+            border-color: var(--accent-blue);
+        }
+
+        button:active:not(:disabled) {
+            background: var(--btn-active);
+        }
+
+        button:disabled {
+            opacity: 0.45;
+            cursor: not-allowed;
+        }
+
+        .checkbox-label {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            cursor: pointer;
+            font-size: 0.88rem;
+            color: var(--text-main);
+        }
+
+        .status-banner {
+            margin-left: auto;
+            font-weight: 700;
+            font-size: 0.9rem;
+            color: #9be2b0;
+            text-align: right;
+        }
+
+        /* Metadata Card - Fixed height to prevent vertical layout shift */
+        .meta-panel {
+            background: var(--panel-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 12px 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            height: 132px;
+            min-height: 132px;
+            max-height: 132px;
+            flex: 0 0 132px;
+            overflow-y: auto;
+        }
+
+        .meta-top-row {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+        }
+
+        .meta-badges {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .txt-pronounce {
+            color: var(--text-muted);
+            font-size: 0.95rem;
+        }
+
+        .txt-pos {
+            color: var(--accent-blue);
+            font-weight: 600;
+            font-size: 0.92rem;
+        }
+
+        .txt-complexity {
+            background: #2f3848;
+            color: #bbd6ff;
+            font-size: 0.78rem;
+            padding: 2px 8px;
+            border-radius: 999px;
+            border: 1px solid #4c5d78;
+        }
+
+        .speech-controls {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .btn-audio {
+            padding: 4px 9px;
+            font-size: 0.8rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .speaking-indicator {
+            font-size: 0.78rem;
+            color: #ffd479;
+            font-weight: 600;
+            min-width: 110px;
+            text-align: right;
+        }
+
+        .txt-meaning {
+            color: var(--text-main);
+            font-size: 0.98rem;
+            line-height: 1.35;
+        }
+
+        .txt-sample {
+            color: #e1f5d2;
+            font-size: 0.98rem;
+            line-height: 1.35;
+        }
+
+        .highlight-word {
+            color: var(--highlight-red);
+            font-weight: 700;
+        }
+
+        /* Canvas Board - Fixed height so the board never jumps */
+        .board-wrapper {
+            height: 260px;
+            min-height: 260px;
+            max-height: 260px;
+            flex: 0 0 260px;
+            background: var(--bg-dark);
+            border: 2px inset #262930;
+            border-radius: 8px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+            cursor: pointer;
+        }
+
+        /* Bottom Instructions / Victory Sentence Panel - Fixed height */
+        .instruction-panel {
+            background: var(--instr-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 10px 20px;
+            text-align: center;
+            height: 78px;
+            min-height: 78px;
+            max-height: 78px;
+            flex: 0 0 78px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        .txt-instruction {
+            color: #d2d7e1;
+            font-size: 1.0rem;
+            font-style: italic;
+            line-height: 1.35;
+            white-space: pre-line;
+        }
+
+        .txt-instruction.victory-sample {
+            font-size: 1.14rem;
+            font-style: normal;
+            line-height: 1.35;
+        }
+    </style>
+</head>
+<body>
+
+<div class="app-container">
+    <!-- Top Dashboard Control Bar -->
+    <div class="control-bar">
+        <!-- Row 1: Complexity, Next Word, Show Hint, Auto-Speak, Auto-Advance -->
+        <div class="control-row">
+            <div class="control-group">
+                <label for="complexitySelect">Complexity:</label>
+                <select id="complexitySelect"></select>
+            </div>
+
+            <button id="nextBtn" type="button">Next Word</button>
+
+            <label class="checkbox-label">
+                <input type="checkbox" id="hintCheckbox" checked>
+                Show Hint
+            </label>
+
+            <label class="checkbox-label">
+                <input type="checkbox" id="autoSpeakCheckbox" checked>
+                Auto-Speak
+            </label>
+
+            <label class="checkbox-label">
+                <input type="checkbox" id="autoAdvanceCheckbox">
+                Auto-Advance
+            </label>
+        </div>
+
+        <!-- Row 2: Mode Dropdown, Auto-Solve, and Status Display -->
+        <div class="control-row">
+            <div class="control-group">
+                <label for="modeSelect">Mode:</label>
+                <select id="modeSelect">
+                    <option value="0">Level 0: Flash Card Reveal</option>
+                    <option value="1">Level 1: Send to End</option>
+                    <option value="2">Level 2: Slide-Swap</option>
+                    <option value="3">Level 3: Reverse-Rotation</option>
+                    <option value="4">Level 4: Reverse then Slide</option>
+                </select>
+            </div>
+
+            <button id="solveBtn" type="button">Auto-Solve</button>
+
+            <div id="statusDisplay" class="status-banner"></div>
+        </div>
+    </div>
+
+    <!-- Metadata Display Card -->
+    <div class="meta-panel">
+        <div class="meta-top-row">
+            <div class="meta-badges">
+                <span id="txtPronounce" class="txt-pronounce"></span>
+                <span id="txtPos" class="txt-pos"></span>
+                <span id="txtComplexity" class="txt-complexity"></span>
+            </div>
+            <div class="speech-controls">
+                <span id="speakingIndicator" class="speaking-indicator"></span>
+                <button id="speakWordBtn" class="btn-audio" type="button" title="Sound out current word">🔊 Word</button>
+                <button id="speakSentenceBtn" class="btn-audio" type="button" title="Read sample sentence">🔊 Sentence</button>
+                <button id="speakBothBtn" class="btn-audio" type="button" title="Sound out word then sentence">🔊 Both</button>
+            </div>
+        </div>
+        <div id="txtMeaning" class="txt-meaning"></div>
+        <div id="txtSample" class="txt-sample"></div>
+    </div>
+
+    <!-- Interactive Graphic Canvas -->
+    <div class="board-wrapper" id="boardWrapper">
+        <canvas id="gameCanvas"></canvas>
+    </div>
+
+    <!-- Under-canvas Descriptive Instructions Panel -->
+    <div class="instruction-panel">
+        <div id="txtInstruction" class="txt-instruction"></div>
+    </div>
+</div>
+<!-- 1. Load external word list BEFORE the main script -->
+<script src="linguistic_words.js"></script>
+<script src=linguistics.js></script>
+</body>
+</html>
