@@ -1,0 +1,2451 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vitalis | Longevity, Environmental & Cognitive Health Intelligence</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Chart.js CDN for visual breakdown -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- Lucide Icons CDN -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
+          },
+          colors: {
+            brand: {
+              50: '#ecfdf5',
+              100: '#d1fae5',
+              400: '#34d399',
+              500: '#10b981',
+              600: '#059669',
+              700: '#047857',
+            },
+            surface: {
+              950: '#070a12',
+              900: '#0b0f19',
+              850: '#0f172a',
+              800: '#131e33',
+              700: '#1e293b',
+              600: '#334155',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap');
+    
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar {
+      width: 7px;
+      height: 7px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #0b0f19;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #1e293b;
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #334155;
+    }
+
+    /* Range slider custom styling */
+    input[type=range] {
+      -webkit-appearance: none;
+      background: transparent;
+    }
+    input[type=range]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      height: 18px;
+      width: 18px;
+      border-radius: 50%;
+      background: #10b981;
+      cursor: pointer;
+      margin-top: -6px;
+      box-shadow: 0 0 12px rgba(16, 185, 129, 0.6);
+      border: 2px solid #ffffff;
+    }
+    input[type=range]::-webkit-slider-runnable-track {
+      width: 100%;
+      height: 6px;
+      cursor: pointer;
+      background: #1e293b;
+      border-radius: 4px;
+    }
+
+    /* Trail Making Node Styling */
+    .trail-node {
+      user-select: none;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .trail-node:active {
+      transform: scale(0.92);
+    }
+
+    /* Print styles */
+    @media print {
+      body {
+        background: #ffffff !important;
+        color: #0f172a !important;
+      }
+      .no-print {
+        display: none !important;
+      }
+      .print-only {
+        display: block !important;
+      }
+      .bg-surface-900, .bg-surface-850, .bg-surface-800 {
+        background: #ffffff !important;
+        border-color: #cbd5e1 !important;
+        color: #0f172a !important;
+        box-shadow: none !important;
+      }
+      .text-white, .text-slate-200, .text-slate-100 {
+        color: #0f172a !important;
+      }
+    }
+  </style>
+</head>
+<body class="bg-surface-950 text-slate-100 min-h-screen flex flex-col font-sans selection:bg-emerald-500 selection:text-white antialiased">
+
+  <!-- Header -->
+  <header class="border-b border-surface-700/80 bg-surface-900/95 backdrop-blur-md sticky top-0 z-40">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+      <div class="flex items-center space-x-3">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-emerald-500 via-teal-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-teal-500/20">
+          <i data-lucide="brain" class="w-5 h-5 text-white"></i>
+        </div>
+        <div>
+          <span class="text-xl font-bold tracking-tight bg-gradient-to-r from-white via-slate-100 to-teal-300 bg-clip-text text-transparent">Vitalis Mind & Body</span>
+          <span class="hidden sm:inline-block text-[11px] font-semibold tracking-wider uppercase text-emerald-400 bg-emerald-950/70 border border-emerald-800/60 px-2 py-0.5 rounded-full ml-2">Longevity & Pre-Dementia Lab</span>
+        </div>
+      </div>
+      
+      <div class="flex items-center space-x-2 sm:space-x-3">
+        <button id="quickPresetOptimal" class="text-xs px-2.5 sm:px-3 py-1.5 rounded-lg border border-emerald-500/40 bg-emerald-950/40 text-emerald-300 hover:bg-emerald-900/50 transition flex items-center gap-1.5">
+          <i data-lucide="sparkles" class="w-3.5 h-3.5 hidden sm:inline"></i>
+          <span>Optimal Preset</span>
+        </button>
+        <button id="quickPresetAtRisk" class="text-xs px-2.5 sm:px-3 py-1.5 rounded-lg border border-rose-500/40 bg-rose-950/40 text-rose-300 hover:bg-rose-900/50 transition flex items-center gap-1.5">
+          <i data-lucide="alert-circle" class="w-3.5 h-3.5 hidden sm:inline"></i>
+          <span>Vascular/MCI Risk</span>
+        </button>
+        <button id="resetAllBtn" title="Reset all parameters" class="text-xs p-2 rounded-lg border border-surface-600 bg-surface-800 text-slate-300 hover:text-white hover:border-slate-400 transition">
+          <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+    
+    <!-- Step Tracker Bar -->
+    <div class="no-print mb-8">
+      <nav aria-label="Progress" class="bg-surface-900/90 p-2 sm:p-2.5 rounded-2xl border border-surface-700 shadow-xl backdrop-blur">
+        <ol role="list" class="grid grid-cols-2 md:grid-cols-5 gap-1.5 sm:gap-2 text-center text-xs sm:text-sm font-medium">
+          <li>
+            <button onclick="navigateToStep(1)" id="step-nav-1" class="step-nav-btn w-full p-2 rounded-xl flex items-center justify-center space-x-1.5 transition bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">
+              <span class="w-5 h-5 rounded-full bg-emerald-500/30 flex items-center justify-center text-[11px] font-bold">1</span>
+              <span class="truncate">Biometrics</span>
+            </button>
+          </li>
+          <li>
+            <button onclick="navigateToStep(2)" id="step-nav-2" class="step-nav-btn w-full p-2 rounded-xl flex items-center justify-center space-x-1.5 transition bg-surface-800/50 text-slate-400 hover:text-slate-200 border border-transparent">
+              <span class="w-5 h-5 rounded-full bg-surface-700 flex items-center justify-center text-[11px] font-bold">2</span>
+              <span class="truncate">Toxins & Habits</span>
+            </button>
+          </li>
+          <li>
+            <button onclick="navigateToStep(3)" id="step-nav-3" class="step-nav-btn w-full p-2 rounded-xl flex items-center justify-center space-x-1.5 transition bg-surface-800/50 text-slate-400 hover:text-slate-200 border border-transparent">
+              <span class="w-5 h-5 rounded-full bg-surface-700 flex items-center justify-center text-[11px] font-bold">3</span>
+              <span class="truncate">Highway & Lifestyle</span>
+            </button>
+          </li>
+          <li>
+            <button onclick="navigateToStep(4)" id="step-nav-4" class="step-nav-btn w-full p-2 rounded-xl flex items-center justify-center space-x-1.5 transition bg-surface-800/50 text-slate-400 hover:text-slate-200 border border-transparent relative">
+              <span class="w-5 h-5 rounded-full bg-surface-700 flex items-center justify-center text-[11px] font-bold">4</span>
+              <span class="truncate font-semibold text-indigo-300 flex items-center gap-1">
+                Cognitive Screen
+                <span class="w-1.5 h-1.5 rounded-full bg-indigo-400 animate-ping"></span>
+              </span>
+            </button>
+          </li>
+          <li class="col-span-2 md:col-span-1">
+            <button onclick="navigateToStep(5)" id="step-nav-5" class="step-nav-btn w-full p-2 rounded-xl flex items-center justify-center space-x-1.5 transition bg-surface-800/50 text-slate-400 hover:text-slate-200 border border-transparent">
+              <span class="w-5 h-5 rounded-full bg-surface-700 flex items-center justify-center text-[11px] font-bold">5</span>
+              <span class="truncate font-bold text-amber-300">Results & Longevity</span>
+            </button>
+          </li>
+        </ol>
+      </nav>
+    </div>
+
+    <!-- STEP 1: Biometrics & Anthropometrics -->
+    <section id="step-1" class="step-section space-y-6">
+      <div class="bg-surface-850 border border-surface-700 rounded-3xl p-6 sm:p-8 shadow-2xl">
+        <div class="flex flex-col md:flex-row md:items-center justify-between pb-6 mb-6 border-b border-surface-700/80 gap-4">
+          <div>
+            <h2 class="text-2xl font-bold text-white flex items-center gap-2.5">
+              <i data-lucide="user-check" class="w-7 h-7 text-emerald-400"></i>
+              Demographics & Body Composition
+            </h2>
+            <p class="text-slate-400 text-sm mt-1">Foundational biometrics establish baseline actuarial life expectancies and cardiovascular stress thresholds.</p>
+          </div>
+          <!-- Unit Switcher -->
+          <div class="flex items-center bg-surface-900 p-1 rounded-xl border border-surface-700 self-start md:self-auto">
+            <button type="button" id="unit-imperial" class="px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-emerald-500 text-white shadow transition">Imperial (ft, lbs)</button>
+            <button type="button" id="unit-metric" class="px-3.5 py-1.5 rounded-lg text-xs font-semibold text-slate-400 hover:text-white transition">Metric (cm, kg)</button>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <!-- Age -->
+          <div class="bg-surface-900/70 p-5 rounded-2xl border border-surface-700/60">
+            <div class="flex justify-between items-center mb-2">
+              <label for="input-age" class="text-sm font-medium text-slate-300">Current Chronological Age</label>
+              <span id="label-age" class="text-lg font-bold text-emerald-400">38 yrs</span>
+            </div>
+            <input type="range" id="input-age" min="18" max="95" value="38" class="w-full">
+            <p class="text-[11px] text-slate-400 mt-2">Life table cohort baseline benchmarks are adjusted to current survival curve.</p>
+          </div>
+
+          <!-- Biological Sex -->
+          <div class="bg-surface-900/70 p-5 rounded-2xl border border-surface-700/60">
+            <label class="text-sm font-medium text-slate-300 block mb-2">Biological Sex at Birth</label>
+            <div class="grid grid-cols-2 gap-2">
+              <button type="button" data-sex="male" class="sex-selector-btn py-2 px-3 rounded-xl border border-emerald-500/40 bg-emerald-500/10 text-emerald-300 font-semibold text-sm flex items-center justify-center gap-2">
+                <i data-lucide="circle-dot" class="w-4 h-4"></i> Male
+              </button>
+              <button type="button" data-sex="female" class="sex-selector-btn py-2 px-3 rounded-xl border border-surface-600 bg-surface-800 text-slate-400 font-semibold text-sm flex items-center justify-center gap-2">
+                <i data-lucide="circle" class="w-4 h-4"></i> Female
+              </button>
+            </div>
+            <p class="text-[11px] text-slate-400 mt-2">Adjusts intrinsic cardiovascular and estrogen-mediated dementia risk curves.</p>
+          </div>
+
+          <!-- Body Frame / Somatotype -->
+          <div class="bg-surface-900/70 p-5 rounded-2xl border border-surface-700/60">
+            <label for="input-frame" class="text-sm font-medium text-slate-300 block mb-2">Body Frame & Muscularity</label>
+            <select id="input-frame" class="w-full bg-surface-800 border border-surface-600 rounded-xl px-3 py-2 text-sm text-slate-200 focus:outline-none focus:border-emerald-500">
+              <option value="lean">Ectomorph (Lean / Slender Frame)</option>
+              <option value="athletic" selected>Mesomorph (Athletic / High Lean Mass)</option>
+              <option value="stocky">Endomorph (Stocky / Heavy Bone Structure)</option>
+            </select>
+            <p class="text-[11px] text-slate-400 mt-2">Calibrates BMI to prevent muscle mass misclassification as unhealthy adiposity.</p>
+          </div>
+
+          <!-- Height -->
+          <div class="bg-surface-900/70 p-5 rounded-2xl border border-surface-700/60">
+            <label class="text-sm font-medium text-slate-300 block mb-2">Height</label>
+            <div id="height-imperial-group" class="grid grid-cols-2 gap-2">
+              <div class="flex items-center bg-surface-800 rounded-xl border border-surface-600 px-3 py-2">
+                <input type="number" id="input-height-ft" min="4" max="7" value="5" class="w-full bg-transparent text-white font-bold text-base focus:outline-none">
+                <span class="text-xs text-slate-400 font-semibold">ft</span>
+              </div>
+              <div class="flex items-center bg-surface-800 rounded-xl border border-surface-600 px-3 py-2">
+                <input type="number" id="input-height-in" min="0" max="11" value="10" class="w-full bg-transparent text-white font-bold text-base focus:outline-none">
+                <span class="text-xs text-slate-400 font-semibold">in</span>
+              </div>
+            </div>
+            <div id="height-metric-group" class="hidden">
+              <div class="flex items-center bg-surface-800 rounded-xl border border-surface-600 px-3 py-2">
+                <input type="number" id="input-height-cm" min="120" max="230" value="178" class="w-full bg-transparent text-white font-bold text-base focus:outline-none">
+                <span class="text-xs text-slate-400 font-semibold">cm</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Weight -->
+          <div class="bg-surface-900/70 p-5 rounded-2xl border border-surface-700/60">
+            <label class="text-sm font-medium text-slate-300 block mb-2">Weight</label>
+            <div id="weight-imperial-group">
+              <div class="flex items-center bg-surface-800 rounded-xl border border-surface-600 px-3 py-2">
+                <input type="number" id="input-weight-lbs" min="70" max="500" value="168" class="w-full bg-transparent text-white font-bold text-base focus:outline-none">
+                <span class="text-xs text-slate-400 font-semibold">lbs</span>
+              </div>
+            </div>
+            <div id="weight-metric-group" class="hidden">
+              <div class="flex items-center bg-surface-800 rounded-xl border border-surface-600 px-3 py-2">
+                <input type="number" id="input-weight-kg" min="30" max="250" value="76" class="w-full bg-transparent text-white font-bold text-base focus:outline-none">
+                <span class="text-xs text-slate-400 font-semibold">kg</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Waist / Visceral Fat -->
+          <div class="bg-surface-900/70 p-5 rounded-2xl border border-surface-700/60">
+            <div class="flex justify-between items-center mb-2">
+              <label for="input-waist" class="text-sm font-medium text-slate-300">Waist at Navel (Visceral Fat)</label>
+              <span id="label-waist" class="text-xs font-semibold text-emerald-400">33 in (84 cm)</span>
+            </div>
+            <input type="range" id="input-waist" min="24" max="55" value="33" class="w-full">
+            <p class="text-[11px] text-slate-400 mt-2">High waist-to-height ratio (&gt;0.53) reflects visceral adiposity that accelerates cognitive decline.</p>
+          </div>
+        </div>
+
+        <!-- Real-Time BMI & Body Status Indicator Bar -->
+        <div class="mt-8 bg-surface-900 rounded-2xl p-5 border border-surface-700">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3">
+            <div class="flex items-center space-x-2">
+              <i data-lucide="scale" class="w-5 h-5 text-emerald-400"></i>
+              <span class="font-semibold text-sm text-slate-200">Body Mass Index (BMI):</span>
+              <span id="bmi-value-display" class="font-extrabold text-base text-emerald-400">24.1 kg/m²</span>
+              <span id="bmi-category-badge" class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">Normal</span>
+            </div>
+            <span id="whr-indicator" class="text-xs text-slate-400">Waist/Height Ratio: <span class="font-semibold text-slate-200">0.47</span> (Favorable)</span>
+          </div>
+
+          <div class="relative w-full h-3 rounded-full bg-surface-700 overflow-hidden">
+            <div class="absolute inset-0 flex">
+              <div class="h-full bg-cyan-400/80" style="width: 18.5%;"></div>
+              <div class="h-full bg-emerald-500/80" style="width: 25%;"></div>
+              <div class="h-full bg-amber-500/80" style="width: 20%;"></div>
+              <div class="h-full bg-rose-500/80" style="width: 36.5%;"></div>
+            </div>
+          </div>
+          <div class="relative w-full h-4 mt-1">
+            <div id="bmi-needle" class="absolute -top-1 -ml-1 text-emerald-400 transition-all duration-300" style="left: 36%;">
+              ▲
+            </div>
+            <div class="flex justify-between text-[10px] text-slate-400 mt-2">
+              <span>Underweight (&lt;18.5)</span>
+              <span>Normal (18.5 - 24.9)</span>
+              <span>Overweight (25 - 29.9)</span>
+              <span>Obese (&gt;30)</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="mt-8 flex justify-end">
+          <button type="button" onclick="navigateToStep(2)" class="px-6 py-3 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-500 hover:from-emerald-500 hover:to-teal-400 text-white font-semibold text-sm shadow-lg shadow-emerald-600/30 flex items-center gap-2 transition transform active:scale-95">
+            <span>Continue to Toxins & Substances</span>
+            <i data-lucide="arrow-right" class="w-4 h-4"></i>
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- STEP 2: Habits, Toxins & Substances -->
+    <section id="step-2" class="step-section hidden space-y-6">
+      <div class="bg-surface-850 border border-surface-700 rounded-3xl p-6 sm:p-8 shadow-2xl">
+        <div class="pb-6 mb-6 border-b border-surface-700/80">
+          <h2 class="text-2xl font-bold text-white flex items-center gap-2.5">
+            <i data-lucide="flame" class="w-7 h-7 text-amber-400"></i>
+            Substance Consumption & Inhalation Toxicology
+          </h2>
+          <p class="text-slate-400 text-sm mt-1">Detailed exposure assessment for combustible particulates, aerosol toxins, neurotoxic alcohol patterns, and drugs.</p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <!-- Combustible Smoking -->
+          <div class="bg-surface-900/70 p-5 rounded-2xl border border-surface-700/60 flex flex-col justify-between">
+            <div>
+              <div class="flex items-center justify-between mb-2">
+                <div class="flex items-center space-x-2">
+                  <i data-lucide="cigarette" class="w-5 h-5 text-rose-400"></i>
+                  <span class="font-semibold text-sm text-slate-200">Combustible Tobacco Smoking</span>
+                </div>
+                <span id="badge-smoking" class="text-xs px-2 py-0.5 rounded-full bg-emerald-950 text-emerald-400 border border-emerald-800">Non-Smoker</span>
+              </div>
+              <p class="text-xs text-slate-400 mb-3">Combustion releases polycyclic aromatic hydrocarbons and CO, driving cerebral microvascular disease and dementia risk.</p>
+              
+              <div class="space-y-3">
+                <select id="input-smoking" class="w-full bg-surface-800 border border-surface-600 rounded-xl px-3 py-2 text-sm text-slate-200">
+                  <option value="none" selected>Never Smoked / Non-Smoker</option>
+                  <option value="former">Former Smoker (Quit &gt; 5 years ago)</option>
+                  <option value="recent_former">Recent Former Smoker (Quit &lt; 3 years ago)</option>
+                  <option value="light">Light Smoker (1 - 5 cigarettes/day)</option>
+                  <option value="half_pack">Moderate Smoker (~10 cigs / day)</option>
+                  <option value="pack_plus">Heavy Smoker (1+ packs / day)</option>
+                </select>
+
+                <div id="smoking-years-container" class="hidden">
+                  <div class="flex justify-between text-xs text-slate-300 mb-1">
+                    <span>Years Smoked</span>
+                    <span id="label-smoking-years" class="text-amber-400 font-bold">5 yrs</span>
+                  </div>
+                  <input type="range" id="input-smoking-years" min="1" max="45" value="5" class="w-full">
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Vaping / E-Cigarettes -->
+          <div class="bg-surface-900/70 p-5 rounded-2xl border border-surface-700/60 flex flex-col justify-between">
+            <div>
+              <div class="flex items-center justify-between mb-2">
+                <div class="flex items-center space-x-2">
+                  <i data-lucide="wind" class="w-5 h-5 text-cyan-400"></i>
+                  <span class="font-semibold text-sm text-slate-200">Vaping & E-Cigarettes</span>
+                </div>
+                <span id="badge-vaping" class="text-xs px-2 py-0.5 rounded-full bg-emerald-950 text-emerald-400 border border-emerald-800">None</span>
+              </div>
+              <p class="text-xs text-slate-400 mb-3">Aerosolized propylene glycol, vegetable glycerin, and flavor aldehydes induce airway neutrophil inflammation.</p>
+              
+              <select id="input-vaping" class="w-full bg-surface-800 border border-surface-600 rounded-xl px-3 py-2 text-sm text-slate-200">
+                <option value="none" selected>Never / Non-User</option>
+                <option value="occasional">Social / Occasional (1-2 days/week)</option>
+                <option value="daily_low">Daily (Low Nicotine &lt;6mg or 0mg)</option>
+                <option value="daily_high">Heavy Daily (High Salt Nicotine 20-50mg+)</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Cannabis / Weed -->
+          <div class="bg-surface-900/70 p-5 rounded-2xl border border-surface-700/60 flex flex-col justify-between">
+            <div>
+              <div class="flex items-center justify-between mb-2">
+                <div class="flex items-center space-x-2">
+                  <i data-lucide="leaf" class="w-5 h-5 text-emerald-400"></i>
+                  <span class="font-semibold text-sm text-slate-200">Cannabis (Weed / THC / CBD)</span>
+                </div>
+                <span id="badge-weed" class="text-xs px-2 py-0.5 rounded-full bg-emerald-950 text-emerald-400 border border-emerald-800">Never</span>
+              </div>
+              <p class="text-xs text-slate-400 mb-3">Differentiates between combustion inhalation (tar/hydrocarbons) vs. non-combustible edibles or tinctures.</p>
+              
+              <select id="input-weed" class="w-full bg-surface-800 border border-surface-600 rounded-xl px-3 py-2 text-sm text-slate-200">
+                <option value="never" selected>Never / Rare experimental</option>
+                <option value="edibles_occasional">Edibles / Tinctures (Occasional 1-2x/mo)</option>
+                <option value="edibles_frequent">Edibles / Tinctures (Frequent / Weekly+)</option>
+                <option value="smoke_occasional">Combustible Inhalation (1-2x/month)</option>
+                <option value="smoke_frequent">Combustible Joint/Pipe (Multiple times/wk)</option>
+                <option value="smoke_daily">Heavy Daily Combustible Smoker</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Alcohol Consumption -->
+          <div class="bg-surface-900/70 p-5 rounded-2xl border border-surface-700/60 flex flex-col justify-between">
+            <div>
+              <div class="flex items-center justify-between mb-2">
+                <div class="flex items-center space-x-2">
+                  <i data-lucide="wine" class="w-5 h-5 text-purple-400"></i>
+                  <span class="font-semibold text-sm text-slate-200">Alcohol Consumption</span>
+                </div>
+                <span id="badge-alcohol" class="text-xs px-2 py-0.5 rounded-full bg-emerald-950 text-emerald-400 border border-emerald-800">Minimal</span>
+              </div>
+              <p class="text-xs text-slate-400 mb-2">Acetaldehyde toxicity and chronic neurotoxicity cause brain atrophy and double long-term vascular dementia risk.</p>
+              
+              <div class="space-y-2.5">
+                <div>
+                  <div class="flex justify-between text-xs text-slate-300 mb-1">
+                    <span>Standard Drinks per Week</span>
+                    <span id="label-alcohol-drinks" class="text-emerald-400 font-bold">2 drinks</span>
+                  </div>
+                  <input type="range" id="input-alcohol-drinks" min="0" max="35" value="2" class="w-full">
+                  <div class="flex justify-between text-[10px] text-slate-500 mt-1">
+                    <span>0 (Abstinent)</span>
+                    <span>7 (Moderate)</span>
+                    <span>14 (Heavy)</span>
+                    <span>25+ (Severe)</span>
+                  </div>
+                </div>
+                <div class="flex items-center justify-between bg-surface-800 p-2 rounded-xl border border-surface-700">
+                  <span class="text-xs text-slate-300">Binge Pattern (4+ drinks in single sitting)?</span>
+                  <input type="checkbox" id="input-binge" class="h-4 w-4 rounded bg-surface-900 border-surface-600 text-purple-500 focus:ring-0">
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Drug Use / Prescription Misuse -->
+          <div class="md:col-span-2 bg-surface-900/70 p-5 rounded-2xl border border-surface-700/60">
+            <div class="flex items-center justify-between mb-2">
+              <div class="flex items-center space-x-2">
+                <i data-lucide="pill" class="w-5 h-5 text-rose-500"></i>
+                <span class="font-semibold text-sm text-slate-200">Recreational Drugs & Prescription Substance Misuse</span>
+              </div>
+              <span id="badge-drugs" class="text-xs px-2 py-0.5 rounded-full bg-emerald-950 text-emerald-400 border border-emerald-800">None</span>
+            </div>
+            <p class="text-xs text-slate-400 mb-3">Includes illicit stimulants (cocaine/methamphetamine), synthetic opioids, high-dose sedatives, or chronic non-medical misuse.</p>
+            
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+              <label class="drug-option flex items-center p-3 rounded-xl border border-surface-700 bg-surface-800/80 cursor-pointer hover:border-slate-500 transition">
+                <input type="radio" name="drug-use" value="none" checked class="text-emerald-500 mr-2.5">
+                <span class="text-xs font-medium text-slate-200">Strictly Abstinent / None</span>
+              </label>
+              <label class="drug-option flex items-center p-3 rounded-xl border border-surface-700 bg-surface-800/80 cursor-pointer hover:border-slate-500 transition">
+                <input type="radio" name="drug-use" value="rare" class="text-amber-500 mr-2.5">
+                <span class="text-xs font-medium text-slate-200">Rare / Infrequent (1-2x/yr)</span>
+              </label>
+              <label class="drug-option flex items-center p-3 rounded-xl border border-surface-700 bg-surface-800/80 cursor-pointer hover:border-slate-500 transition">
+                <input type="radio" name="drug-use" value="monthly" class="text-orange-500 mr-2.5">
+                <span class="text-xs font-medium text-slate-200">Monthly Recreational Misuse</span>
+              </label>
+              <label class="drug-option flex items-center p-3 rounded-xl border border-surface-700 bg-surface-800/80 cursor-pointer hover:border-slate-500 transition">
+                <input type="radio" name="drug-use" value="regular" class="text-rose-500 mr-2.5">
+                <span class="text-xs font-medium text-slate-200">Frequent / Chronic Misuse</span>
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <div class="mt-8 flex justify-between">
+          <button type="button" onclick="navigateToStep(1)" class="px-5 py-2.5 rounded-xl border border-surface-600 bg-surface-800 text-slate-300 hover:text-white text-sm font-medium transition flex items-center gap-2">
+            <i data-lucide="arrow-left" class="w-4 h-4"></i>
+            <span>Back</span>
+          </button>
+          <button type="button" onclick="navigateToStep(3)" class="px-6 py-3 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-500 hover:from-emerald-500 hover:to-teal-400 text-white font-semibold text-sm shadow-lg shadow-emerald-600/30 flex items-center gap-2 transition transform active:scale-95">
+            <span>Continue to Environment & Lifestyle</span>
+            <i data-lucide="arrow-right" class="w-4 h-4"></i>
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- STEP 3: Environmental Highway Proximity & Lifestyle -->
+    <section id="step-3" class="step-section hidden space-y-6">
+      <div class="bg-surface-850 border border-surface-700 rounded-3xl p-6 sm:p-8 shadow-2xl">
+        <div class="pb-6 mb-6 border-b border-surface-700/80">
+          <h2 class="text-2xl font-bold text-white flex items-center gap-2.5">
+            <i data-lucide="map-pin" class="w-7 h-7 text-cyan-400"></i>
+            Highway Proximity & Lifestyle Factors
+          </h2>
+          <p class="text-slate-400 text-sm mt-1">Air pollution epidemiology (PM2.5, NO₂, black carbon) and key longevity-extending daily routines.</p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <!-- Highway Proximity Highlight Feature -->
+          <div class="md:col-span-2 bg-gradient-to-br from-slate-900 via-surface-900 to-indigo-950/40 p-6 rounded-3xl border-2 border-cyan-500/30 shadow-xl">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
+              <div class="flex items-center space-x-3">
+                <div class="w-10 h-10 rounded-xl bg-cyan-500/20 text-cyan-400 flex items-center justify-center border border-cyan-500/40">
+                  <i data-lucide="truck" class="w-6 h-6"></i>
+                </div>
+                <div>
+                  <h3 class="font-bold text-base text-white flex items-center gap-2">
+                    Proximity to Busy Highway / Major Arterial Road
+                    <span class="text-[10px] uppercase font-mono tracking-wider bg-cyan-500/20 text-cyan-300 px-2 py-0.5 rounded-full border border-cyan-500/30">Neuro-Vascular Hazard</span>
+                  </h3>
+                  <p class="text-xs text-slate-300 mt-0.5">Ultrafine particulate matter (PM2.5, PM0.1) crosses the alveolar and blood-brain barriers, triggering neuroinflammation and amyloid deposition.</p>
+                </div>
+              </div>
+              <div id="highway-hazard-pill" class="text-xs font-bold px-3 py-1 rounded-full bg-emerald-950 text-emerald-400 border border-emerald-800 self-start sm:self-auto">
+                Clean Zone (&gt;500m)
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mt-4">
+              <label class="highway-card flex flex-col p-4 rounded-2xl border-2 border-surface-700 bg-surface-800/90 cursor-pointer hover:border-slate-500 transition relative">
+                <input type="radio" name="highway-distance" value="critical" class="hidden">
+                <div class="flex items-center justify-between mb-1.5">
+                  <span class="text-sm font-bold text-rose-400">&lt; 50 meters</span>
+                  <span class="text-xs text-rose-400 font-extrabold">🚨 Critical</span>
+                </div>
+                <p class="text-[11px] text-slate-300 leading-relaxed">Direct tailpipe plume zone. Continuous high concentrations of black carbon, diesel soot, and tire microplastics.</p>
+              </label>
+
+              <label class="highway-card flex flex-col p-4 rounded-2xl border-2 border-surface-700 bg-surface-800/90 cursor-pointer hover:border-slate-500 transition relative">
+                <input type="radio" name="highway-distance" value="high" class="hidden">
+                <div class="flex items-center justify-between mb-1.5">
+                  <span class="text-sm font-bold text-amber-400">50 - 150 meters</span>
+                  <span class="text-xs text-amber-400 font-semibold">⚠️ High PM2.5</span>
+                </div>
+                <p class="text-[11px] text-slate-300 leading-relaxed">Associated with 12-14% increased risk of all-cause dementia and accelerated arterial plaque.</p>
+              </label>
+
+              <label class="highway-card flex flex-col p-4 rounded-2xl border-2 border-surface-700 bg-surface-800/90 cursor-pointer hover:border-slate-500 transition relative">
+                <input type="radio" name="highway-distance" value="moderate" class="hidden">
+                <div class="flex items-center justify-between mb-1.5">
+                  <span class="text-sm font-bold text-cyan-300">150 - 500 meters</span>
+                  <span class="text-xs text-cyan-400 font-semibold">Moderate Exposure</span>
+                </div>
+                <p class="text-[11px] text-slate-300 leading-relaxed">Particle concentrations decay with distance, though elevated ambient NO₂ remains detectable.</p>
+              </label>
+
+              <label class="highway-card flex flex-col p-4 rounded-2xl border-2 border-emerald-500 bg-emerald-950/20 cursor-pointer transition relative">
+                <input type="radio" name="highway-distance" value="safe" checked class="hidden">
+                <div class="flex items-center justify-between mb-1.5">
+                  <span class="text-sm font-bold text-emerald-400">&gt; 500 meters</span>
+                  <span class="text-xs text-emerald-400 font-bold">✓ Clean Baseline</span>
+                </div>
+                <p class="text-[11px] text-slate-300 leading-relaxed">Sufficient distance for turbulent atmospheric dilution; minimal roadway-specific particulate burden.</p>
+              </label>
+            </div>
+
+            <!-- Indoor HEPA Filter Mitigation Toggle -->
+            <div class="mt-4 pt-3 border-t border-surface-700/60 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-surface-900/60 p-3.5 rounded-xl">
+              <div class="flex items-center space-x-2.5">
+                <i data-lucide="shield-check" class="w-5 h-5 text-teal-400"></i>
+                <div>
+                  <span class="text-xs font-semibold text-slate-200">Active True HEPA (H13/H14) Air Filtration Indoors?</span>
+                  <p class="text-[11px] text-slate-400">Clinical trials prove continuous indoor HEPA filtration reduces blood markers of systemic vascular inflammation by 60%+.</p>
+                </div>
+              </div>
+              <label class="relative inline-flex items-center cursor-pointer">
+                <input type="checkbox" id="input-hepa" class="sr-only peer">
+                <div class="w-11 h-6 bg-surface-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-500"></div>
+                <span class="ml-2 text-xs font-semibold text-slate-300 peer-checked:text-emerald-400">HEPA Active</span>
+              </label>
+            </div>
+          </div>
+
+          <!-- Physical Activity -->
+          <div class="bg-surface-900/70 p-5 rounded-2xl border border-surface-700/60">
+            <div class="flex items-center justify-between mb-2">
+              <div class="flex items-center space-x-2">
+                <i data-lucide="dumbbell" class="w-5 h-5 text-emerald-400"></i>
+                <label for="input-exercise" class="text-sm font-semibold text-slate-200">Aerobic Exercise & Strength</label>
+              </div>
+              <span id="label-exercise" class="text-xs font-bold text-emerald-400">Moderate (150m/wk)</span>
+            </div>
+            <select id="input-exercise" class="w-full bg-surface-800 border border-surface-600 rounded-xl px-3 py-2 text-sm text-slate-200 mt-2">
+              <option value="sedentary">Sedentary (&lt;3,000 steps/day, zero intentional exercise)</option>
+              <option value="light">Light Activity (Occasional walking, light recreation)</option>
+              <option value="moderate" selected>Moderate (150+ min/wk brisk cardio + 1x weights)</option>
+              <option value="vigorous">High Fitness / Athletic (300+ min/wk cardio + regular strength)</option>
+            </select>
+            <p class="text-[11px] text-slate-400 mt-2">Cardiorespiratory exercise triggers Brain-Derived Neurotrophic Factor (BDNF) synthesis in the hippocampus.</p>
+          </div>
+
+          <!-- Nutrition Quality -->
+          <div class="bg-surface-900/70 p-5 rounded-2xl border border-surface-700/60">
+            <div class="flex items-center justify-between mb-2">
+              <div class="flex items-center space-x-2">
+                <i data-lucide="apple" class="w-5 h-5 text-amber-400"></i>
+                <label for="input-diet" class="text-sm font-semibold text-slate-200">Dietary Pattern (MIND / Mediterranean)</label>
+              </div>
+              <span id="label-diet" class="text-xs font-bold text-emerald-400">Mediterranean / MIND</span>
+            </div>
+            <select id="input-diet" class="w-full bg-surface-800 border border-surface-600 rounded-xl px-3 py-2 text-sm text-slate-200 mt-2">
+              <option value="ultra_processed">Standard Western / Ultra-Processed Heavy (Refined sugars, fast food)</option>
+              <option value="average">Mixed Average (Occasional home cooking, moderate processed foods)</option>
+              <option value="mediterranean" selected>Mediterranean / MIND Diet (Leafy greens, berries, olive oil, fish)</option>
+              <option value="plant_forward">Whole-Food Plant-Rich / Blue Zone (Legumes, polyphenols, nuts)</option>
+            </select>
+            <p class="text-[11px] text-slate-400 mt-2">Adherence to MIND/Mediterranean diets is linked with up to 53% reduction in Alzheimer's disease rates.</p>
+          </div>
+
+          <!-- Sleep Duration -->
+          <div class="bg-surface-900/70 p-5 rounded-2xl border border-surface-700/60">
+            <div class="flex items-center justify-between mb-2">
+              <div class="flex items-center space-x-2">
+                <i data-lucide="moon" class="w-5 h-5 text-indigo-400"></i>
+                <label for="input-sleep" class="text-sm font-semibold text-slate-200">Sleep Duration</label>
+              </div>
+              <span id="label-sleep" class="text-xs font-bold text-indigo-400">7.5 hrs/night</span>
+            </div>
+            <input type="range" id="input-sleep" min="4.0" max="11.0" step="0.5" value="7.5" class="w-full mt-2">
+            <div class="flex justify-between text-[10px] text-slate-500 mt-1">
+              <span>&lt; 5 hrs (Severe)</span>
+              <span>7.0 - 8.5 hrs (Optimal Glymphatic)</span>
+              <span>&gt; 10 hrs</span>
+            </div>
+            <p class="text-[11px] text-slate-400 mt-2">Deep slow-wave sleep activates the glymphatic system, flushing beta-amyloid and phosphorylated tau plaques.</p>
+          </div>
+
+          <!-- Resting Heart Rate & Blood Pressure -->
+          <div class="bg-surface-900/70 p-5 rounded-2xl border border-surface-700/60">
+            <div class="flex items-center justify-between mb-2">
+              <div class="flex items-center space-x-2">
+                <i data-lucide="heart-pulse" class="w-5 h-5 text-rose-400"></i>
+                <label for="input-bp" class="text-sm font-semibold text-slate-200">Blood Pressure Estimate</label>
+              </div>
+              <span id="label-bp" class="text-xs font-bold text-emerald-400">Normal (&lt;120/80)</span>
+            </div>
+            <select id="input-bp" class="w-full bg-surface-800 border border-surface-600 rounded-xl px-3 py-2 text-sm text-slate-200 mt-2">
+              <option value="normal" selected>Normal / Optimal (&lt;120/80 mmHg)</option>
+              <option value="elevated">Elevated / Pre-hypertension (120-129 / &lt;80)</option>
+              <option value="stage1">Stage 1 Hypertension (130-139 / 80-89)</option>
+              <option value="stage2">Stage 2 Hypertension (140+ / 90+ mmHg)</option>
+            </select>
+            <p class="text-[11px] text-slate-400 mt-2">Midlife hypertension is one of the single most potent modifiable drivers of vascular dementia.</p>
+          </div>
+        </div>
+
+        <div class="mt-8 flex justify-between">
+          <button type="button" onclick="navigateToStep(2)" class="px-5 py-2.5 rounded-xl border border-surface-600 bg-surface-800 text-slate-300 hover:text-white text-sm font-medium transition flex items-center gap-2">
+            <i data-lucide="arrow-left" class="w-4 h-4"></i>
+            <span>Back</span>
+          </button>
+          <button type="button" onclick="navigateToStep(4)" class="px-6 py-3 rounded-xl bg-gradient-to-r from-indigo-600 via-teal-600 to-emerald-500 hover:from-indigo-500 hover:to-emerald-400 text-white font-semibold text-sm shadow-lg shadow-indigo-600/30 flex items-center gap-2 transition transform active:scale-95">
+            <span>Proceed to Cognitive Screening</span>
+            <i data-lucide="arrow-right" class="w-4 h-4"></i>
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- STEP 4: Skippable Pre-Dementia & Cognitive Risk Screener -->
+    <section id="step-4" class="step-section hidden space-y-6">
+      
+      <!-- Option Banner: Take or Skip Screen -->
+      <div id="cognitive-choice-card" class="bg-gradient-to-br from-surface-850 via-surface-900 to-indigo-950/60 border-2 border-indigo-500/40 rounded-3xl p-6 sm:p-8 shadow-2xl">
+        <div class="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6">
+          <div class="max-w-2xl">
+            <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/20 text-indigo-300 text-xs font-bold border border-indigo-500/30 mb-3">
+              <i data-lucide="sparkles" class="w-3.5 h-3.5"></i> Optional Clinical-Grade Screener
+            </div>
+            <h2 class="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
+              Pre-Dementia & Mild Cognitive Impairment (MCI) Screener
+            </h2>
+            <p class="text-slate-300 text-sm mt-2 leading-relaxed">
+              Dementia pathology initiates 15–20 years before overt symptoms emerge. This 3-minute interactive battery tests 
+              <strong>Episodic Word Recall</strong>, <strong>Executive Trail-Making</strong>, <strong>Reverse Working Memory</strong>, and <strong>Subjective Decline Indicators</strong> based on validated Mini-Cog, MoCA, and SLUMS protocols.
+            </p>
+            <div class="flex flex-wrap items-center gap-3 mt-4 text-xs text-slate-400">
+              <span class="flex items-center gap-1.5"><i data-lucide="clock" class="w-3.5 h-3.5 text-indigo-400"></i> Takes ~3 minutes</span>
+              <span class="flex items-center gap-1.5"><i data-lucide="shield-check" class="w-3.5 h-3.5 text-emerald-400"></i> 100% Client-Side & Private</span>
+              <span class="flex items-center gap-1.5"><i data-lucide="skip-forward" class="w-3.5 h-3.5 text-amber-400"></i> Completely Skippable</span>
+            </div>
+          </div>
+
+          <div class="flex flex-col sm:flex-row lg:flex-col gap-3 w-full sm:w-auto shrink-0">
+            <button type="button" id="startCognitiveBtn" onclick="startCognitiveBattery()" class="px-6 py-3.5 rounded-xl bg-gradient-to-r from-indigo-500 via-teal-500 to-emerald-500 hover:from-indigo-400 hover:to-emerald-400 text-white font-bold text-sm shadow-xl shadow-indigo-500/30 flex items-center justify-center gap-2 transition transform active:scale-95">
+              <i data-lucide="play" class="w-4 h-4 fill-current"></i>
+              <span>Start 3-Minute Cognitive Battery</span>
+            </button>
+            <button type="button" id="skipCognitiveBtn" onclick="skipCognitiveBattery()" class="px-5 py-3 rounded-xl border border-surface-600 bg-surface-800/90 text-slate-300 hover:text-white hover:border-slate-400 text-xs font-semibold flex items-center justify-center gap-2 transition">
+              <i data-lucide="skip-forward" class="w-4 h-4 text-amber-400"></i>
+              <span>Skip Cognitive Assessment (Proceed with Vitals)</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Interactive Cognitive Battery Container (Shown when started) -->
+      <div id="cognitive-battery-container" class="hidden bg-surface-850 border border-surface-700 rounded-3xl p-6 sm:p-8 shadow-2xl">
+        
+        <!-- Battery Stepper Header -->
+        <div class="flex items-center justify-between pb-4 mb-6 border-b border-surface-700">
+          <div class="flex items-center space-x-3">
+            <span id="cog-stage-badge" class="px-3 py-1 rounded-full text-xs font-bold bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
+              Stage 1 of 5
+            </span>
+            <h3 id="cog-stage-title" class="text-lg font-bold text-white">Immediate Word Registration</h3>
+          </div>
+          <button type="button" onclick="skipCognitiveBattery()" class="text-xs text-slate-400 hover:text-amber-300 flex items-center gap-1 transition">
+            <span>Skip remainder</span>
+            <i data-lucide="chevron-right" class="w-3.5 h-3.5"></i>
+          </button>
+        </div>
+
+        <!-- STAGE 1: Word Registration -->
+        <div id="cog-stage-1" class="space-y-6">
+          <p class="text-sm text-slate-300">
+            Carefully memorize these <strong>5 words</strong>. You will be asked to recall them later without visual prompts.
+          </p>
+
+          <div class="grid grid-cols-2 sm:grid-cols-5 gap-3 py-4">
+            <div class="bg-surface-900 border border-indigo-500/40 p-4 rounded-2xl text-center shadow-lg">
+              <span class="text-lg font-extrabold text-indigo-300 tracking-wide font-mono">VELVET</span>
+            </div>
+            <div class="bg-surface-900 border border-indigo-500/40 p-4 rounded-2xl text-center shadow-lg">
+              <span class="text-lg font-extrabold text-indigo-300 tracking-wide font-mono">NYLON</span>
+            </div>
+            <div class="bg-surface-900 border border-indigo-500/40 p-4 rounded-2xl text-center shadow-lg">
+              <span class="text-lg font-extrabold text-indigo-300 tracking-wide font-mono">CHURCH</span>
+            </div>
+            <div class="bg-surface-900 border border-indigo-500/40 p-4 rounded-2xl text-center shadow-lg">
+              <span class="text-lg font-extrabold text-indigo-300 tracking-wide font-mono">DAHLIA</span>
+            </div>
+            <div class="col-span-2 sm:col-span-1 bg-surface-900 border border-indigo-500/40 p-4 rounded-2xl text-center shadow-lg">
+              <span class="text-lg font-extrabold text-indigo-300 tracking-wide font-mono">AMBER</span>
+            </div>
+          </div>
+
+          <div class="flex items-center justify-between pt-4">
+            <span id="cog-countdown" class="text-xs font-semibold text-slate-400">Study timer: 8s remaining</span>
+            <button type="button" id="btn-next-stage-1" onclick="advanceCogStage(2)" class="px-6 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-sm transition">
+              I have memorized them → Next
+            </button>
+          </div>
+        </div>
+
+        <!-- STAGE 2: Executive Function & Trail-Making Test (1 -> A -> 2 -> B -> 3 -> C -> 4 -> D) -->
+        <div id="cog-stage-2" class="hidden space-y-6">
+          <div>
+            <h4 class="text-base font-bold text-white flex items-center gap-2">
+              <i data-lucide="shuffle" class="w-5 h-5 text-teal-400"></i>
+              Executive Alternation Task (Trail Making B)
+            </h4>
+            <p class="text-xs text-slate-300 mt-1">
+              Click/Tap the nodes in strictly alternating numerical-alphabetical order: 
+              <span class="font-mono text-teal-300 font-bold">1 → A → 2 → B → 3 → C → 4 → D</span>.
+            </p>
+          </div>
+
+          <div class="flex items-center justify-between text-xs text-slate-400 bg-surface-900 p-3 rounded-xl border border-surface-700">
+            <span>Next Target: <span id="trail-next-target" class="text-teal-300 font-extrabold font-mono text-sm">1</span></span>
+            <span>Elapsed: <span id="trail-timer" class="font-mono text-slate-200">0.0s</span></span>
+            <span>Errors: <span id="trail-errors" class="font-mono text-rose-400 font-bold">0</span></span>
+          </div>
+
+          <!-- Trail Arena -->
+          <div id="trail-grid" class="relative w-full h-72 sm:h-80 bg-surface-900/90 rounded-2xl border-2 border-surface-700/80 p-4 overflow-hidden select-none">
+            <!-- Nodes placed dynamically via JS for randomized layout -->
+          </div>
+
+          <div id="trail-complete-banner" class="hidden p-3 bg-emerald-950/60 border border-emerald-500/40 rounded-xl text-center text-xs text-emerald-300 font-semibold">
+            ✓ Executive sequence completed! Click below to advance.
+          </div>
+
+          <div class="flex justify-end">
+            <button type="button" id="btn-next-stage-2" disabled onclick="advanceCogStage(3)" class="px-6 py-2.5 rounded-xl bg-surface-700 text-slate-400 cursor-not-allowed font-semibold text-sm transition">
+              Continue to Working Memory →
+            </button>
+          </div>
+        </div>
+
+        <!-- STAGE 3: Attention & Reverse Digit Span -->
+        <div id="cog-stage-3" class="hidden space-y-6">
+          <div>
+            <h4 class="text-base font-bold text-white flex items-center gap-2">
+              <i data-lucide="binary" class="w-5 h-5 text-indigo-400"></i>
+              Reverse Working Memory (Dorsolateral Prefrontal Function)
+            </h4>
+            <p class="text-xs text-slate-300 mt-1">
+              Watch the sequence of 4 numbers flash below. When finished, enter them in <strong>reverse order</strong>.
+            </p>
+          </div>
+
+          <div class="h-28 flex items-center justify-center bg-surface-900 rounded-2xl border border-surface-700">
+            <div id="digit-display" class="text-5xl font-black font-mono tracking-widest text-emerald-400 transition-all duration-300">
+              Ready...
+            </div>
+          </div>
+
+          <div id="digit-input-box" class="hidden space-y-3">
+            <label class="text-xs text-slate-300 font-medium block">Enter the 4 numbers in reverse order (e.g. 8421):</label>
+            <input type="text" id="input-reverse-digits" maxlength="4" placeholder="Enter reverse digits" class="w-full bg-surface-900 border border-indigo-500/50 rounded-xl p-3 text-center text-2xl font-mono tracking-widest text-white focus:outline-none focus:border-indigo-400">
+            <p class="text-[11px] text-slate-400 text-center">Example: If shown 7 - 2 - 9 - 4, your answer should be 4927.</p>
+          </div>
+
+          <div class="flex justify-between items-center">
+            <button type="button" id="btn-replay-digits" onclick="startDigitSpanSequence()" class="text-xs text-indigo-400 hover:text-indigo-300 underline">
+              Replay Sequence
+            </button>
+            <button type="button" id="btn-next-stage-3" onclick="submitDigitSpan()" class="px-6 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-sm transition">
+              Confirm & Continue →
+            </button>
+          </div>
+        </div>
+
+        <!-- STAGE 4: Delayed Free Recall -->
+        <div id="cog-stage-4" class="hidden space-y-6">
+          <div>
+            <h4 class="text-base font-bold text-white flex items-center gap-2">
+              <i data-lucide="help-circle" class="w-5 h-5 text-amber-400"></i>
+              Delayed Episodic Recall (Hippocampal Retention)
+            </h4>
+            <p class="text-xs text-slate-300 mt-1">
+              Type the <strong>5 words</strong> presented at the beginning of the assessment. Separate them with spaces or commas.
+            </p>
+          </div>
+
+          <div class="bg-surface-900 p-4 rounded-2xl border border-surface-700">
+            <textarea id="input-delayed-words" rows="3" placeholder="Type the 5 words you memorized earlier..." class="w-full bg-transparent text-slate-100 placeholder-slate-500 text-sm focus:outline-none resize-none"></textarea>
+          </div>
+          <p class="text-[11px] text-slate-400">Partial spelling credit is awarded. Do not worry about capitalization.</p>
+
+          <div class="flex justify-end">
+            <button type="button" onclick="submitDelayedRecall()" class="px-6 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-sm transition">
+              Continue to Final Check →
+            </button>
+          </div>
+        </div>
+
+        <!-- STAGE 5: Subjective Cognitive Decline (SCD) Check -->
+        <div id="cog-stage-5" class="hidden space-y-6">
+          <div>
+            <h4 class="text-base font-bold text-white flex items-center gap-2">
+              <i data-lucide="clipboard-check" class="w-5 h-5 text-teal-400"></i>
+              Subjective Cognitive Concerns (AD8 Screener Subset)
+            </h4>
+            <p class="text-xs text-slate-300 mt-1">
+              Over the past 12 months, have you or close family members noticed consistent changes in any of the following?
+            </p>
+          </div>
+
+          <div class="space-y-3">
+            <label class="flex items-start space-x-3 bg-surface-900 p-3.5 rounded-xl border border-surface-700 cursor-pointer hover:border-slate-500 transition">
+              <input type="checkbox" id="scd-q1" class="mt-0.5 rounded bg-surface-800 border-surface-600 text-teal-500 focus:ring-0">
+              <span class="text-xs text-slate-200 leading-relaxed">Trouble remembering appointments, conversations, or frequently repeating the same question within hours.</span>
+            </label>
+            <label class="flex items-start space-x-3 bg-surface-900 p-3.5 rounded-xl border border-surface-700 cursor-pointer hover:border-slate-500 transition">
+              <input type="checkbox" id="scd-q2" class="mt-0.5 rounded bg-surface-800 border-surface-600 text-teal-500 focus:ring-0">
+              <span class="text-xs text-slate-200 leading-relaxed">Increased difficulty handling complex calculations, balancing finances, or learning new technology/tools.</span>
+            </label>
+            <label class="flex items-start space-x-3 bg-surface-900 p-3.5 rounded-xl border border-surface-700 cursor-pointer hover:border-slate-500 transition">
+              <input type="checkbox" id="scd-q3" class="mt-0.5 rounded bg-surface-800 border-surface-600 text-teal-500 focus:ring-0">
+              <span class="text-xs text-slate-200 leading-relaxed">Struggling with word-finding (tip-of-the-tongue phenomenon) significantly more than peers of your age.</span>
+            </label>
+            <label class="flex items-start space-x-3 bg-surface-900 p-3.5 rounded-xl border border-surface-700 cursor-pointer hover:border-slate-500 transition">
+              <input type="checkbox" id="scd-q4" class="mt-0.5 rounded bg-surface-800 border-surface-600 text-teal-500 focus:ring-0">
+              <span class="text-xs text-slate-200 leading-relaxed">Episodes of getting momentarily disoriented or confused on driving/walking routes you normally know well.</span>
+            </label>
+          </div>
+
+          <div class="flex justify-end pt-2">
+            <button type="button" onclick="finalizeCognitiveBattery()" class="px-8 py-3 rounded-xl bg-gradient-to-r from-emerald-500 via-teal-500 to-indigo-600 hover:from-emerald-400 hover:to-indigo-500 text-white font-bold text-sm shadow-xl shadow-teal-500/20 transition transform active:scale-95">
+              <span>Complete Battery & Generate Health Profile</span>
+              <i data-lucide="sparkles" class="w-4 h-4 inline ml-1"></i>
+            </button>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Skipped Status Badge if user opted to skip -->
+      <div id="cognitive-skipped-banner" class="hidden bg-surface-900/80 p-5 rounded-2xl border border-surface-700 text-slate-300 text-xs flex items-center justify-between">
+        <div class="flex items-center space-x-3">
+          <i data-lucide="info" class="w-5 h-5 text-amber-400"></i>
+          <div>
+            <span class="font-bold text-white block">Cognitive Screening Skipped</span>
+            <span>Your final longevity model will calculate risk using your standard cardiovascular, environmental, and substance inputs.</span>
+          </div>
+        </div>
+        <button type="button" onclick="startCognitiveBattery()" class="text-xs font-semibold text-indigo-400 hover:underline">
+          Take Test Now
+        </button>
+      </div>
+
+      <div class="flex justify-between items-center pt-4">
+        <button type="button" onclick="navigateToStep(3)" class="px-5 py-2.5 rounded-xl border border-surface-600 bg-surface-800 text-slate-300 hover:text-white text-sm font-medium transition flex items-center gap-2">
+          <i data-lucide="arrow-left" class="w-4 h-4"></i>
+          <span>Back to Lifestyle</span>
+        </button>
+        <button type="button" onclick="calculateAndShowResults()" class="px-8 py-3.5 rounded-xl bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500 hover:from-emerald-400 hover:to-cyan-400 text-white font-bold text-base shadow-xl shadow-emerald-500/30 flex items-center gap-2.5 transition transform hover:scale-[1.02] active:scale-95">
+          <i data-lucide="sparkles" class="w-5 h-5 text-amber-300"></i>
+          <span>View Comprehensive Intelligence Dashboard</span>
+        </button>
+      </div>
+    </section>
+
+    <!-- STEP 5: Results & Comprehensive Intelligence Dashboard -->
+    <section id="step-5" class="step-section hidden space-y-8">
+      
+      <!-- Top Action Bar -->
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 no-print">
+        <div>
+          <h2 class="text-3xl font-extrabold text-white tracking-tight flex items-center gap-3">
+            <span>Longevity & Neurocognitive Intelligence</span>
+            <span id="risk-tier-badge" class="px-3 py-1 text-xs font-bold rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/40">Optimal Longevity</span>
+          </h2>
+          <p class="text-sm text-slate-400 mt-1">Integrated multi-system biological risk profile calibrated with epidemiological mortality datasets.</p>
+        </div>
+        <div class="flex items-center space-x-3">
+          <button onclick="navigateToStep(1)" class="px-4 py-2 rounded-xl border border-surface-600 bg-surface-800 hover:bg-surface-700 text-slate-200 text-xs font-semibold flex items-center gap-2 transition">
+            <i data-lucide="sliders" class="w-4 h-4"></i>
+            <span>Edit Metrics</span>
+          </button>
+          <button onclick="window.print()" class="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold flex items-center gap-2 shadow-lg shadow-emerald-600/20 transition">
+            <i data-lucide="printer" class="w-4 h-4"></i>
+            <span>Print Report</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Core Score Cards Grid -->
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-5">
+        
+        <!-- Estimated Life Expectancy Card -->
+        <div class="bg-gradient-to-br from-surface-850 via-surface-900 to-emerald-950/30 p-5 rounded-3xl border border-emerald-500/30 shadow-xl relative overflow-hidden">
+          <div class="flex items-center justify-between mb-2">
+            <span class="text-xs font-bold uppercase tracking-wider text-emerald-400">Life Expectancy</span>
+            <i data-lucide="hourglass" class="w-4 h-4 text-emerald-400"></i>
+          </div>
+          <div class="flex items-baseline space-x-1.5 my-1">
+            <span id="stat-life-expectancy" class="text-4xl sm:text-5xl font-black text-white tracking-tight">85.4</span>
+            <span class="text-slate-400 text-sm font-semibold">yrs</span>
+          </div>
+          <div class="mt-2 pt-2 border-t border-surface-700/60 flex items-center justify-between text-xs">
+            <span id="stat-diff-badge" class="font-bold text-emerald-400">+7.1 yrs vs Cohort</span>
+            <span class="text-[10px] text-slate-500" id="stat-demo-avg">Avg: 78.3</span>
+          </div>
+        </div>
+
+        <!-- Cognitive Healthspan Free of Decline -->
+        <div class="bg-gradient-to-br from-surface-850 via-surface-900 to-indigo-950/30 p-5 rounded-3xl border border-indigo-500/30 shadow-xl relative overflow-hidden">
+          <div class="flex items-center justify-between mb-2">
+            <span class="text-xs font-bold uppercase tracking-wider text-indigo-400">Cognitive Healthspan</span>
+            <i data-lucide="brain-circuit" class="w-4 h-4 text-indigo-400"></i>
+          </div>
+          <div class="flex items-baseline space-x-1.5 my-1">
+            <span id="stat-cognitive-healthspan" class="text-4xl sm:text-5xl font-black text-white tracking-tight">80.2</span>
+            <span class="text-slate-400 text-sm font-semibold">yrs</span>
+          </div>
+          <div class="mt-2 pt-2 border-t border-surface-700/60 flex items-center justify-between text-xs">
+            <span id="stat-cog-status" class="font-bold text-indigo-300">Optimal Cognitive Reserve</span>
+            <span class="text-[10px] text-slate-500">MCI Free</span>
+          </div>
+        </div>
+
+        <!-- Biological Brain & Body Age Card -->
+        <div class="bg-gradient-to-br from-surface-850 via-surface-900 to-cyan-950/30 p-5 rounded-3xl border border-cyan-500/30 shadow-xl relative overflow-hidden">
+          <div class="flex items-center justify-between mb-2">
+            <span class="text-xs font-bold uppercase tracking-wider text-cyan-400">Biological Age</span>
+            <i data-lucide="dna" class="w-4 h-4 text-cyan-400"></i>
+          </div>
+          <div class="flex items-baseline space-x-1.5 my-1">
+            <span id="stat-bio-age" class="text-4xl sm:text-5xl font-black text-white tracking-tight">33.2</span>
+            <span class="text-slate-400 text-sm font-semibold">yrs</span>
+          </div>
+          <div class="mt-2 pt-2 border-t border-surface-700/60 flex items-center justify-between text-xs">
+            <span id="stat-bio-delta" class="font-bold text-cyan-300">4.8 yrs younger</span>
+            <span class="text-[10px] text-slate-500" id="stat-chron-age">Age: 38</span>
+          </div>
+        </div>
+
+        <!-- Overall Vitality Score Card -->
+        <div class="bg-gradient-to-br from-surface-850 via-surface-900 to-teal-950/30 p-5 rounded-3xl border border-teal-500/30 shadow-xl relative overflow-hidden">
+          <div class="flex items-center justify-between mb-2">
+            <span class="text-xs font-bold uppercase tracking-wider text-teal-400">Vitality Index</span>
+            <i data-lucide="shield-check" class="w-4 h-4 text-teal-400"></i>
+          </div>
+          <div class="flex items-baseline space-x-1.5 my-1">
+            <span id="stat-vitality-score" class="text-4xl sm:text-5xl font-black text-white tracking-tight">88</span>
+            <span class="text-slate-400 text-sm font-semibold">/ 100</span>
+          </div>
+          <div class="mt-2 pt-2 border-t border-surface-700/60 flex items-center justify-between text-xs">
+            <span id="stat-score-rating" class="font-bold text-teal-300">Top 15% Resilience</span>
+            <span class="text-[10px] text-slate-500">Low Hazard</span>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Pre-Dementia Screener Detailed Report Card -->
+      <div class="bg-surface-850 border border-surface-700 rounded-3xl p-6 sm:p-8 shadow-xl">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between pb-4 mb-4 border-b border-surface-700/80 gap-3">
+          <div class="flex items-center space-x-3">
+            <div class="w-10 h-10 rounded-xl bg-indigo-500/20 text-indigo-400 flex items-center justify-center border border-indigo-500/30">
+              <i data-lucide="brain" class="w-6 h-6"></i>
+            </div>
+            <div>
+              <h3 class="text-xl font-bold text-white flex items-center gap-2">
+                Pre-Dementia & Cognitive Screener Analysis
+                <span id="cog-result-pill" class="text-xs px-2.5 py-0.5 rounded-full bg-emerald-950 text-emerald-300 border border-emerald-800 font-semibold">Normal / Age Expected</span>
+              </h3>
+              <p class="text-xs text-slate-400 mt-0.5">Evaluation of neurocognitive domains sensitive to early pre-clinical Alzheimer's and vascular cognitive impairment.</p>
+            </div>
+          </div>
+          <div id="cog-score-badge" class="text-right">
+            <span class="text-2xl font-black text-indigo-300" id="cog-total-score">28 / 30</span>
+            <span class="text-[11px] text-slate-400 block">Screener Score</span>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-4">
+          
+          <div class="bg-surface-900/90 p-4 rounded-2xl border border-surface-700/80">
+            <div class="flex justify-between items-center mb-1 text-xs">
+              <span class="text-slate-300 font-semibold">Episodic Memory</span>
+              <span id="cog-score-mem" class="font-bold text-indigo-400">9/10</span>
+            </div>
+            <div class="w-full bg-surface-700 h-2 rounded-full overflow-hidden mb-2">
+              <div id="bar-cog-mem" class="bg-indigo-500 h-full rounded-full" style="width: 90%;"></div>
+            </div>
+            <p class="text-[11px] text-slate-400">Delayed 5-word retrieval measuring medial temporal and hippocampal retention.</p>
+          </div>
+
+          <div class="bg-surface-900/90 p-4 rounded-2xl border border-surface-700/80">
+            <div class="flex justify-between items-center mb-1 text-xs">
+              <span class="text-slate-300 font-semibold">Executive Function</span>
+              <span id="cog-score-exec" class="font-bold text-teal-400">8/8</span>
+            </div>
+            <div class="w-full bg-surface-700 h-2 rounded-full overflow-hidden mb-2">
+              <div id="bar-cog-exec" class="bg-teal-500 h-full rounded-full" style="width: 100%;"></div>
+            </div>
+            <p class="text-[11px] text-slate-400">Trail-Making speed and cognitive flexibility (prefrontal cortex).</p>
+          </div>
+
+          <div class="bg-surface-900/90 p-4 rounded-2xl border border-surface-700/80">
+            <div class="flex justify-between items-center mb-1 text-xs">
+              <span class="text-slate-300 font-semibold">Working Memory</span>
+              <span id="cog-score-work" class="font-bold text-cyan-400">6/6</span>
+            </div>
+            <div class="w-full bg-surface-700 h-2 rounded-full overflow-hidden mb-2">
+              <div id="bar-cog-work" class="bg-cyan-500 h-full rounded-full" style="width: 100%;"></div>
+            </div>
+            <p class="text-[11px] text-slate-400">Reverse digit span evaluating dorsolateral prefrontal attention loops.</p>
+          </div>
+
+          <div class="bg-surface-900/90 p-4 rounded-2xl border border-surface-700/80">
+            <div class="flex justify-between items-center mb-1 text-xs">
+              <span class="text-slate-300 font-semibold">Subjective Stability</span>
+              <span id="cog-score-scd" class="font-bold text-emerald-400">6/6</span>
+            </div>
+            <div class="w-full bg-surface-700 h-2 rounded-full overflow-hidden mb-2">
+              <div id="bar-cog-scd" class="bg-emerald-500 h-full rounded-full" style="width: 100%;"></div>
+            </div>
+            <p class="text-[11px] text-slate-400">Freedom from noticeable changes in everyday navigation and finance recall.</p>
+          </div>
+
+        </div>
+
+        <div id="cog-clinical-note" class="mt-4 p-3.5 bg-surface-900/60 rounded-xl border border-surface-700 text-xs text-slate-300 leading-relaxed">
+          <!-- Populated dynamically via JS -->
+        </div>
+      </div>
+
+      <!-- Categorized Subsystem Health Risk Breakdown -->
+      <div class="bg-surface-850 border border-surface-700 rounded-3xl p-6 sm:p-8 shadow-xl">
+        <h3 class="text-xl font-bold text-white mb-2 flex items-center gap-2.5">
+          <i data-lucide="layers" class="w-6 h-6 text-emerald-400"></i>
+          Multi-System Physiological Hazard Profile
+        </h3>
+        <p class="text-xs text-slate-400 mb-6">Quantified organ system vulnerabilities integrating environmental and toxicological loads.</p>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+          
+          <!-- Neuro-Vascular Risk -->
+          <div class="bg-surface-900/80 p-4 sm:p-5 rounded-2xl border border-surface-700/80">
+            <div class="flex justify-between items-center mb-2">
+              <span class="text-xs font-semibold text-slate-300 flex items-center gap-1.5">
+                <i data-lucide="brain" class="w-4 h-4 text-indigo-400"></i> Neuro-Vascular
+              </span>
+              <span id="score-neuro" class="text-xs font-bold text-emerald-400">16% (Low)</span>
+            </div>
+            <div class="w-full bg-surface-700 h-2.5 rounded-full overflow-hidden mb-2">
+              <div id="bar-neuro" class="bg-emerald-500 h-full rounded-full transition-all duration-700" style="width: 16%;"></div>
+            </div>
+            <p id="desc-neuro" class="text-[11px] text-slate-400">Weighed for cognitive score, highway PM2.5, BP, and alcohol neurotoxicity.</p>
+          </div>
+
+          <!-- Cardiovascular Risk -->
+          <div class="bg-surface-900/80 p-4 sm:p-5 rounded-2xl border border-surface-700/80">
+            <div class="flex justify-between items-center mb-2">
+              <span class="text-xs font-semibold text-slate-300 flex items-center gap-1.5">
+                <i data-lucide="heart" class="w-4 h-4 text-rose-400"></i> Cardiovascular
+              </span>
+              <span id="score-cardio" class="text-xs font-bold text-emerald-400">20% (Low)</span>
+            </div>
+            <div class="w-full bg-surface-700 h-2.5 rounded-full overflow-hidden mb-2">
+              <div id="bar-cardio" class="bg-emerald-500 h-full rounded-full transition-all duration-700" style="width: 20%;"></div>
+            </div>
+            <p id="desc-cardio" class="text-[11px] text-slate-400">Weighed for blood pressure, traffic particles, tobacco, and aerobic fitness.</p>
+          </div>
+
+          <!-- Respiratory Risk -->
+          <div class="bg-surface-900/80 p-4 sm:p-5 rounded-2xl border border-surface-700/80">
+            <div class="flex justify-between items-center mb-2">
+              <span class="text-xs font-semibold text-slate-300 flex items-center gap-1.5">
+                <i data-lucide="wind" class="w-4 h-4 text-cyan-400"></i> Respiratory
+              </span>
+              <span id="score-resp" class="text-xs font-bold text-emerald-400">15% (Low)</span>
+            </div>
+            <div class="w-full bg-surface-700 h-2.5 rounded-full overflow-hidden mb-2">
+              <div id="bar-resp" class="bg-emerald-500 h-full rounded-full transition-all duration-700" style="width: 15%;"></div>
+            </div>
+            <p id="desc-resp" class="text-[11px] text-slate-400">Weighed for smoking pack-years, vaping aerosols, and roadway distance.</p>
+          </div>
+
+          <!-- Metabolic & Toxicological Risk -->
+          <div class="bg-surface-900/80 p-4 sm:p-5 rounded-2xl border border-surface-700/80">
+            <div class="flex justify-between items-center mb-2">
+              <span class="text-xs font-semibold text-slate-300 flex items-center gap-1.5">
+                <i data-lucide="flame" class="w-4 h-4 text-amber-400"></i> Metabolic & Toxins
+              </span>
+              <span id="score-meta" class="text-xs font-bold text-emerald-400">18% (Low)</span>
+            </div>
+            <div class="w-full bg-surface-700 h-2.5 rounded-full overflow-hidden mb-2">
+              <div id="bar-meta" class="bg-emerald-500 h-full rounded-full transition-all duration-700" style="width: 18%;"></div>
+            </div>
+            <p id="desc-meta" class="text-[11px] text-slate-400">Weighed for BMI, visceral waist ratio, diet pattern, alcohol, and drug burden.</p>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Factor Impact Waterfall Chart -->
+      <div class="bg-surface-850 border border-surface-700 rounded-3xl p-6 sm:p-8 shadow-xl">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between pb-4 mb-4 border-b border-surface-700/80 gap-2">
+          <div>
+            <h3 class="text-xl font-bold text-white flex items-center gap-2">
+              <i data-lucide="bar-chart-3" class="w-6 h-6 text-cyan-400"></i>
+              Years Added vs Lost Longevity Waterfall
+            </h3>
+            <p class="text-xs text-slate-400 mt-0.5">Epidemiological contribution of individual habits, cognitive reserve, and environmental exposures.</p>
+          </div>
+          <div class="flex items-center space-x-4 text-xs font-semibold">
+            <span class="flex items-center gap-1.5 text-emerald-400"><span class="w-3 h-3 rounded-full bg-emerald-500"></span> Gained Life (+)</span>
+            <span class="flex items-center gap-1.5 text-rose-400"><span class="w-3 h-3 rounded-full bg-rose-500"></span> Life Penalties (-)</span>
+          </div>
+        </div>
+
+        <div class="h-80 w-full">
+          <canvas id="impactChart"></canvas>
+        </div>
+      </div>
+
+      <!-- Interactive Longevity Sandbox / "What-If" Simulator -->
+      <div class="bg-gradient-to-br from-surface-850 via-surface-900 to-teal-950/40 border-2 border-teal-500/40 rounded-3xl p-6 sm:p-8 shadow-2xl relative">
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-6 mb-6 border-b border-surface-700/80">
+          <div>
+            <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-teal-500/20 text-teal-300 text-xs font-bold border border-teal-500/30 mb-2">
+              <i data-lucide="sparkles" class="w-3.5 h-3.5"></i> Interactive Longevity Simulator
+            </div>
+            <h3 class="text-2xl font-bold text-white">"What-If" Habit & Cognitive Optimization Sandbox</h3>
+            <p class="text-sm text-slate-300 mt-1">Simulate adopting evidence-backed protocols to see how many years of life and cognitive healthspan you can reclaim.</p>
+          </div>
+          <div class="bg-surface-900/90 p-4 rounded-2xl border border-teal-500/30 flex items-center space-x-4">
+            <div>
+              <span class="text-[11px] uppercase tracking-wider text-slate-400 font-bold block">Potential Reclaimed Life</span>
+              <span id="sandbox-gain-counter" class="text-3xl font-black text-emerald-400">+0.0 Years</span>
+            </div>
+            <div class="w-12 h-12 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center border border-emerald-500/30">
+              <i data-lucide="trending-up" class="w-6 h-6"></i>
+            </div>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <!-- Toggle 1: Clean Air HEPA -->
+          <div class="bg-surface-900/70 p-4 rounded-2xl border border-surface-700 flex items-center justify-between">
+            <div class="pr-2">
+              <span class="text-xs font-bold text-slate-200 block">Deploy Indoor True HEPA Purifiers</span>
+              <span class="text-[11px] text-cyan-400">Eliminates 90%+ highway PM2.5 particles</span>
+            </div>
+            <label class="relative inline-flex items-center cursor-pointer">
+              <input type="checkbox" id="sim-hepa" class="sr-only peer">
+              <div class="w-11 h-6 bg-surface-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-teal-500"></div>
+            </label>
+          </div>
+
+          <!-- Toggle 2: Complete Cessation -->
+          <div class="bg-surface-900/70 p-4 rounded-2xl border border-surface-700 flex items-center justify-between">
+            <div class="pr-2">
+              <span class="text-xs font-bold text-slate-200 block">Smoking / Vaping Cessation</span>
+              <span class="text-[11px] text-amber-400">Restores cerebral microcirculation</span>
+            </div>
+            <label class="relative inline-flex items-center cursor-pointer">
+              <input type="checkbox" id="sim-quit-smoke" class="sr-only peer">
+              <div class="w-11 h-6 bg-surface-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-teal-500"></div>
+            </label>
+          </div>
+
+          <!-- Toggle 3: Cardiorespiratory Exercise -->
+          <div class="bg-surface-900/70 p-4 rounded-2xl border border-surface-700 flex items-center justify-between">
+            <div class="pr-2">
+              <span class="text-xs font-bold text-slate-200 block">150+ Min/Wk Zone 2 Aerobic Exercise</span>
+              <span class="text-[11px] text-emerald-400">Stimulates BDNF & neurogenesis</span>
+            </div>
+            <label class="relative inline-flex items-center cursor-pointer">
+              <input type="checkbox" id="sim-exercise" class="sr-only peer">
+              <div class="w-11 h-6 bg-surface-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-teal-500"></div>
+            </label>
+          </div>
+
+          <!-- Toggle 4: MIND / Mediterranean Diet -->
+          <div class="bg-surface-900/70 p-4 rounded-2xl border border-surface-700 flex items-center justify-between">
+            <div class="pr-2">
+              <span class="text-xs font-bold text-slate-200 block">Adopt MIND Diet Regimen</span>
+              <span class="text-[11px] text-emerald-400">Berries, olive oil, greens (anti-amyloid)</span>
+            </div>
+            <label class="relative inline-flex items-center cursor-pointer">
+              <input type="checkbox" id="sim-diet" class="sr-only peer">
+              <div class="w-11 h-6 bg-surface-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-teal-500"></div>
+            </label>
+          </div>
+
+          <!-- Toggle 5: Optimal Sleep -->
+          <div class="bg-surface-900/70 p-4 rounded-2xl border border-surface-700 flex items-center justify-between">
+            <div class="pr-2">
+              <span class="text-xs font-bold text-slate-200 block">7.5 - 8.5 Hrs Restorative Sleep</span>
+              <span class="text-[11px] text-indigo-400">Activates glymphatic plaque clearance</span>
+            </div>
+            <label class="relative inline-flex items-center cursor-pointer">
+              <input type="checkbox" id="sim-sleep" class="sr-only peer">
+              <div class="w-11 h-6 bg-surface-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-teal-500"></div>
+            </label>
+          </div>
+
+          <!-- Toggle 6: Alcohol Harm Reduction -->
+          <div class="bg-surface-900/70 p-4 rounded-2xl border border-surface-700 flex items-center justify-between">
+            <div class="pr-2">
+              <span class="text-xs font-bold text-slate-200 block">Cap Alcohol to &lt; 2 Drinks/Week</span>
+              <span class="text-[11px] text-purple-400">Prevents cortical gray matter loss</span>
+            </div>
+            <label class="relative inline-flex items-center cursor-pointer">
+              <input type="checkbox" id="sim-alcohol" class="sr-only peer">
+              <div class="w-11 h-6 bg-surface-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-teal-500"></div>
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tailored Evidence-Based Action Plan -->
+      <div class="bg-surface-850 border border-surface-700 rounded-3xl p-6 sm:p-8 shadow-xl">
+        <h3 class="text-xl font-bold text-white mb-2 flex items-center gap-2">
+          <i data-lucide="compass" class="w-6 h-6 text-emerald-400"></i>
+          Prioritized Action Plan & Neuroprotective Protocols
+        </h3>
+        <p class="text-xs text-slate-400 mb-6">Targeted interventions prioritized according to your identified risk drivers.</p>
+
+        <div id="recommendations-container" class="space-y-4">
+          <!-- Dynamically populated via JS -->
+        </div>
+      </div>
+
+      <!-- Medical Disclaimer & Scientific References -->
+      <div class="bg-surface-900/90 rounded-2xl p-5 border border-surface-700/80 text-slate-400 text-xs leading-relaxed space-y-2">
+        <div class="flex items-center space-x-2 text-amber-400 font-semibold">
+          <i data-lucide="alert-triangle" class="w-4 h-4"></i>
+          <span>Clinical & Educational Screening Disclaimer</span>
+        </div>
+        <p>
+          This platform and cognitive screening battery are designed strictly for educational, research, and preventive awareness. 
+          The cognitive tasks are digital adaptations inspired by validated neuropsychological screening batteries (Mini-Cog, MoCA, AD8, Trail Making Test), 
+          <strong>not a formal medical diagnosis of Mild Cognitive Impairment (MCI) or Alzheimer’s disease</strong>. 
+          Performance can be influenced by acute stress, lack of sleep, sensory impairments, or test fatigue. 
+          If you or family members notice persistent memory difficulties or daily functional impairment, please schedule an evaluation with a board-certified neurologist or geriatrician.
+        </p>
+      </div>
+
+    </section>
+
+  </main>
+
+  <!-- Notification Toast Container -->
+  <div id="toast-modal" class="fixed bottom-6 right-6 z-50 transform translate-y-24 opacity-0 transition-all duration-300 pointer-events-none">
+    <div class="bg-surface-800 border border-emerald-500/40 text-slate-100 px-4 py-3 rounded-2xl shadow-2xl flex items-center space-x-3">
+      <i id="toast-icon" data-lucide="check-circle" class="w-5 h-5 text-emerald-400"></i>
+      <span id="toast-msg" class="text-xs font-semibold">Settings updated</span>
+    </div>
+  </div>
+
+  <script>
+    // Global Application State
+    const state = {
+      currentStep: 1,
+      unitSystem: 'imperial',
+      age: 38,
+      sex: 'male',
+      frame: 'athletic',
+      heightFt: 5,
+      heightIn: 10,
+      heightCm: 178,
+      weightLbs: 168,
+      weightKg: 76,
+      waistIn: 33,
+      // Habits & Toxins
+      smoking: 'none',
+      smokingYears: 5,
+      vaping: 'none',
+      weed: 'never',
+      alcoholDrinks: 2,
+      bingeDrinking: false,
+      drugUse: 'none',
+      // Environment & Lifestyle
+      highwayProximity: 'safe',
+      hepaActive: false,
+      exercise: 'moderate',
+      diet: 'mediterranean',
+      sleepHrs: 7.5,
+      bloodPressure: 'normal',
+      // Cognitive Screener State
+      cognitive: {
+        taken: false,
+        skipped: false,
+        currentStage: 1,
+        // Battery Data
+        targetWords: ['VELVET', 'NYLON', 'CHURCH', 'DAHLIA', 'AMBER'],
+        trailSequence: ['1', 'A', '2', 'B', '3', 'C', '4', 'D'],
+        trailCurrentIndex: 0,
+        trailStartTime: null,
+        trailErrors: 0,
+        trailDuration: 0,
+        digitSequence: [7, 2, 8, 4],
+        digitUserInput: '',
+        delayedWordsInput: '',
+        recalledCount: 0,
+        scdFlags: 0,
+        // Domain Scores
+        scores: {
+          memory: 9,
+          executive: 8,
+          working: 6,
+          subjective: 6,
+          total: 29
+        }
+      },
+      // Simulator Overrides
+      sim: {
+        hepa: false,
+        quitSmoke: false,
+        exercise: false,
+        diet: false,
+        sleep: false,
+        alcohol: false
+      }
+    };
+
+    let impactChartInstance = null;
+
+    function calculateBMI() {
+      let heightM = 1.78;
+      let weightKg = 76;
+
+      if (state.unitSystem === 'imperial') {
+        const totalInches = (Number(state.heightFt) * 12) + Number(state.heightIn);
+        heightM = (totalInches * 2.54) / 100;
+        weightKg = Number(state.weightLbs) * 0.453592;
+      } else {
+        heightM = Number(state.heightCm) / 100;
+        weightKg = Number(state.weightKg);
+      }
+
+      if (heightM <= 0) heightM = 1.75;
+      const bmi = weightKg / (heightM * heightM);
+      return { bmi: parseFloat(bmi.toFixed(1)), heightM, weightKg };
+    }
+
+    function updateBMIGauge() {
+      const { bmi, heightM } = calculateBMI();
+      document.getElementById('bmi-value-display').textContent = `${bmi} kg/m²`;
+
+      const badge = document.getElementById('bmi-category-badge');
+      if (bmi < 18.5) {
+        badge.textContent = 'Underweight';
+        badge.className = 'px-2.5 py-0.5 rounded-full text-xs font-bold bg-cyan-500/20 text-cyan-300 border border-cyan-500/30';
+      } else if (bmi < 25) {
+        badge.textContent = 'Optimal / Normal';
+        badge.className = 'px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30';
+      } else if (bmi < 30) {
+        badge.textContent = state.frame === 'athletic' ? 'Muscular / Athletic' : 'Overweight';
+        badge.className = 'px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30';
+      } else {
+        badge.textContent = 'Obese Range';
+        badge.className = 'px-2.5 py-0.5 rounded-full text-xs font-bold bg-rose-500/20 text-rose-300 border border-rose-500/30';
+      }
+
+      const clampedBmi = Math.min(40, Math.max(15, bmi));
+      const percentage = ((clampedBmi - 15) / (40 - 15)) * 100;
+      document.getElementById('bmi-needle').style.left = `${Math.min(96, Math.max(2, percentage))}%`;
+
+      const waistCm = state.waistIn * 2.54;
+      const heightCmVal = heightM * 100;
+      const whr = (waistCm / (heightCmVal || 178)).toFixed(2);
+      const whrText = whr < 0.53 ? 'Favorable' : 'Visceral Risk';
+      document.getElementById('whr-indicator').innerHTML = `Waist/Height Ratio: <span class="font-semibold text-slate-200">${whr}</span> (${whrText})`;
+    }
+
+    function startCognitiveBattery() {
+      state.cognitive.taken = true;
+      state.cognitive.skipped = false;
+      document.getElementById('cognitive-choice-card').classList.add('hidden');
+      document.getElementById('cognitive-battery-container').classList.remove('hidden');
+      document.getElementById('cognitive-skipped-banner').classList.add('hidden');
+      advanceCogStage(1);
+    }
+
+    function skipCognitiveBattery() {
+      state.cognitive.taken = false;
+      state.cognitive.skipped = true;
+      document.getElementById('cognitive-choice-card').classList.add('hidden');
+      document.getElementById('cognitive-battery-container').classList.add('hidden');
+      document.getElementById('cognitive-skipped-banner').classList.remove('hidden');
+      showToast('Cognitive assessment skipped.');
+    }
+
+    function advanceCogStage(stageNum) {
+      state.cognitive.currentStage = stageNum;
+      document.getElementById('cog-stage-badge').textContent = `Stage ${stageNum} of 5`;
+
+      for (let s = 1; s <= 5; s++) {
+        const stageEl = document.getElementById(`cog-stage-${s}`);
+        if (stageEl) {
+          if (s === stageNum) stageEl.classList.remove('hidden');
+          else stageEl.classList.add('hidden');
+        }
+      }
+
+      const titles = {
+        1: 'Immediate Word Registration',
+        2: 'Executive Alternation (Trail Making)',
+        3: 'Attention & Reverse Working Memory',
+        4: 'Delayed Hippocampal Recall',
+        5: 'Subjective Cognitive Status'
+      };
+      document.getElementById('cog-stage-title').textContent = titles[stageNum];
+
+      if (stageNum === 1) {
+        startStage1Countdown();
+      } else if (stageNum === 2) {
+        initTrailMakingTest();
+      } else if (stageNum === 3) {
+        startDigitSpanSequence();
+      }
+
+      if (window.lucide) lucide.createIcons();
+    }
+
+    let stage1TimerId = null;
+    function startStage1Countdown() {
+      let secondsLeft = 8;
+      const label = document.getElementById('cog-countdown');
+      if (stage1TimerId) clearInterval(stage1TimerId);
+      label.textContent = `Study timer: ${secondsLeft}s remaining`;
+
+      stage1TimerId = setInterval(() => {
+        secondsLeft--;
+        if (secondsLeft <= 0) {
+          clearInterval(stage1TimerId);
+          label.textContent = `Study time completed`;
+        } else {
+          label.textContent = `Study timer: ${secondsLeft}s remaining`;
+        }
+      }, 1000);
+    }
+
+    function initTrailMakingTest() {
+      state.cognitive.trailCurrentIndex = 0;
+      state.cognitive.trailErrors = 0;
+      state.cognitive.trailStartTime = Date.now();
+      document.getElementById('trail-next-target').textContent = state.cognitive.trailSequence[0];
+      document.getElementById('trail-errors').textContent = '0';
+      document.getElementById('trail-timer').textContent = '0.0s';
+      document.getElementById('trail-complete-banner').classList.add('hidden');
+      const continueBtn = document.getElementById('btn-next-stage-2');
+      continueBtn.disabled = true;
+      continueBtn.className = 'px-6 py-2.5 rounded-xl bg-surface-700 text-slate-400 cursor-not-allowed font-semibold text-sm transition';
+
+      const arena = document.getElementById('trail-grid');
+      arena.innerHTML = '';
+
+      // Coordinates for 8 scattered nodes (percentages)
+      const positions = [
+        { top: 15, left: 12 },
+        { top: 18, left: 78 },
+        { top: 72, left: 20 },
+        { top: 68, left: 82 },
+        { top: 42, left: 45 },
+        { top: 14, left: 48 },
+        { top: 74, left: 52 },
+        { top: 45, left: 18 }
+      ];
+
+      // Shuffle positions for fresh trial
+      const shuffledPositions = positions.sort(() => Math.random() - 0.5);
+
+      state.cognitive.trailSequence.forEach((item, idx) => {
+        const node = document.createElement('button');
+        node.type = 'button';
+        node.textContent = item;
+        node.dataset.target = item;
+        node.style.top = `${shuffledPositions[idx].top}%`;
+        node.style.left = `${shuffledPositions[idx].left}%`;
+        node.className = 'trail-node absolute w-11 h-11 -ml-5 -mt-5 rounded-full bg-surface-800 border-2 border-indigo-500/60 text-white font-mono font-extrabold text-base flex items-center justify-center shadow-lg hover:border-teal-400';
+        
+        node.addEventListener('click', () => handleTrailNodeClick(node, item));
+        arena.appendChild(node);
+      });
+    }
+
+    function handleTrailNodeClick(nodeEl, clickedVal) {
+      const expectedVal = state.cognitive.trailSequence[state.cognitive.trailCurrentIndex];
+
+      if (clickedVal === expectedVal) {
+        nodeEl.className = 'trail-node absolute w-11 h-11 -ml-5 -mt-5 rounded-full bg-emerald-600 border-2 border-white text-white font-mono font-extrabold text-base flex items-center justify-center shadow-lg shadow-emerald-500/40 pointer-events-none scale-105';
+        state.cognitive.trailCurrentIndex++;
+
+        if (state.cognitive.trailCurrentIndex >= state.cognitive.trailSequence.length) {
+          // Finished trail
+          const elapsed = ((Date.now() - state.cognitive.trailStartTime) / 1000).toFixed(1);
+          state.cognitive.trailDuration = parseFloat(elapsed);
+          document.getElementById('trail-timer').textContent = `${elapsed}s`;
+          document.getElementById('trail-next-target').textContent = 'DONE';
+          document.getElementById('trail-complete-banner').classList.remove('hidden');
+
+          const continueBtn = document.getElementById('btn-next-stage-2');
+          continueBtn.disabled = false;
+          continueBtn.className = 'px-6 py-2.5 rounded-xl bg-teal-600 hover:bg-teal-500 text-white font-semibold text-sm transition';
+        } else {
+          document.getElementById('trail-next-target').textContent = state.cognitive.trailSequence[state.cognitive.trailCurrentIndex];
+          const elapsed = ((Date.now() - state.cognitive.trailStartTime) / 1000).toFixed(1);
+          document.getElementById('trail-timer').textContent = `${elapsed}s`;
+        }
+      } else {
+        state.cognitive.trailErrors++;
+        document.getElementById('trail-errors').textContent = state.cognitive.trailErrors;
+        nodeEl.classList.add('bg-rose-600', 'border-rose-400');
+        setTimeout(() => {
+          if (!nodeEl.classList.contains('bg-emerald-600')) {
+            nodeEl.classList.remove('bg-rose-600', 'border-rose-400');
+          }
+        }, 350);
+      }
+    }
+
+    function startDigitSpanSequence() {
+      const display = document.getElementById('digit-display');
+      const inputBox = document.getElementById('digit-input-box');
+      inputBox.classList.add('hidden');
+      document.getElementById('input-reverse-digits').value = '';
+
+      const digits = [7, 2, 8, 4];
+      state.cognitive.digitSequence = digits;
+      let idx = 0;
+
+      display.textContent = '3...';
+      setTimeout(() => {
+        display.textContent = '2...';
+        setTimeout(() => {
+          display.textContent = '1...';
+          setTimeout(() => {
+            const interval = setInterval(() => {
+              if (idx < digits.length) {
+                display.textContent = digits[idx];
+                idx++;
+              } else {
+                clearInterval(interval);
+                display.textContent = 'Done!';
+                setTimeout(() => {
+                  display.textContent = 'Enter in Reverse:';
+                  inputBox.classList.remove('hidden');
+                  document.getElementById('input-reverse-digits').focus();
+                }, 600);
+              }
+            }, 1000);
+          }, 800);
+        }, 800);
+      }, 800);
+    }
+
+    function submitDigitSpan() {
+      const val = document.getElementById('input-reverse-digits').value.trim();
+      state.cognitive.digitUserInput = val;
+      advanceCogStage(4);
+    }
+
+    function submitDelayedRecall() {
+      const text = document.getElementById('input-delayed-words').value.toUpperCase();
+      state.cognitive.delayedWordsInput = text;
+      
+      let matches = 0;
+      state.cognitive.targetWords.forEach(word => {
+        if (text.includes(word)) {
+          matches++;
+        }
+      });
+      state.cognitive.recalledCount = matches;
+      advanceCogStage(5);
+    }
+
+    function finalizeCognitiveBattery() {
+      // Calculate Subjective Decline Checkbox count
+      let scdFlags = 0;
+      if (document.getElementById('scd-q1').checked) scdFlags++;
+      if (document.getElementById('scd-q2').checked) scdFlags++;
+      if (document.getElementById('scd-q3').checked) scdFlags++;
+      if (document.getElementById('scd-q4').checked) scdFlags++;
+      state.cognitive.scdFlags = scdFlags;
+
+      // Score Computation (out of 30)
+      // 1. Episodic Memory (0 - 10)
+      const memoryScore = Math.min(10, Math.round(state.cognitive.recalledCount * 2));
+      
+      // 2. Executive Function (0 - 8)
+      let execScore = 8;
+      if (state.cognitive.trailDuration > 30) execScore -= 2;
+      if (state.cognitive.trailErrors > 1) execScore -= 2;
+      if (state.cognitive.trailErrors > 3) execScore -= 2;
+      execScore = Math.max(2, execScore);
+
+      // 3. Working Memory (0 - 6)
+      const expectedReverse = state.cognitive.digitSequence.slice().reverse().join('');
+      let workScore = 2;
+      if (state.cognitive.digitUserInput === expectedReverse) {
+        workScore = 6;
+      } else if (state.cognitive.digitUserInput.length >= 3) {
+        workScore = 4;
+      }
+
+      // 4. Subjective Decline (0 - 6)
+      const subjScore = Math.max(1, 6 - (scdFlags * 1.3));
+
+      const totalScore = Math.round(memoryScore + execScore + workScore + subjScore);
+
+      state.cognitive.scores = {
+        memory: memoryScore,
+        executive: execScore,
+        working: workScore,
+        subjective: Math.round(subjScore),
+        total: totalScore
+      };
+
+      calculateAndShowResults();
+    }
+
+    function computeLongevityModel(applySimulator = false) {
+      const { bmi } = calculateBMI();
+      
+      let baseCohortLE = state.sex === 'female' ? 81.8 : 76.5;
+      if (state.age > (baseCohortLE - 6)) {
+        baseCohortLE = state.age + 7 + ((92 - state.age) * 0.22);
+      }
+
+      const factors = {};
+
+      // 1. BMI Impact
+      let bmiDelta = 0;
+      if (bmi < 18.5) bmiDelta = -2.2;
+      else if (bmi >= 18.5 && bmi < 25) bmiDelta = 0.5;
+      else if (bmi >= 25 && bmi < 30) bmiDelta = state.frame === 'athletic' ? 0.0 : -1.2;
+      else if (bmi >= 30 && bmi < 35) bmiDelta = state.frame === 'athletic' ? -1.5 : -3.2;
+      else bmiDelta = -5.8;
+
+      const waistCm = state.waistIn * 2.54;
+      const heightCmVal = state.unitSystem === 'imperial' 
+        ? ((Number(state.heightFt) * 12) + Number(state.heightIn)) * 2.54 
+        : Number(state.heightCm);
+      const wtr = waistCm / (heightCmVal || 178);
+      if (wtr > 0.58) bmiDelta -= 1.0;
+      factors['Body Composition & BMI'] = parseFloat(bmiDelta.toFixed(1));
+
+      // 2. Tobacco Smoke
+      let smokeDelta = 0;
+      const isSmokingQuit = applySimulator && state.sim.quitSmoke;
+      if (!isSmokingQuit) {
+        if (state.smoking === 'pack_plus') smokeDelta = -7.6 - Math.min(Number(state.smokingYears) * 0.12, 3.0);
+        else if (state.smoking === 'half_pack') smokeDelta = -4.4 - Math.min(Number(state.smokingYears) * 0.08, 2.0);
+        else if (state.smoking === 'light') smokeDelta = -2.4;
+        else if (state.smoking === 'recent_former') smokeDelta = -1.1;
+        else if (state.smoking === 'former') smokeDelta = -0.3;
+      } else {
+        if (state.smoking !== 'none') smokeDelta = -0.6;
+      }
+      factors['Combustible Smoking'] = parseFloat(smokeDelta.toFixed(1));
+
+      // 3. Vaping
+      let vapeDelta = 0;
+      if (!(applySimulator && state.sim.quitSmoke)) {
+        if (state.vaping === 'daily_high') vapeDelta = -2.2;
+        else if (state.vaping === 'daily_low') vapeDelta = -1.1;
+        else if (state.vaping === 'occasional') vapeDelta = -0.3;
+      }
+      factors['Vaping Aerosols'] = parseFloat(vapeDelta.toFixed(1));
+
+      // 4. Cannabis
+      let weedDelta = 0;
+      if (state.weed === 'smoke_daily') weedDelta = -1.6;
+      else if (state.weed === 'smoke_frequent') weedDelta = -0.8;
+      else if (state.weed === 'smoke_occasional') weedDelta = -0.2;
+      factors['Cannabis Inhalation'] = parseFloat(weedDelta.toFixed(1));
+
+      // 5. Alcohol
+      let drinks = Number(state.alcoholDrinks);
+      if (applySimulator && state.sim.alcohol) drinks = Math.min(drinks, 2);
+      let alcoholDelta = 0;
+      if (drinks === 0) alcoholDelta = 0.2;
+      else if (drinks <= 4) alcoholDelta = 0.0;
+      else if (drinks <= 10) alcoholDelta = -0.9;
+      else if (drinks <= 18) alcoholDelta = -2.5;
+      else alcoholDelta = -5.0;
+
+      if (state.bingeDrinking && (!applySimulator || !state.sim.alcohol)) alcoholDelta -= 1.6;
+      factors['Alcohol Consumption'] = parseFloat(alcoholDelta.toFixed(1));
+
+      // 6. Drugs
+      let drugDelta = 0;
+      if (state.drugUse === 'regular') drugDelta = -7.5;
+      else if (state.drugUse === 'monthly') drugDelta = -2.2;
+      else if (state.drugUse === 'rare') drugDelta = -0.5;
+      factors['Recreational Drugs'] = parseFloat(drugDelta.toFixed(1));
+
+      // 7. Highway Proximity & Ultrafine Traffic Particles
+      let highwayDelta = 0;
+      const isHepaProtected = state.hepaActive || (applySimulator && state.sim.hepa);
+      if (state.highwayProximity === 'critical') highwayDelta = isHepaProtected ? -0.6 : -2.5;
+      else if (state.highwayProximity === 'high') highwayDelta = isHepaProtected ? -0.3 : -1.5;
+      else if (state.highwayProximity === 'moderate') highwayDelta = isHepaProtected ? -0.1 : -0.7;
+      else highwayDelta = 0.2;
+      factors['Highway Traffic PM2.5'] = parseFloat(highwayDelta.toFixed(1));
+
+      // 8. Exercise & Cardio
+      let exerciseDelta = 0;
+      const exerciseLevel = (applySimulator && state.sim.exercise) ? 'vigorous' : state.exercise;
+      if (exerciseLevel === 'vigorous') exerciseDelta = 3.6;
+      else if (exerciseLevel === 'moderate') exerciseDelta = 2.4;
+      else if (exerciseLevel === 'light') exerciseDelta = 0.5;
+      else exerciseDelta = -2.2;
+      factors['Physical Fitness & BDNF'] = parseFloat(exerciseDelta.toFixed(1));
+
+      // 9. Diet
+      let dietDelta = 0;
+      const dietLevel = (applySimulator && state.sim.diet) ? 'mediterranean' : state.diet;
+      if (dietLevel === 'plant_forward') dietDelta = 3.0;
+      else if (dietLevel === 'mediterranean') dietDelta = 2.4;
+      else if (dietLevel === 'average') dietDelta = 0.0;
+      else dietDelta = -2.3;
+      factors['MIND / Mediterranean Diet'] = parseFloat(dietDelta.toFixed(1));
+
+      // 10. Sleep
+      let sleepHrs = Number(state.sleepHrs);
+      if (applySimulator && state.sim.sleep) sleepHrs = 7.5;
+      let sleepDelta = 0;
+      if (sleepHrs >= 7.0 && sleepHrs <= 8.5) sleepDelta = 1.2;
+      else if (sleepHrs >= 6.0 && sleepHrs < 7.0) sleepDelta = -0.4;
+      else if (sleepHrs < 6.0) sleepDelta = -2.2;
+      else sleepDelta = -0.7;
+      factors['Sleep & Glymphatic Health'] = parseFloat(sleepDelta.toFixed(1));
+
+      // 11. Blood Pressure
+      let bpDelta = 0;
+      if (state.bloodPressure === 'stage2') bpDelta = -3.8;
+      else if (state.bloodPressure === 'stage1') bpDelta = -2.0;
+      else if (state.bloodPressure === 'elevated') bpDelta = -0.7;
+      factors['Vascular Blood Pressure'] = parseFloat(bpDelta.toFixed(1));
+
+      // 12. Cognitive Reserve & Pre-Dementia Marker
+      let cogDelta = 0;
+      if (state.cognitive.taken) {
+        const score = state.cognitive.scores.total;
+        if (score >= 26) cogDelta = 1.5; // High cognitive reserve
+        else if (score >= 22) cogDelta = 0.0; // Expected baseline
+        else if (score >= 17) cogDelta = -2.5; // Mild Cognitive Impairment warning
+        else cogDelta = -4.5; // Marked neurocognitive risk
+      }
+      factors['Cognitive Reserve Index'] = parseFloat(cogDelta.toFixed(1));
+
+      const totalDelta = Object.values(factors).reduce((acc, curr) => acc + curr, 0);
+      const estimatedLE = Math.max(state.age + 1.5, parseFloat((baseCohortLE + totalDelta).toFixed(1)));
+      const biologicalAge = Math.max(16, parseFloat((state.age - (totalDelta * 0.72)).toFixed(1)));
+      
+      // Healthspan free of chronic cognitive/vascular decline
+      const cognitiveHealthspan = Math.max(state.age + 1.0, parseFloat((estimatedLE - 4.2 + (factors['Cognitive Reserve Index'] * 0.8)).toFixed(1)));
+
+      return {
+        baseCohortLE: parseFloat(baseCohortLE.toFixed(1)),
+        estimatedLE,
+        cognitiveHealthspan,
+        totalDelta: parseFloat(totalDelta.toFixed(1)),
+        biologicalAge,
+        factors,
+        bmi
+      };
+    }
+
+    function computeRiskSubscores() {
+      // Neuro-Vascular Risk
+      let neuroRisk = 15;
+      if (state.bloodPressure === 'stage2') neuroRisk += 28;
+      else if (state.bloodPressure === 'stage1') neuroRisk += 16;
+      if (state.highwayProximity === 'critical' && !state.hepaActive) neuroRisk += 24;
+      else if (state.highwayProximity === 'high' && !state.hepaActive) neuroRisk += 14;
+      if (state.alcoholDrinks > 14) neuroRisk += 20;
+      if (state.sleepHrs < 6) neuroRisk += 16;
+      if (state.cognitive.taken) {
+        if (state.cognitive.scores.total < 20) neuroRisk += 30;
+        else if (state.cognitive.scores.total < 25) neuroRisk += 15;
+        else neuroRisk -= 10;
+      }
+      neuroRisk = Math.min(98, Math.max(8, neuroRisk));
+
+      // Cardiovascular
+      let cardioRisk = 14;
+      if (state.bloodPressure === 'stage2') cardioRisk += 32;
+      if (state.exercise === 'sedentary') cardioRisk += 20;
+      if (state.smoking !== 'none' && !state.smoking.includes('former')) cardioRisk += 25;
+      if (state.highwayProximity === 'critical') cardioRisk += 14;
+      cardioRisk = Math.min(98, Math.max(8, cardioRisk));
+
+      // Respiratory
+      let respRisk = 12;
+      if (state.smoking === 'pack_plus') respRisk += 45;
+      else if (state.smoking === 'half_pack') respRisk += 30;
+      if (state.vaping.includes('daily')) respRisk += 20;
+      if (state.highwayProximity === 'critical' && !state.hepaActive) respRisk += 22;
+      respRisk = Math.min(98, Math.max(8, respRisk));
+
+      // Metabolic & Toxins
+      const { bmi } = calculateBMI();
+      let metaRisk = 14;
+      if (bmi > 30) metaRisk += 28;
+      if (state.diet === 'ultra_processed') metaRisk += 22;
+      if (state.drugUse === 'regular') metaRisk += 45;
+      if (state.bingeDrinking) metaRisk += 18;
+      metaRisk = Math.min(98, Math.max(8, metaRisk));
+
+      const compositeHazard = (neuroRisk + cardioRisk + respRisk + metaRisk) / 4;
+      const vitalityScore = Math.max(12, Math.min(98, Math.round(100 - (compositeHazard * 0.85))));
+
+      return { neuroRisk, cardioRisk, respRisk, metaRisk, vitalityScore };
+    }
+
+    function renderImpactChart(factors) {
+      const ctx = document.getElementById('impactChart').getContext('2d');
+      const labels = Object.keys(factors);
+      const data = Object.values(factors);
+
+      const backgroundColors = data.map(val => val >= 0 ? 'rgba(16, 185, 129, 0.85)' : 'rgba(244, 63, 94, 0.85)');
+      const borderColors = data.map(val => val >= 0 ? '#10b981' : '#f43f5e');
+
+      if (impactChartInstance) {
+        impactChartInstance.destroy();
+      }
+
+      impactChartInstance = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: labels,
+          datasets: [{
+            label: 'Years Gained (+) or Lost (-)',
+            data: data,
+            backgroundColor: backgroundColors,
+            borderColor: borderColors,
+            borderWidth: 1.5,
+            borderRadius: 6,
+          }]
+        },
+        options: {
+          indexAxis: 'y',
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              callbacks: {
+                label: function(context) {
+                  const val = context.raw;
+                  return (val >= 0 ? `+${val}` : `${val}`) + ' years longevity impact';
+                }
+              }
+            }
+          },
+          scales: {
+            x: {
+              grid: { color: 'rgba(51, 65, 85, 0.4)' },
+              ticks: {
+                color: '#94a3b8',
+                callback: function(value) {
+                  return (value > 0 ? `+${value}` : value) + ' yr';
+                }
+              }
+            },
+            y: {
+              grid: { display: false },
+              ticks: { color: '#cbd5e1', font: { size: 11 } }
+            }
+          }
+        }
+      });
+    }
+
+    function updateSimulatorMetrics() {
+      const baseline = computeLongevityModel(false);
+      const simulated = computeLongevityModel(true);
+
+      const yearsReclaimed = Math.max(0, simulated.estimatedLE - baseline.estimatedLE);
+      document.getElementById('sandbox-gain-counter').textContent = `+${yearsReclaimed.toFixed(1)} Years`;
+
+      const counterEl = document.getElementById('sandbox-gain-counter');
+      counterEl.classList.remove('scale-110');
+      void counterEl.offsetWidth;
+      counterEl.classList.add('scale-110');
+    }
+
+    function generatePersonalizedRecommendations(model, risks) {
+      const recs = [];
+
+      // Cognitive Screener feedback
+      if (state.cognitive.taken) {
+        const cog = state.cognitive.scores;
+        if (cog.total < 22) {
+          recs.push({
+            level: 'Clinical Follow-up Advised',
+            icon: 'alert-triangle',
+            title: 'Mild Cognitive Vulnerability Detected (Schedule Clinical Screening)',
+            text: 'Your interactive screen indicated subtle delays in delayed recall or executive alternation. Discuss these findings with your primary physician or a neurologist for a formal Montreal Cognitive Assessment (MoCA), thyroid/B12 panel, and vascular evaluation.',
+            badgeColor: 'border-rose-500/40 bg-rose-950/40 text-rose-300'
+          });
+        } else {
+          recs.push({
+            level: 'Neuro-Protection',
+            icon: 'sparkles',
+            title: 'Preserve Robust Cognitive Reserve',
+            text: 'Your cognitive battery scores demonstrate strong hippocampal retention and prefrontal alternation. Continue daily cognitive novelty, dual-task physical exercise, and multi-lingual or musical engagement to reinforce synaptic density.',
+            badgeColor: 'border-indigo-500/40 bg-indigo-950/40 text-indigo-300'
+          });
+        }
+      }
+
+      // Highway Air Quality
+      if (state.highwayProximity === 'critical' || state.highwayProximity === 'high') {
+        recs.push({
+          level: 'High Impact Environment',
+          icon: 'wind',
+          title: 'Mitigate Highway Ultrafine Particulate (PM2.5 / Black Carbon)',
+          text: state.hepaActive 
+            ? 'Great job deploying indoor HEPA filtration. Replace filters every 6 months to maintain >99% capture of ultrafine roadway soot and prevent systemic neuroinflammation.'
+            : 'Living within 150m of a major highway exposes brain capillary endothelia to ultrafine nanoparticles. Deploy an H13/H14 True HEPA purifier in the bedroom and keep windows closed during morning rush hour.',
+          badgeColor: 'border-cyan-500/40 bg-cyan-950/40 text-cyan-300'
+        });
+      }
+
+      // Blood Pressure
+      if (state.bloodPressure === 'stage1' || state.bloodPressure === 'stage2') {
+        recs.push({
+          level: 'Vascular Critical',
+          icon: 'heart-pulse',
+          title: 'Target Systolic Blood Pressure < 120 mmHg (SPRINT-MIND Protocol)',
+          text: 'The landmark SPRINT-MIND clinical trial proved intensive blood pressure control reduces the rate of Mild Cognitive Impairment by 19%. Consult your physician regarding sodium restriction, DASH dietary interventions, or antihypertensive therapy.',
+          badgeColor: 'border-rose-500/40 bg-rose-950/40 text-rose-300'
+        });
+      }
+
+      // Exercise
+      if (state.exercise === 'sedentary' || state.exercise === 'light') {
+        recs.push({
+          level: 'Neurogenesis',
+          icon: 'dumbbell',
+          title: '150 Min/Wk Zone 2 Cardio for Hippocampal BDNF',
+          text: 'Aerobic exercise is one of the only proven interventions capable of increasing the physical volume of the human hippocampus. Aim for brisk walking, rowing, or cycling where you can maintain a conversational pace.',
+          badgeColor: 'border-emerald-500/40 bg-emerald-950/40 text-emerald-300'
+        });
+      }
+
+      // Sleep
+      if (state.sleepHrs < 6.5) {
+        recs.push({
+          level: 'Glymphatic Clearance',
+          icon: 'moon',
+          title: 'Expand Sleep Window to 7.5 - 8.5 Hours',
+          text: 'During non-REM slow wave sleep, glial channels expand by 60%, allowing cerebrospinal fluid to wash away amyloid-beta aggregates. Chronic sleep deprivation halts this critical neuro-cleansing mechanism.',
+          badgeColor: 'border-indigo-500/40 bg-indigo-950/40 text-indigo-300'
+        });
+      }
+
+      const container = document.getElementById('recommendations-container');
+      container.innerHTML = '';
+
+      recs.forEach(r => {
+        const div = document.createElement('div');
+        div.className = `p-4 sm:p-5 rounded-2xl border ${r.badgeColor} bg-surface-900/80 flex items-start gap-4 transition hover:border-slate-400`;
+        div.innerHTML = `
+          <div class="p-2.5 rounded-xl bg-surface-800 border border-surface-700 mt-0.5">
+            <i data-lucide="${r.icon}" class="w-5 h-5 text-slate-200"></i>
+          </div>
+          <div class="flex-1">
+            <div class="flex items-center justify-between gap-2 mb-1 flex-wrap">
+              <h4 class="font-bold text-sm text-white">${r.title}</h4>
+              <span class="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full border ${r.badgeColor}">${r.level}</span>
+            </div>
+            <p class="text-xs text-slate-300 leading-relaxed">${r.text}</p>
+          </div>
+        `;
+        container.appendChild(div);
+      });
+
+      if (window.lucide) lucide.createIcons();
+    }
+
+    function navigateToStep(stepNumber) {
+      state.currentStep = stepNumber;
+
+      for (let i = 1; i <= 5; i++) {
+        const btn = document.getElementById(`step-nav-${i}`);
+        const sec = document.getElementById(`step-${i}`);
+
+        if (i === stepNumber) {
+          btn.className = 'step-nav-btn w-full p-2 rounded-xl flex items-center justify-center space-x-1.5 transition bg-emerald-500/20 text-emerald-300 border border-emerald-500/40';
+          sec.classList.remove('hidden');
+        } else {
+          btn.className = 'step-nav-btn w-full p-2 rounded-xl flex items-center justify-center space-x-1.5 transition bg-surface-800/50 text-slate-400 hover:text-slate-200 border border-transparent';
+          sec.classList.add('hidden');
+        }
+      }
+
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      if (window.lucide) lucide.createIcons();
+    }
+
+    function calculateAndShowResults() {
+      const model = computeLongevityModel(false);
+      const risks = computeRiskSubscores();
+
+      // Life Expectancy
+      document.getElementById('stat-life-expectancy').textContent = model.estimatedLE;
+      const diffYears = model.estimatedLE - model.baseCohortLE;
+      const diffBadge = document.getElementById('stat-diff-badge');
+      if (diffYears >= 0) {
+        diffBadge.textContent = `+${diffYears.toFixed(1)} yrs vs Cohort Avg`;
+        diffBadge.className = 'font-bold text-emerald-400';
+      } else {
+        diffBadge.textContent = `${diffYears.toFixed(1)} yrs vs Cohort Avg`;
+        diffBadge.className = 'font-bold text-rose-400';
+      }
+      document.getElementById('stat-demo-avg').textContent = `Cohort: ${model.baseCohortLE} yrs`;
+
+      // Cognitive Healthspan
+      document.getElementById('stat-cognitive-healthspan').textContent = model.cognitiveHealthspan;
+
+      // Biological Age
+      document.getElementById('stat-bio-age').textContent = model.biologicalAge;
+      const bioDiff = state.age - model.biologicalAge;
+      const bioBadge = document.getElementById('stat-bio-delta');
+      if (bioDiff >= 0) {
+        bioBadge.textContent = `${bioDiff.toFixed(1)} yrs younger`;
+        bioBadge.className = 'font-bold text-cyan-300';
+      } else {
+        bioBadge.textContent = `${Math.abs(bioDiff).toFixed(1)} yrs accelerated`;
+        bioBadge.className = 'font-bold text-rose-400';
+      }
+      document.getElementById('stat-chron-age').textContent = `Age: ${state.age}`;
+
+      // Vitality
+      document.getElementById('stat-vitality-score').textContent = risks.vitalityScore;
+      const riskTierBadge = document.getElementById('risk-tier-badge');
+      const scoreRating = document.getElementById('stat-score-rating');
+      if (risks.vitalityScore >= 80) {
+        riskTierBadge.textContent = 'Optimal Longevity Tier';
+        riskTierBadge.className = 'px-3 py-1 text-xs font-bold rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/40';
+        scoreRating.textContent = 'Superior Resilience';
+      } else if (risks.vitalityScore >= 60) {
+        riskTierBadge.textContent = 'Moderate Health Risk';
+        riskTierBadge.className = 'px-3 py-1 text-xs font-bold rounded-full bg-amber-500/20 text-amber-400 border border-amber-500/40';
+        scoreRating.textContent = 'Moderate Vulnerability';
+      } else {
+        riskTierBadge.textContent = 'Elevated Chronic Risk';
+        riskTierBadge.className = 'px-3 py-1 text-xs font-bold rounded-full bg-rose-500/20 text-rose-400 border border-rose-500/40';
+        scoreRating.textContent = 'High Vulnerability';
+      }
+
+      // Cognitive Card Breakdown
+      const cogNote = document.getElementById('cog-clinical-note');
+      if (state.cognitive.taken) {
+        const cog = state.cognitive.scores;
+        document.getElementById('cog-total-score').textContent = `${cog.total} / 30`;
+        document.getElementById('cog-score-mem').textContent = `${cog.memory}/10`;
+        document.getElementById('bar-cog-mem').style.width = `${cog.memory * 10}%`;
+
+        document.getElementById('cog-score-exec').textContent = `${cog.executive}/8`;
+        document.getElementById('bar-cog-exec').style.width = `${(cog.executive / 8) * 100}%`;
+
+        document.getElementById('cog-score-work').textContent = `${cog.working}/6`;
+        document.getElementById('bar-cog-work').style.width = `${(cog.working / 6) * 100}%`;
+
+        document.getElementById('cog-score-scd').textContent = `${cog.subjective}/6`;
+        document.getElementById('bar-cog-scd').style.width = `${(cog.subjective / 6) * 100}%`;
+
+        const pill = document.getElementById('cog-result-pill');
+        if (cog.total >= 26) {
+          pill.textContent = 'Optimal Cognitive Reserve';
+          pill.className = 'text-xs px-2.5 py-0.5 rounded-full bg-emerald-950 text-emerald-300 border border-emerald-800 font-semibold';
+          cogNote.textContent = 'Strong performances observed across delayed 5-word retrieval, executive Trail-Making alternation, and working memory. No significant pre-dementia flags identified.';
+        } else if (cog.total >= 21) {
+          pill.textContent = 'Mild Cognitive Vulnerability (MCI Flag)';
+          pill.className = 'text-xs px-2.5 py-0.5 rounded-full bg-amber-950 text-amber-300 border border-amber-800 font-semibold';
+          cogNote.textContent = 'Subtle executive hesitation or retrieval latency observed. Correlates with early pre-clinical signs. Prioritizing blood pressure reduction, Mediterranean diet, and aerobic exercise is strongly advised.';
+        } else {
+          pill.textContent = 'Elevated Neurocognitive Concern';
+          pill.className = 'text-xs px-2.5 py-0.5 rounded-full bg-rose-950 text-rose-300 border border-rose-800 font-semibold';
+          cogNote.textContent = 'Scores reflect multiple domain drops in delayed recall and working memory. A formal outpatient neurological screening (MoCA, MRI brain, cognitive labs) is recommended.';
+        }
+      } else {
+        document.getElementById('cog-total-score').textContent = 'Skipped';
+        document.getElementById('cog-result-pill').textContent = 'Not Assessed (Standard Baseline)';
+        document.getElementById('cog-result-pill').className = 'text-xs px-2.5 py-0.5 rounded-full bg-surface-800 text-slate-300 border border-surface-600 font-semibold';
+        cogNote.textContent = 'Cognitive screening battery was skipped. Life expectancy and brain age are calculated based on your physiological, environmental, and vascular metrics.';
+      }
+
+      // Risk Subscores
+      document.getElementById('score-neuro').textContent = `${risks.neuroRisk}%`;
+      document.getElementById('bar-neuro').style.width = `${risks.neuroRisk}%`;
+      document.getElementById('bar-neuro').className = risks.neuroRisk > 50 ? 'bg-rose-500 h-full rounded-full' : (risks.neuroRisk > 30 ? 'bg-amber-500 h-full rounded-full' : 'bg-emerald-500 h-full rounded-full');
+
+      document.getElementById('score-cardio').textContent = `${risks.cardioRisk}%`;
+      document.getElementById('bar-cardio').style.width = `${risks.cardioRisk}%`;
+      document.getElementById('bar-cardio').className = risks.cardioRisk > 50 ? 'bg-rose-500 h-full rounded-full' : (risks.cardioRisk > 30 ? 'bg-amber-500 h-full rounded-full' : 'bg-emerald-500 h-full rounded-full');
+
+      document.getElementById('score-resp').textContent = `${risks.respRisk}%`;
+      document.getElementById('bar-resp').style.width = `${risks.respRisk}%`;
+      document.getElementById('bar-resp').className = risks.respRisk > 50 ? 'bg-rose-500 h-full rounded-full' : (risks.respRisk > 30 ? 'bg-amber-500 h-full rounded-full' : 'bg-emerald-500 h-full rounded-full');
+
+      document.getElementById('score-meta').textContent = `${risks.metaRisk}%`;
+      document.getElementById('bar-meta').style.width = `${risks.metaRisk}%`;
+      document.getElementById('bar-meta').className = risks.metaRisk > 50 ? 'bg-rose-500 h-full rounded-full' : (risks.metaRisk > 30 ? 'bg-amber-500 h-full rounded-full' : 'bg-emerald-500 h-full rounded-full');
+
+      renderImpactChart(model.factors);
+      generatePersonalizedRecommendations(model, risks);
+      updateSimulatorMetrics();
+
+      navigateToStep(5);
+    }
+
+    function showToast(message) {
+      const toast = document.getElementById('toast-modal');
+      const msgEl = document.getElementById('toast-msg');
+      msgEl.textContent = message;
+      toast.classList.remove('translate-y-24', 'opacity-0');
+      toast.classList.add('translate-y-0', 'opacity-100');
+      setTimeout(() => {
+        toast.classList.remove('translate-y-0', 'opacity-100');
+        toast.classList.add('translate-y-24', 'opacity-0');
+      }, 2500);
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      // Age Slider
+      const inputAge = document.getElementById('input-age');
+      inputAge.addEventListener('input', (e) => {
+        state.age = Number(e.target.value);
+        document.getElementById('label-age').textContent = `${state.age} yrs`;
+      });
+
+      // Biological Sex
+      document.querySelectorAll('.sex-selector-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          state.sex = btn.getAttribute('data-sex');
+          document.querySelectorAll('.sex-selector-btn').forEach(b => {
+            b.className = 'sex-selector-btn py-2 px-3 rounded-xl border border-surface-600 bg-surface-800 text-slate-400 font-semibold text-sm flex items-center justify-center gap-2';
+            b.querySelector('i').setAttribute('data-lucide', 'circle');
+          });
+          btn.className = 'sex-selector-btn py-2 px-3 rounded-xl border border-emerald-500/40 bg-emerald-500/10 text-emerald-300 font-semibold text-sm flex items-center justify-center gap-2';
+          btn.querySelector('i').setAttribute('data-lucide', 'circle-dot');
+          if (window.lucide) lucide.createIcons();
+        });
+      });
+
+      // Frame
+      document.getElementById('input-frame').addEventListener('change', (e) => {
+        state.frame = e.target.value;
+        updateBMIGauge();
+      });
+
+      // Height Imperial / Metric
+      document.getElementById('input-height-ft').addEventListener('input', (e) => { state.heightFt = e.target.value; updateBMIGauge(); });
+      document.getElementById('input-height-in').addEventListener('input', (e) => { state.heightIn = e.target.value; updateBMIGauge(); });
+      document.getElementById('input-height-cm').addEventListener('input', (e) => { state.heightCm = e.target.value; updateBMIGauge(); });
+
+      // Weight Imperial / Metric
+      document.getElementById('input-weight-lbs').addEventListener('input', (e) => { state.weightLbs = e.target.value; updateBMIGauge(); });
+      document.getElementById('input-weight-kg').addEventListener('input', (e) => { state.weightKg = e.target.value; updateBMIGauge(); });
+
+      // Waist
+      document.getElementById('input-waist').addEventListener('input', (e) => {
+        state.waistIn = Number(e.target.value);
+        const cm = Math.round(state.waistIn * 2.54);
+        document.getElementById('label-waist').textContent = `${state.waistIn} in (${cm} cm)`;
+        updateBMIGauge();
+      });
+
+      // Unit switchers
+      document.getElementById('unit-imperial').addEventListener('click', () => {
+        state.unitSystem = 'imperial';
+        document.getElementById('unit-imperial').className = 'px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-emerald-500 text-white shadow transition';
+        document.getElementById('unit-metric').className = 'px-3.5 py-1.5 rounded-lg text-xs font-semibold text-slate-400 hover:text-white transition';
+        document.getElementById('height-imperial-group').classList.remove('hidden');
+        document.getElementById('height-metric-group').classList.add('hidden');
+        document.getElementById('weight-imperial-group').classList.remove('hidden');
+        document.getElementById('weight-metric-group').classList.add('hidden');
+        updateBMIGauge();
+      });
+
+      document.getElementById('unit-metric').addEventListener('click', () => {
+        state.unitSystem = 'metric';
+        document.getElementById('unit-metric').className = 'px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-emerald-500 text-white shadow transition';
+        document.getElementById('unit-imperial').className = 'px-3.5 py-1.5 rounded-lg text-xs font-semibold text-slate-400 hover:text-white transition';
+        document.getElementById('height-metric-group').classList.remove('hidden');
+        document.getElementById('height-imperial-group').classList.add('hidden');
+        document.getElementById('weight-metric-group').classList.remove('hidden');
+        document.getElementById('weight-imperial-group').classList.add('hidden');
+        updateBMIGauge();
+      });
+
+      // Smoking
+      const inputSmoking = document.getElementById('input-smoking');
+      inputSmoking.addEventListener('change', (e) => {
+        state.smoking = e.target.value;
+        const yearsContainer = document.getElementById('smoking-years-container');
+        const badge = document.getElementById('badge-smoking');
+        if (state.smoking !== 'none') {
+          yearsContainer.classList.remove('hidden');
+          badge.textContent = state.smoking.includes('former') ? 'Former' : 'Active Smoker';
+          badge.className = 'text-xs px-2 py-0.5 rounded-full bg-rose-950 text-rose-400 border border-rose-800';
+        } else {
+          yearsContainer.classList.add('hidden');
+          badge.textContent = 'Non-Smoker';
+          badge.className = 'text-xs px-2 py-0.5 rounded-full bg-emerald-950 text-emerald-400 border border-emerald-800';
+        }
+      });
+
+      document.getElementById('input-smoking-years').addEventListener('input', (e) => {
+        state.smokingYears = Number(e.target.value);
+        document.getElementById('label-smoking-years').textContent = `${state.smokingYears} yrs`;
+      });
+
+      // Vaping
+      document.getElementById('input-vaping').addEventListener('change', (e) => {
+        state.vaping = e.target.value;
+        const badge = document.getElementById('badge-vaping');
+        badge.textContent = state.vaping !== 'none' ? 'Active Vape' : 'None';
+        badge.className = state.vaping !== 'none' ? 'text-xs px-2 py-0.5 rounded-full bg-amber-950 text-amber-400 border border-amber-800' : 'text-xs px-2 py-0.5 rounded-full bg-emerald-950 text-emerald-400 border border-emerald-800';
+      });
+
+      // Cannabis
+      document.getElementById('input-weed').addEventListener('change', (e) => {
+        state.weed = e.target.value;
+        const badge = document.getElementById('badge-weed');
+        badge.textContent = state.weed !== 'never' ? 'Active User' : 'Never';
+        badge.className = state.weed !== 'never' ? 'text-xs px-2 py-0.5 rounded-full bg-teal-950 text-teal-300 border border-teal-800' : 'text-xs px-2 py-0.5 rounded-full bg-emerald-950 text-emerald-400 border border-emerald-800';
+      });
+
+      // Alcohol
+      document.getElementById('input-alcohol-drinks').addEventListener('input', (e) => {
+        state.alcoholDrinks = Number(e.target.value);
+        document.getElementById('label-alcohol-drinks').textContent = `${state.alcoholDrinks} drinks`;
+        const badge = document.getElementById('badge-alcohol');
+        badge.textContent = state.alcoholDrinks > 14 ? 'Heavy' : (state.alcoholDrinks > 5 ? 'Moderate' : 'Minimal');
+        badge.className = state.alcoholDrinks > 14 ? 'text-xs px-2 py-0.5 rounded-full bg-rose-950 text-rose-400 border border-rose-800' : 'text-xs px-2 py-0.5 rounded-full bg-emerald-950 text-emerald-400 border border-emerald-800';
+      });
+
+      document.getElementById('input-binge').addEventListener('change', (e) => {
+        state.bingeDrinking = e.target.checked;
+      });
+
+      // Drug Radios
+      document.querySelectorAll('input[name="drug-use"]').forEach(radio => {
+        radio.addEventListener('change', (e) => {
+          state.drugUse = e.target.value;
+          const badge = document.getElementById('badge-drugs');
+          badge.textContent = state.drugUse !== 'none' ? 'Reported' : 'None';
+          badge.className = state.drugUse !== 'none' ? 'text-xs px-2 py-0.5 rounded-full bg-rose-950 text-rose-400 border border-rose-800' : 'text-xs px-2 py-0.5 rounded-full bg-emerald-950 text-emerald-400 border border-emerald-800';
+        });
+      });
+
+      // Highway Radios
+      document.querySelectorAll('input[name="highway-distance"]').forEach(radio => {
+        radio.parentElement.addEventListener('click', () => {
+          document.querySelectorAll('.highway-card').forEach(c => {
+            c.className = 'highway-card flex flex-col p-4 rounded-2xl border-2 border-surface-700 bg-surface-800/90 cursor-pointer hover:border-slate-500 transition relative';
+          });
+          radio.parentElement.className = 'highway-card flex flex-col p-4 rounded-2xl border-2 border-cyan-500 bg-cyan-950/20 cursor-pointer transition relative';
+          state.highwayProximity = radio.value;
+
+          const pill = document.getElementById('highway-hazard-pill');
+          if (radio.value === 'critical') {
+            pill.textContent = '🚨 Critical Exposure (<50m)';
+            pill.className = 'text-xs font-bold px-3 py-1 rounded-full bg-rose-950 text-rose-400 border border-rose-800 self-start sm:self-auto';
+          } else if (radio.value === 'high') {
+            pill.textContent = '⚠️ Elevated PM2.5 (50-150m)';
+            pill.className = 'text-xs font-bold px-3 py-1 rounded-full bg-amber-950 text-amber-400 border border-amber-800 self-start sm:self-auto';
+          } else if (radio.value === 'moderate') {
+            pill.textContent = 'Moderate Zone (150-500m)';
+            pill.className = 'text-xs font-bold px-3 py-1 rounded-full bg-cyan-950 text-cyan-400 border border-cyan-800 self-start sm:self-auto';
+          } else {
+            pill.textContent = 'Clean Zone (>500m)';
+            pill.className = 'text-xs font-bold px-3 py-1 rounded-full bg-emerald-950 text-emerald-400 border border-emerald-800 self-start sm:self-auto';
+          }
+        });
+      });
+
+      // HEPA
+      document.getElementById('input-hepa').addEventListener('change', (e) => {
+        state.hepaActive = e.target.checked;
+        showToast(state.hepaActive ? 'HEPA filtration activated' : 'HEPA filtration disabled');
+      });
+
+      // Exercise, Diet, Sleep, Blood Pressure
+      document.getElementById('input-exercise').addEventListener('change', (e) => {
+        state.exercise = e.target.value;
+        document.getElementById('label-exercise').textContent = e.target.options[e.target.selectedIndex].text.split(' ')[0];
+      });
+
+      document.getElementById('input-diet').addEventListener('change', (e) => {
+        state.diet = e.target.value;
+        document.getElementById('label-diet').textContent = e.target.options[e.target.selectedIndex].text.split(' ')[0];
+      });
+
+      document.getElementById('input-sleep').addEventListener('input', (e) => {
+        state.sleepHrs = Number(e.target.value);
+        document.getElementById('label-sleep').textContent = `${state.sleepHrs} hrs/night`;
+      });
+
+      document.getElementById('input-bp').addEventListener('change', (e) => {
+        state.bloodPressure = e.target.value;
+        document.getElementById('label-bp').textContent = e.target.options[e.target.selectedIndex].text.split(' ')[0];
+      });
+
+      // Simulator Toggles
+      document.getElementById('sim-hepa').addEventListener('change', (e) => { state.sim.hepa = e.target.checked; updateSimulatorMetrics(); });
+      document.getElementById('sim-quit-smoke').addEventListener('change', (e) => { state.sim.quitSmoke = e.target.checked; updateSimulatorMetrics(); });
+      document.getElementById('sim-exercise').addEventListener('change', (e) => { state.sim.exercise = e.target.checked; updateSimulatorMetrics(); });
+      document.getElementById('sim-diet').addEventListener('change', (e) => { state.sim.diet = e.target.checked; updateSimulatorMetrics(); });
+      document.getElementById('sim-sleep').addEventListener('change', (e) => { state.sim.sleep = e.target.checked; updateSimulatorMetrics(); });
+      document.getElementById('sim-alcohol').addEventListener('change', (e) => { state.sim.alcohol = e.target.checked; updateSimulatorMetrics(); });
+
+      // Preset 1: Optimal Longevity
+      document.getElementById('quickPresetOptimal').addEventListener('click', () => {
+        state.smoking = 'none';
+        state.vaping = 'none';
+        state.weed = 'never';
+        state.alcoholDrinks = 1;
+        state.bingeDrinking = false;
+        state.drugUse = 'none';
+        state.highwayProximity = 'safe';
+        state.hepaActive = true;
+        state.exercise = 'vigorous';
+        state.diet = 'mediterranean';
+        state.sleepHrs = 8.0;
+        state.bloodPressure = 'normal';
+
+        document.getElementById('input-smoking').value = 'none';
+        document.getElementById('input-vaping').value = 'none';
+        document.getElementById('input-weed').value = 'never';
+        document.getElementById('input-alcohol-drinks').value = 1;
+        document.getElementById('label-alcohol-drinks').textContent = '1 drinks';
+        document.getElementById('input-binge').checked = false;
+        document.getElementById('input-hepa').checked = true;
+        document.getElementById('input-exercise').value = 'vigorous';
+        document.getElementById('input-diet').value = 'mediterranean';
+        document.getElementById('input-sleep').value = 8.0;
+        document.getElementById('label-sleep').textContent = '8 hrs/night';
+        document.getElementById('input-bp').value = 'normal';
+
+        updateBMIGauge();
+        showToast('Optimal Longevity & Brain Health Preset applied!');
+      });
+
+      // Preset 2: Vascular & Pre-Dementia Risk
+      document.getElementById('quickPresetAtRisk').addEventListener('click', () => {
+        state.smoking = 'half_pack';
+        state.smokingYears = 12;
+        state.vaping = 'daily_high';
+        state.alcoholDrinks = 18;
+        state.bingeDrinking = true;
+        state.highwayProximity = 'critical';
+        state.hepaActive = false;
+        state.exercise = 'sedentary';
+        state.diet = 'ultra_processed';
+        state.sleepHrs = 5.0;
+        state.bloodPressure = 'stage2';
+
+        document.getElementById('input-smoking').value = 'half_pack';
+        document.getElementById('smoking-years-container').classList.remove('hidden');
+        document.getElementById('input-vaping').value = 'daily_high';
+        document.getElementById('input-alcohol-drinks').value = 18;
+        document.getElementById('label-alcohol-drinks').textContent = '18 drinks';
+        document.getElementById('input-binge').checked = true;
+        document.getElementById('input-hepa').checked = false;
+        document.getElementById('input-exercise').value = 'sedentary';
+        document.getElementById('input-diet').value = 'ultra_processed';
+        document.getElementById('input-sleep').value = 5.0;
+        document.getElementById('label-sleep').textContent = '5 hrs/night';
+        document.getElementById('input-bp').value = 'stage2';
+
+        updateBMIGauge();
+        showToast('Vascular & Pre-Dementia Risk Preset applied!');
+      });
+
+      document.getElementById('resetAllBtn').addEventListener('click', () => {
+        window.location.reload();
+      });
+
+      updateBMIGauge();
+      if (window.lucide) lucide.createIcons();
+    });
+  </script>
+</body>
+</html>

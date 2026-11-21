@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vibe Web Dev — Language Selection (50% Internet uses English)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            box-sizing: border-box;
+            user-select: none;
+        }
+        /* Clean custom scrollbar for the 4-column language grid */
+        #langGrid::-webkit-scrollbar {
+            width: 8px;
+        }
+        #langGrid::-webkit-scrollbar-track {
+            background: #f1f5f9;
+            border-radius: 8px;
+        }
+        #langGrid::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 8px;
+        }
+        #langGrid::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+    </style>
+</head>
+<body class="min-h-screen bg-slate-900 text-slate-800 flex items-center justify-center p-4">
+
+    <div class="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-6xl overflow-hidden flex flex-col max-h-[92vh]">
+        <!-- Header -->
+        <div class="px-6 py-4 bg-slate-50 border-b border-slate-200 flex items-center justify-between shrink-0">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center text-white text-xl shadow-sm">
+                    🌐
+                </div>
+                <div>
+                    <h1 class="text-base font-bold text-slate-800">Language Selection</h1>
+                    <p id="lblHoverSpeakerDetail" class="text-xs text-slate-500 transition-colors">Choose a display language • Hover over a language to see native speakers</p>
+                </div>
+            </div>
+            <div class="text-right">
+                <span class="text-[11px] text-slate-400 block">Browser Locale</span>
+                <span id="lblBrowserLocale" class="text-xs font-semibold text-blue-600 bg-blue-50 px-2.5 py-0.5 rounded-full border border-blue-200">en-US</span>
+            </div>
+        </div>
+
+        <!-- Body -->
+        <div class="p-6 space-y-5 overflow-hidden flex flex-col flex-1">
+            <!-- Scrollable 4-Column Language Grid -->
+            <div class="flex flex-col flex-1 min-h-0">
+                <div class="flex items-center justify-between mb-2.5 shrink-0">
+                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-400">Select Language</label>
+                    <span id="lblTotalLanguages" class="text-xs text-slate-400 font-medium"></span>
+                </div>
+                <div id="langGrid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2.5 overflow-y-auto pr-1.5 max-h-[52vh]"></div>
+            </div>
+
+            <!-- Live Translation Preview Box -->
+            <div id="previewBox" class="bg-slate-50 rounded-xl p-3 border border-slate-200 space-y-2 shrink-0 transition-colors">
+                <div class="flex items-center justify-between border-b border-slate-200 pb-2">
+                    <span class="text-xs font-semibold text-slate-500">Toolbar &amp; UI Preview</span>
+                    <span id="lblActiveLangCode" class="text-xs font-bold text-indigo-600 uppercase">EN</span>
+                </div>
+
+                <!-- Red Warning Banner for Untranslated Languages -->
+                <div id="untranslatedWarning" class="hidden bg-red-100 border border-red-300 text-red-800 rounded-lg px-3 py-2 text-xs font-semibold flex items-center gap-2">
+                    <span>⚠️</span>
+                    <span id="lblUntranslatedWarningText">Translation not available for this language. English will be used instead.</span>
+                </div>
+
+                <div class="flex flex-wrap gap-2">
+                    <span id="prevSettings" class="px-2.5 py-1 rounded-md bg-slate-800 text-white text-xs font-medium">⚙️ Settings</span>
+                    <span id="prevRegenerate" class="px-2.5 py-1 rounded-md bg-white border border-slate-300 text-slate-700 text-xs font-medium">🔄 Regenerate</span>
+                    <span id="prevAddImages" class="px-2.5 py-1 rounded-md bg-blue-600 text-white text-xs font-medium">➕ Add Images</span>
+                    <span id="prevLoadDemo" class="px-2.5 py-1 rounded-md bg-indigo-50 border border-indigo-200 text-indigo-700 text-xs font-medium">🖼️ Load Demo</span>
+                    <span id="prevPreview" class="px-2.5 py-1 rounded-md bg-amber-50 border border-amber-300 text-amber-800 text-xs font-medium">🔍 Preview</span>
+                    <span id="prevSavePoster" class="px-2.5 py-1 rounded-md bg-emerald-600 text-white text-xs font-medium">💾 Save Poster</span>
+                </div>
+                <p id="prevHint" class="text-xs text-slate-500 pt-1 italic"></p>
+            </div>
+        </div>
+
+        <!-- Footer with Dynamic Cancel and Save Buttons on the Bottom Right -->
+        <div class="px-6 py-4 bg-slate-50 border-t border-slate-200 flex items-center justify-between shrink-0">
+            <span id="lblSavedStatus" class="text-xs text-emerald-600 font-medium">✓ Ready to save</span>
+            <div class="flex items-center gap-3">
+                <button id="btnCancel" type="button" class="px-5 py-2.5 rounded-xl border border-slate-300 bg-white hover:bg-slate-100 active:bg-slate-200 text-slate-700 text-xs sm:text-sm font-semibold shadow-sm transition cursor-pointer">
+                    <span id="lblBtnCancel">Cancel</span>
+                </button>
+                <button id="btnSave" type="button" class="px-6 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white text-xs sm:text-sm font-semibold shadow-sm transition flex items-center gap-2 cursor-pointer">
+                    <span>✓</span>
+                    <span id="lblBtnSave">Save</span>
+                </button>
+            </div>
+        </div>
+
+    </div>
+
+    <script src="index_translations.js"></script>
+    <script src="photocollage/photocollage_i18n.js"></script>
+    <script>
+        (function () {
+            const BUTTON_TRANSLATIONS = {
+                en: { cancel: "Cancel",    save: "Save" },
+                es: { cancel: "Cancelar",  save: "Guardar" },
+                fr: { cancel: "Annuler",   save: "Enregistrer" },
+                de: { cancel: "Abbrechen", save: "Speichern" },
+                pt: { cancel: "Cancelar",  save: "Salvar" },
+                it: { cancel: "Annulla",   save: "Salva" },
+                zh: { cancel: "取消",       save: "保存" },
+                ja: { cancel: "キャンセル", save: "保存" },
+                ko: { cancel: "취소",       save: "저장" },
+                ru: { cancel: "Отмена",    save: "Сохранить" }
+            };
+
+            function isLanguageTranslated(code) {
+                if (code === "en") return true;
+                const inPhotoCollage = Boolean(
+                    window.I18N_DICTIONARY &&
+                    window.I18N_DICTIONARY[code] &&
+                    window.I18N_DICTIONARY[code]["toolbar.settings"]
+                );
+                const inIndex = Boolean(
+                    window.INDEX_TRANSLATIONS &&
+                    window.INDEX_TRANSLATIONS[code]
+                );
+                return inPhotoCollage || inIndex || Boolean(BUTTON_TRANSLATIONS[code]);
+            }
+
+            const browserLoc = (navigator.languages && navigator.languages[0]) || navigator.language || "en-US";
+            document.getElementById("lblBrowserLocale").textContent = browserLoc;
+            const browserBase = browserLoc.split("-")[0].toLowerCase();
+
+            // Use window.INDEX_LANGUAGES from index_translations.js
+            const sourceList = Array.isArray(window.INDEX_LANGUAGES) ? window.INDEX_LANGUAGES : [];
+            const nonAutoLanguages = sourceList.filter(l => l.code !== "auto");
+            const matchedBrowserLang = nonAutoLanguages.find(l => l.code === browserBase) || nonAutoLanguages[0] || { name: "English", speakers: "400 million native speakers" };
+
+            const LANGUAGES = sourceList.map(item => {
+                if (item.code === "auto") {
+                    return {
+                        code: "auto",
+                        icon: item.flag || "🧭",
+                        name: item.name || "Auto Detect",
+                        baseName: item.name || "Auto Detect",
+                        sub: item.hello || "Browser Default",
+                        speakersText: `${matchedBrowserLang.name}: ${matchedBrowserLang.speakers}`,
+                        hasTranslation: isLanguageTranslated(browserBase)
+                    };
+                }
+                const normCode = item.code.toLowerCase();
+                const displayName = (item.native && item.native !== item.name)
+                    ? `${item.name} (${item.native})`
+                    : item.name;
+                return {
+                    code: normCode,
+                    icon: item.flag || "🌐",
+                    name: displayName,
+                    baseName: item.name,
+                    sub: item.hello || "Hello World!",
+                    speakersText: item.speakers || "",
+                    hasTranslation: isLanguageTranslated(normCode)
+                };
+            });
+
+            const totalNonAuto = LANGUAGES.filter(l => l.code !== "auto");
+            const supportedCount = totalNonAuto.filter(l => l.hasTranslation).length;
+            document.getElementById("lblTotalLanguages").textContent =
+                `${totalNonAuto.length} Languages (${supportedCount} translated)`;
+
+            const urlParams = new URLSearchParams(window.location.search);
+            const urlLang = urlParams.get("lang");
+            const fromParam = urlParams.get("from");
+
+            let initialChoice = "auto";
+            try {
+                initialChoice = localStorage.getItem("photocollage_lang") || urlLang || "auto";
+            } catch (_) {
+                if (urlLang) initialChoice = urlLang;
+            }
+
+            let pendingChoice = initialChoice;
+
+            const grid = document.getElementById("langGrid");
+            const hoverBanner = document.getElementById("lblHoverSpeakerDetail");
+            const defaultBannerText = "Choose a display language • Hover over a language to see native speakers";
+
+            function getReturnUrl(langCode) {
+                if (fromParam === "photocollage" || (document.referrer && document.referrer.includes("photocollage"))) {
+                    return `photocollage/photocollage.html?lang=${encodeURIComponent(langCode)}`;
+                }
+                return `index.html?lang=${encodeURIComponent(langCode)}`;
+            }
+
+            function resolvePreviewLang(choice) {
+                if (choice && choice !== "auto") {
+                    return choice;
+                }
+                return browserBase || "en";
+            }
+
+            function selectLanguage(choice) {
+                pendingChoice = choice;
+
+                const effectiveLang = resolvePreviewLang(choice);
+                const selectedObj = LANGUAGES.find(l => l.code === choice) || LANGUAGES[0];
+                const hasTrans = isLanguageTranslated(effectiveLang);
+
+                const dict = (hasTrans && window.I18N_DICTIONARY && window.I18N_DICTIONARY[effectiveLang])
+                    || (window.I18N_DICTIONARY && window.I18N_DICTIONARY.en)
+                    || {};
+                const indexDict = (hasTrans && window.INDEX_TRANSLATIONS && window.INDEX_TRANSLATIONS[effectiveLang])
+                    || (window.INDEX_TRANSLATIONS && window.INDEX_TRANSLATIONS.en)
+                    || {};
+                const btnDict = (hasTrans && BUTTON_TRANSLATIONS[effectiveLang]) || BUTTON_TRANSLATIONS.en;
+
+                const lblCode = document.getElementById("lblActiveLangCode");
+                const warningBox = document.getElementById("untranslatedWarning");
+                const warningText = document.getElementById("lblUntranslatedWarningText");
+                const savedStatus = document.getElementById("lblSavedStatus");
+
+                if (hasTrans) {
+                    lblCode.className = "text-xs font-bold text-indigo-600 uppercase";
+                    lblCode.textContent = choice === "auto"
+                        ? `AUTO (${effectiveLang.toUpperCase()})`
+                        : `${effectiveLang.toUpperCase()} — ${selectedObj.baseName}`;
+
+                    warningBox.classList.add("hidden");
+                    savedStatus.className = "text-xs text-emerald-600 font-medium";
+                    savedStatus.textContent = choice === initialChoice
+                        ? `✓ Current language: ${selectedObj.baseName}`
+                        : `● Selected: ${selectedObj.baseName}`;
+                } else {
+                    lblCode.className = "text-xs font-bold text-red-600 uppercase";
+                    lblCode.textContent = `${effectiveLang.toUpperCase()} — ${selectedObj.baseName} (FALLBACK: EN)`;
+
+                    warningBox.classList.remove("hidden");
+                    warningText.textContent = `No translation available for ${selectedObj.name}. English will be used instead.`;
+
+                    savedStatus.className = "text-xs text-red-600 font-semibold";
+                    savedStatus.textContent = `⚠️ ${selectedObj.baseName} selected — English will be used instead`;
+                }
+
+                document.getElementById("prevSettings").textContent = "⚙️ " + (dict["toolbar.settings"] || indexDict.nav_language || "Settings");
+                document.getElementById("prevRegenerate").textContent = "🔄 " + (dict["toolbar.regenerate"] || indexDict.nav_brief || "Regenerate");
+                document.getElementById("prevAddImages").textContent = "➕ " + (dict["toolbar.addImages"] || indexDict.helio_title || "Add Images");
+                document.getElementById("prevLoadDemo").textContent = "🖼️ " + (dict["toolbar.loadDemo"] || indexDict.money_title || "Load Demo");
+                document.getElementById("prevPreview").textContent = "🔍 " + (dict["toolbar.preview"] || indexDict.plants_title || "Preview");
+                document.getElementById("prevSavePoster").textContent = "💾 " + (dict["toolbar.savePoster"] || indexDict.puzzles_title || "Save Poster");
+
+                const defaultHint = indexDict.helio_desc || "Tip: Click a photo to zoom full-size • Drag inside a cell to pan or swap • Drag yellow borders to resize";
+                document.getElementById("prevHint").textContent = dict["hint.default"] || defaultHint;
+
+                const lblCancel = document.getElementById("lblBtnCancel");
+                const lblSave = document.getElementById("lblBtnSave");
+
+                if (lblCancel) {
+                    lblCancel.textContent = (hasTrans && (indexDict.btn_cancel || dict["modal.cancel"] || btnDict.cancel)) || "Cancel";
+                }
+                if (lblSave) {
+                    lblSave.textContent = (hasTrans && (indexDict.btn_save || dict["modal.save"] || btnDict.save)) || "Save";
+                }
+
+                renderCards();
+            }
+
+            function renderCards() {
+                grid.innerHTML = "";
+                LANGUAGES.forEach((item) => {
+                    const isSelected = item.code === pendingChoice;
+                    const btn = document.createElement("button");
+                    btn.type = "button";
+
+                    if (item.hasTranslation) {
+                        btn.className = isSelected
+                            ? "group flex items-center gap-3 p-3 rounded-xl border-2 border-blue-600 bg-blue-50/60 text-left transition shadow-sm"
+                            : "group flex items-center gap-3 p-3 rounded-xl border border-slate-200 hover:border-blue-400 hover:bg-slate-50 bg-white text-left transition";
+                    } else {
+                        btn.className = isSelected
+                            ? "group flex items-center gap-3 p-3 rounded-xl border-2 border-red-500 bg-red-50/80 text-left transition shadow-sm"
+                            : "group flex items-center gap-3 p-3 rounded-xl border border-red-200 hover:border-red-400 hover:bg-red-50 bg-white text-left transition";
+                    }
+
+                    const iconSpan = document.createElement("span");
+                    iconSpan.className = "text-2xl shrink-0";
+                    iconSpan.textContent = item.icon;
+
+                    const textWrap = document.createElement("div");
+                    textWrap.className = "flex-1 min-w-0";
+
+                    const titleDiv = document.createElement("div");
+                    titleDiv.className = item.hasTranslation
+                        ? "text-sm font-bold text-slate-800 truncate"
+                        : "text-sm font-bold text-red-600 group-hover:text-red-700 truncate transition-colors";
+                    titleDiv.textContent = item.name;
+
+                    const subDiv = document.createElement("div");
+                    subDiv.className = item.hasTranslation
+                        ? "text-[11px] text-slate-500 group-hover:text-blue-600 group-hover:font-semibold truncate transition-colors"
+                        : "text-[11px] text-red-500 group-hover:text-red-700 group-hover:font-semibold truncate transition-colors";
+                    subDiv.textContent = item.sub;
+
+                    textWrap.appendChild(titleDiv);
+                    textWrap.appendChild(subDiv);
+
+                    const checkSpan = document.createElement("span");
+                    if (isSelected) {
+                        checkSpan.className = item.hasTranslation
+                            ? "w-5 h-5 shrink-0 rounded-full flex items-center justify-center text-xs bg-blue-600 text-white"
+                            : "w-5 h-5 shrink-0 rounded-full flex items-center justify-center text-xs bg-red-600 text-white";
+                        checkSpan.textContent = item.hasTranslation ? "✓" : "!";
+                    } else {
+                        checkSpan.className = item.hasTranslation
+                            ? "w-5 h-5 shrink-0 rounded-full flex items-center justify-center text-xs border border-slate-300"
+                            : "w-5 h-5 shrink-0 rounded-full flex items-center justify-center text-xs border border-red-300 group-hover:border-red-400 group-hover:bg-red-100 group-hover:text-red-700";
+                        checkSpan.textContent = "";
+                    }
+
+                    btn.appendChild(iconSpan);
+                    btn.appendChild(textWrap);
+                    btn.appendChild(checkSpan);
+
+                    btn.addEventListener("mouseenter", () => {
+                        subDiv.textContent = item.speakersText;
+                        if (hoverBanner) {
+                            if (item.hasTranslation) {
+                                hoverBanner.className = "text-xs text-blue-600 font-medium transition-colors";
+                                hoverBanner.textContent = `${item.name}: ${item.speakersText}`;
+                            } else {
+                                hoverBanner.className = "text-xs text-red-600 font-semibold transition-colors";
+                                hoverBanner.textContent = `⚠️ ${item.name} (${item.speakersText}) — No translation available; English will be used instead`;
+                            }
+                        }
+                    });
+
+                    btn.addEventListener("mouseleave", () => {
+                        subDiv.textContent = item.sub;
+                        if (hoverBanner) {
+                            hoverBanner.className = "text-xs text-slate-500 transition-colors";
+                            hoverBanner.textContent = defaultBannerText;
+                        }
+                    });
+
+                    btn.addEventListener("click", () => selectLanguage(item.code));
+                    grid.appendChild(btn);
+                });
+            }
+
+            document.getElementById("btnCancel").addEventListener("click", () => {
+                window.location.href = getReturnUrl(initialChoice);
+            });
+
+            document.getElementById("btnSave").addEventListener("click", () => {
+                try {
+                    if (pendingChoice === "auto") {
+                        localStorage.removeItem("photocollage_lang");
+                    } else {
+                        localStorage.setItem("photocollage_lang", pendingChoice);
+                    }
+                } catch (_) {}
+                window.location.href = getReturnUrl(pendingChoice);
+            });
+
+            selectLanguage(initialChoice);
+        })();
+    </script>
+</body>
+</html>

@@ -1,0 +1,857 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Three.js Cinematic: The Void & The Mixing Bowl</title>
+    <style>
+        body { margin: 0; padding: 0; overflow: hidden; background-color: #000; font-family: sans-serif; }
+        #canvas-container { width: 100vw; height: 100vh; display: block; }
+        
+        #start-overlay {
+            position: absolute; top: 0; left: 0; width: 100vw; height: 100vh;
+            background: rgba(0,0,0,0.95); color: #fff;
+            display: flex; justify-content: center; align-items: center;
+            font-size: 24px; font-weight: bold; letter-spacing: 3px;
+            z-index: 100; cursor: pointer; text-transform: uppercase;
+        }
+        #start-overlay:hover { color: #ffaa00; }
+
+        #ui-layer {
+            position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.8); color: #fff;
+            padding: 15px 30px; border-radius: 30px; border: 1px solid #333;
+            pointer-events: none; font-size: 20px; font-weight: bold; letter-spacing: 2px;
+            text-transform: uppercase; text-align: center;
+        }
+        #instructions {
+            position: absolute; top: 20px; left: 20px;
+            color: #aaa; background: rgba(0,0,0,0.5); padding: 10px;
+            border-radius: 8px; font-size: 14px; pointer-events: none;
+        }
+        .key { background: #fff; color: #000; padding: 2px 6px; border-radius: 4px; font-weight: bold; }
+    </style>
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+                "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+            }
+        }
+    </script>
+</head>
+<body>
+    <div id="start-overlay">Click Anywhere to Start Experience (Enable Audio)</div>
+    <div id="canvas-container"></div>
+    <div id="instructions">
+        <span class="key">SPACE</span> Pause/Play &nbsp;|&nbsp; <span class="key">◀</span> <span class="key">▶</span> Skip Sections
+    </div>
+    <div id="ui-layer">Initializing...</div>
+
+    <script type="module">
+        import * as THREE from 'three';
+        import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+        // ==========================================
+        // 0. PROCEDURAL AUDIO ENGINE
+        // ==========================================
+        const SoundEngine = {
+            ctx: null,
+            init: function() {
+                this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+            },
+            playOsc: function(freq, type, duration, vol=0.1, slideFreq=null) {
+                if(!this.ctx) return;
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.type = type;
+                osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
+                if(slideFreq) {
+                    osc.frequency.exponentialRampToValueAtTime(slideFreq, this.ctx.currentTime + duration);
+                }
+                gain.gain.setValueAtTime(vol, this.ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + duration);
+                osc.connect(gain); gain.connect(this.ctx.destination);
+                osc.start(); osc.stop(this.ctx.currentTime + duration);
+            },
+            playNoise: function(duration, vol, filterType, startFreq, endFreq) {
+                if(!this.ctx) return;
+                const bufferSize = this.ctx.sampleRate * duration;
+                const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+                const data = buffer.getChannelData(0);
+                for(let i=0; i<bufferSize; i++) data[i] = Math.random() * 2 - 1;
+                
+                const noise = this.ctx.createBufferSource(); noise.buffer = buffer;
+                const filter = this.ctx.createBiquadFilter(); filter.type = filterType;
+                filter.frequency.setValueAtTime(startFreq, this.ctx.currentTime);
+                filter.frequency.exponentialRampToValueAtTime(endFreq, this.ctx.currentTime + duration);
+                
+                const gain = this.ctx.createGain();
+                gain.gain.setValueAtTime(vol, this.ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + duration);
+                
+                noise.connect(filter); filter.connect(gain); gain.connect(this.ctx.destination);
+                noise.start();
+            }
+        };
+
+        function triggerPhaseAudio(phase) {
+            switch(phase) {
+                case 0: SoundEngine.playOsc(100, 'sawtooth', 4.0, 0.1, 200); break;
+                case 1: SoundEngine.playOsc(300, 'square', 0.5, 0.05, 600); break;
+                case 2: SoundEngine.playOsc(400, 'sine', 1.0, 0.1); break;
+                case 3: SoundEngine.playOsc(600, 'square', 0.5, 0.05, 1200); break;
+                case 4: SoundEngine.playOsc(800, 'sine', 1.0, 0.1); break;
+                case 5: SoundEngine.playNoise(4.0, 1.0, 'lowpass', 1500, 40); break;
+                case 6: SoundEngine.playOsc(300, 'sawtooth', 1.0, 0.1, 50); break;
+                case 7: 
+                    SoundEngine.playOsc(261.63, 'sine', 8.0, 0.05); 
+                    SoundEngine.playOsc(329.63, 'sine', 8.0, 0.04); 
+                    SoundEngine.playOsc(392.00, 'triangle', 8.0, 0.03); 
+                    SoundEngine.playOsc(493.88, 'sine', 8.0, 0.02); 
+                    break; 
+                case 8: SoundEngine.playOsc(800, 'sine', 3.0, 0.15, 50); break; 
+                case 9: SoundEngine.playOsc(200, 'triangle', 2.0, 0.1, 300); break; 
+                case 10: SoundEngine.playOsc(800, 'sine', 0.5, 0.1, 100); break; 
+                case 11: SoundEngine.playNoise(0.5, 0.8, 'highpass', 1000, 100); break; 
+                case 12: SoundEngine.playOsc(300, 'sine', 2.0, 0.1, 50); break; 
+                case 13: 
+                    SoundEngine.playOsc(130.81, 'sawtooth', 4.0, 0.03); 
+                    SoundEngine.playOsc(261.63, 'triangle', 4.0, 0.03); 
+                    SoundEngine.playOsc(392.00, 'sine', 4.0, 0.04); 
+                    break;
+                case 14: SoundEngine.playNoise(3.0, 0.2, 'bandpass', 300, 800); break; 
+                case 16: SoundEngine.playNoise(4.0, 0.2, 'bandpass', 800, 200); break; 
+                case 17: SoundEngine.playNoise(6.0, 0.4, 'bandpass', 1500, 300); break; 
+                case 19: SoundEngine.playNoise(8.0, 0.5, 'lowpass', 100, 30); break; 
+                case 20: SoundEngine.playOsc(200, 'triangle', 4.0, 0.1, 400); break; 
+            }
+        }
+
+        // ==========================================
+        // 1. BASE ENVIRONMENT & ROOM
+        // ==========================================
+        const container = document.getElementById('canvas-container');
+        const scene = new THREE.Scene();
+        scene.fog = new THREE.Fog(0x222222, 20, 80);
+
+        const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+        camera.position.set(12, 10, 15);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(window.devicePixelRatio);
+        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        renderer.localClippingEnabled = true; 
+        container.appendChild(renderer.domElement);
+
+        scene.add(new THREE.AmbientLight(0xffffff, 0.4));
+        const dirLight = new THREE.DirectionalLight(0xffffff, 1.0);
+        dirLight.position.set(15, 30, 10); dirLight.castShadow = true;
+        dirLight.shadow.mapSize.width = 2048; dirLight.shadow.mapSize.height = 2048;
+        dirLight.shadow.camera.left = -25; dirLight.shadow.camera.right = 25;
+        dirLight.shadow.camera.top = 25; dirLight.shadow.camera.bottom = -25;
+        scene.add(dirLight);
+
+        // --- CUBE CAMERA FOR REAL REFLECTIONS ---
+        const cubeRenderTarget = new THREE.WebGLCubeRenderTarget(256, { generateMipmaps: true, minFilter: THREE.LinearMipmapLinearFilter });
+        const cubeCamera = new THREE.CubeCamera(0.1, 100, cubeRenderTarget);
+        cubeCamera.position.set(0, 3, 0); 
+        scene.add(cubeCamera);
+
+        const floorY = -15;
+        const roomSize = 100;
+        const textureLoader = new THREE.TextureLoader();
+
+        const floorTex = textureLoader.load('raw_wooden_floor_01_diff_4k.webp');
+        floorTex.wrapS = THREE.RepeatWrapping; floorTex.wrapT = THREE.RepeatWrapping;
+        floorTex.repeat.set(4, 4); floorTex.colorSpace = THREE.SRGBColorSpace;
+        const floor = new THREE.Mesh(new THREE.PlaneGeometry(roomSize, roomSize), new THREE.MeshStandardMaterial({ map: floorTex, color: 0x888888, roughness: 0.8 }));
+        floor.rotation.x = -Math.PI / 2; floor.position.y = floorY + 0.05; floor.receiveShadow = true;
+        scene.add(floor);
+
+        const wallTex = textureLoader.load('wall-texture.jpg');
+        wallTex.wrapS = THREE.RepeatWrapping; wallTex.wrapT = THREE.RepeatWrapping;
+        wallTex.repeat.set(10, 4); wallTex.colorSpace = THREE.SRGBColorSpace;
+        const roomHeight = 60;
+        const roomMat = new THREE.MeshStandardMaterial({ 
+            map: wallTex, color: 0xcccccc, side: THREE.BackSide, 
+            roughness: 0.9, metalness: 0.0,
+            envMap: cubeRenderTarget.texture, envMapIntensity: 2.0 
+        });
+        const roomBox = new THREE.Mesh(new THREE.BoxGeometry(roomSize, roomHeight, roomSize), roomMat);
+        roomBox.position.y = floorY + (roomHeight / 2); roomBox.receiveShadow = true;
+        scene.add(roomBox);
+
+        // --- CHESS TABLE & LEG ---
+        const tableY = -2; 
+        const tableWidth = 12; 
+        const tableGroup = new THREE.Group();
+        tableGroup.position.set(0, tableY, 0); 
+        scene.add(tableGroup);
+
+        const boardMesh = new THREE.InstancedMesh(new THREE.BoxGeometry(1, 0.2, 1), new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.3, metalness: 0.1 }), 64);
+        boardMesh.castShadow = true; boardMesh.receiveShadow = true;
+        tableGroup.add(boardMesh);
+
+        const dummyTile = new THREE.Object3D();
+        const colorWhite = new THREE.Color(0xeeeeee);
+        const colorBlack = new THREE.Color(0x111111);
+        
+        const boardData = [];
+        let idx = 0;
+        for (let x = 0; x < 8; x++) {
+            for (let z = 0; z < 8; z++) {
+                const pos = new THREE.Vector3(-3.5 + x, -0.1, -3.5 + z);
+                dummyTile.position.copy(pos);
+                dummyTile.updateMatrix();
+                boardMesh.setMatrixAt(idx, dummyTile.matrix);
+                boardMesh.setColorAt(idx, (x + z) % 2 === 1 ? colorBlack : colorWhite);
+                
+                const isCenter = (x >= 2 && x <= 5 && z >= 2 && z <= 5);
+                boardData.push({ basePos: pos, isCenter: isCenter });
+                idx++;
+            }
+        }
+        boardMesh.instanceMatrix.needsUpdate = true;
+        boardMesh.instanceColor.needsUpdate = true;
+
+        const woodWalnut = new THREE.MeshStandardMaterial({ color: 0x3d2314, roughness: 0.7 });
+        const woodCherry = new THREE.MeshStandardMaterial({ color: 0x763c28, roughness: 0.6 });
+        const woodOak = new THREE.MeshStandardMaterial({ color: 0x8b5a2b, roughness: 0.8 });
+        
+        [{g: new THREE.BoxGeometry(8.4, 0.3, 0.2), p: [0, -0.05, 4.1], m: woodWalnut}, {g: new THREE.BoxGeometry(8.4, 0.3, 0.2), p: [0, -0.05, -4.1], m: woodWalnut}, {g: new THREE.BoxGeometry(0.2, 0.3, 8.0), p: [4.1, -0.05, 0], m: woodWalnut}, {g: new THREE.BoxGeometry(0.2, 0.3, 8.0), p: [-4.1, -0.05, 0], m: woodWalnut},
+         {g: new THREE.BoxGeometry(10, 0.2, 0.8), p: [0, -0.1, 4.6], m: woodCherry}, {g: new THREE.BoxGeometry(10, 0.2, 0.8), p: [0, -0.1, -4.6], m: woodCherry}, {g: new THREE.BoxGeometry(0.8, 0.2, 8.4), p: [4.6, -0.1, 0], m: woodCherry}, {g: new THREE.BoxGeometry(0.8, 0.2, 8.4), p: [-4.6, -0.1, 0], m: woodCherry},
+         {g: new THREE.BoxGeometry(12, 1, 12), p: [0, -0.7, 0], m: woodOak},
+         {g: new THREE.CylinderGeometry(1, 1, 3, 32), p: [0, -2.7, 0], m: woodOak},
+         {g: new THREE.CylinderGeometry(0.8, 0.8, 3.5, 32), p: [0, -6.15, 0], m: woodOak},
+         {g: new THREE.SphereGeometry(1.6, 32, 16), p: [0, -8.0, 0], m: woodWalnut},
+         {g: new THREE.CylinderGeometry(1.2, 1.2, 2.5, 32), p: [0, -10.5, 0], m: woodOak}
+        ].forEach(s => {
+            const mesh = new THREE.Mesh(s.g, s.m); mesh.position.set(...s.p); tableGroup.add(mesh);
+        });
+
+        const torus1 = new THREE.Mesh(new THREE.TorusGeometry(1.2, 0.4, 16, 32), woodWalnut); torus1.rotation.x = Math.PI / 2; torus1.position.y = -4.2; tableGroup.add(torus1);
+        for (let i = 0; i < 4; i++) {
+            const pivot = new THREE.Group(); pivot.rotation.y = (Math.PI / 2) * i;
+            const spoke = new THREE.Mesh(new THREE.CylinderGeometry(0.6, 0.3, 5, 16), woodWalnut);
+            spoke.rotation.z = Math.PI / 4; spoke.position.set(2.5, -11.182, 0); 
+            pivot.add(spoke); tableGroup.add(pivot);
+        }
+        tableGroup.traverse(c => { if(c.isMesh) { c.receiveShadow = true; c.castShadow = true; } });
+
+
+        // ==========================================
+        // 2. FRACTALS, EGG & DUST 
+        // ==========================================
+        const clipPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 2);
+        const spongeGroup = new THREE.Group(); scene.add(spongeGroup);
+        const spongeSize = 4;
+        
+        function getMengerPos(level) {
+            const arr = [];
+            function r(lvl, sz, x, y, z) {
+                if(lvl===0) { arr.push(new THREE.Vector3(x,y,z)); return; }
+                const n = sz/3;
+                for(let dx=-1;dx<=1;dx++) for(let dy=-1;dy<=1;dy++) for(let dz=-1;dz<=1;dz++)
+                    if((dx===0?1:0)+(dy===0?1:0)+(dz===0?1:0)<2) r(lvl-1,n, x+dx*n, y+dy*n, z+dz*n);
+            }
+            r(level, spongeSize, 0,0,0);
+            return arr;
+        }
+
+        const dummy = new THREE.Object3D();
+        const tCol = new THREE.Color();
+        const baseMatConfig = { color: 0xffffff, metalness: 0.1, roughness: 0.8, clippingPlanes: [clipPlane] };
+
+        // --- SUN & EGG ---
+        const sunMat = new THREE.MeshStandardMaterial({ color: 0xffdd44, emissive: 0xffaa00, emissiveIntensity: 1.0, roughness: 0.2, metalness: 0.1, clippingPlanes: [clipPlane] });
+        const innerSun = new THREE.Mesh(new THREE.SphereGeometry(0.5, 32, 32), sunMat);
+        const sunLight = new THREE.PointLight(0xffcc22, 200, 25);
+        innerSun.add(sunLight); spongeGroup.add(innerSun);
+
+        const eggWhite = new THREE.Mesh(new THREE.CylinderGeometry(1, 1, 0.05, 32), new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.8, metalness: 0.0 }));
+        eggWhite.position.set(0, -1.95, 0); eggWhite.receiveShadow = true; eggWhite.visible = false;
+        spongeGroup.add(eggWhite);
+
+        // --- MENGERS ---
+        const pos1 = getMengerPos(1), pos2 = getMengerPos(2), pos3 = getMengerPos(3);
+        const mesh0 = new THREE.InstancedMesh(new THREE.BoxGeometry(spongeSize/3, spongeSize/3, spongeSize/3), new THREE.MeshStandardMaterial(baseMatConfig), pos1.length);
+        pos1.forEach((p,i)=>{ dummy.position.copy(p); dummy.updateMatrix(); mesh0.setMatrixAt(i, dummy.matrix); tCol.setHSL(Math.random(),0.8,0.25); mesh0.setColorAt(i, tCol); });
+        
+        const pos0_5 = [];
+        pos1.forEach(p=>{ const o=(spongeSize/3)/4; for(let dx of [-1,1]) for(let dy of [-1,1]) for(let dz of [-1,1]) pos0_5.push(new THREE.Vector3(p.x+dx*o, p.y+dy*o, p.z+dz*o)); });
+        const mesh0_5 = new THREE.InstancedMesh(new THREE.BoxGeometry(spongeSize/6, spongeSize/6, spongeSize/6), new THREE.MeshStandardMaterial(baseMatConfig), pos0_5.length);
+        pos0_5.forEach((p,i)=>{ dummy.position.copy(p); dummy.updateMatrix(); mesh0_5.setMatrixAt(i, dummy.matrix); tCol.setHSL(Math.random(),0.8,0.35); mesh0_5.setColorAt(i, tCol); });
+        
+        const mesh1 = new THREE.InstancedMesh(new THREE.BoxGeometry(spongeSize/9, spongeSize/9, spongeSize/9), new THREE.MeshStandardMaterial(baseMatConfig), pos2.length);
+        pos2.forEach((p,i)=>{ dummy.position.copy(p); dummy.updateMatrix(); mesh1.setMatrixAt(i, dummy.matrix); tCol.setHSL(Math.random(),0.8,0.45); mesh1.setColorAt(i, tCol); });
+
+        const pos2_5 = [];
+        pos2.forEach(p=>{ const o=(spongeSize/9)/4; for(let dx of [-1,1]) for(let dy of [-1,1]) for(let dz of [-1,1]) pos2_5.push(new THREE.Vector3(p.x+dx*o, p.y+dy*o, p.z+dz*o)); });
+        const mesh2 = new THREE.InstancedMesh(new THREE.BoxGeometry(spongeSize/18, spongeSize/18, spongeSize/18), new THREE.MeshStandardMaterial(baseMatConfig), pos2_5.length);
+        pos2_5.forEach((p,i)=>{ dummy.position.copy(p); dummy.updateMatrix(); mesh2.setMatrixAt(i, dummy.matrix); tCol.setHSL(Math.random(),0.8,0.5); mesh2.setColorAt(i, tCol); });
+
+        const box3 = spongeSize/27;
+        const mesh3 = new THREE.InstancedMesh(new THREE.BoxGeometry(box3, box3, box3), new THREE.MeshStandardMaterial(baseMatConfig), pos3.length);
+        
+        const currentPositions3 = pos3.map(p => p.clone());
+        const velocities = new Float32Array(pos3.length * 3);
+        const rotVelocities = new Float32Array(pos3.length * 3);
+        const rotations = Array.from({length: pos3.length}, () => new THREE.Euler());
+        let isExploding = false;
+
+        pos3.forEach((p,i)=>{ dummy.position.copy(p); dummy.updateMatrix(); mesh3.setMatrixAt(i, dummy.matrix); tCol.setHSL(Math.random(),0.8,0.5); mesh3.setColorAt(i, tCol); });
+        
+        [mesh0, mesh0_5, mesh1, mesh2, mesh3].forEach(m=>{ m.castShadow=true; m.receiveShadow=true; spongeGroup.add(m); });
+
+        // --- DUST ---
+        const dustCount = 300, dustData = [];
+        const dustMesh = new THREE.InstancedMesh(new THREE.SphereGeometry(0.08, 8, 8), new THREE.MeshBasicMaterial({ color: 0xffaa44 }), dustCount);
+        for (let i = 0; i < dustCount; i++) {
+            const isSun = (i % 3 === 0); 
+            dustData.push({ radius: 1.5 + Math.random()*5.5, theta: Math.random()*Math.PI*2, phi: Math.acos((Math.random()*2)-1), speed: 0.5 + Math.random()*1.5, isSmallSun: isSun, currentScale: isSun?0.05:0.2, maxScale: 0.3+Math.random()*0.4, planeFactor: 1.0 });
+        }
+        dustMesh.visible = false; spongeGroup.add(dustMesh);
+
+
+        // ==========================================
+        // 3. PERIODIC TABLE, WHITE COVER, HOLE & BOWL
+        // ==========================================
+        const ptGroup = new THREE.Group();
+        scene.add(ptGroup); ptGroup.visible = false;
+        
+        const ptCover = new THREE.Mesh(new THREE.PlaneGeometry(8.5, 8.5), new THREE.MeshStandardMaterial({ color: 0xffffff }));
+        ptCover.rotation.x = -Math.PI / 2; ptCover.position.y = -1.99; 
+        ptCover.receiveShadow = true; ptCover.scale.setScalar(0.001);
+        ptGroup.add(ptCover);
+
+        // Black Hole 
+        const blackHole = new THREE.Mesh(new THREE.CircleGeometry(1, 64), new THREE.MeshBasicMaterial({ color: 0x000000, side: THREE.DoubleSide }));
+        blackHole.rotation.x = -Math.PI / 2; blackHole.position.y = -1.98; 
+        blackHole.scale.setScalar(0.001); blackHole.visible = false;
+        ptGroup.add(blackHole);
+
+        // Mixing Bowl
+        const mixingBowl = new THREE.Mesh(
+            new THREE.SphereGeometry(4, 32, 16, 0, Math.PI * 2, 0, Math.PI / 2), 
+            new THREE.MeshStandardMaterial({ 
+                color: 0x8899a6, metalness: 1.0, roughness: 0.1, 
+                side: THREE.DoubleSide, envMap: cubeRenderTarget.texture, envMapIntensity: 1.0 
+            })
+        );
+        mixingBowl.rotation.x = Math.PI; 
+        mixingBowl.position.y = -6; 
+        mixingBowl.visible = false;
+        ptGroup.add(mixingBowl);
+
+        const ptElements = []; 
+        const globalOrbitals = []; 
+        
+        const symbols = "H,He,Li,Be,B,C,N,O,F,Ne,Na,Mg,Al,Si,P,S,Cl,Ar,K,Ca,Sc,Ti,V,Cr,Mn,Fe,Co,Ni,Cu,Zn,Ga,Ge,As,Se,Br,Kr,Rb,Sr,Y,Zr,Nb,Mo,Tc,Ru,Rh,Pd,Ag,Cd,In,Sn,Sb,Te,I,Xe,Cs,Ba,La,Ce,Pr,Nd,Pm,Sm,Eu,Gd,Tb,Dy,Ho,Er,Tm,Yb,Lu,Hf,Ta,W,Re,Os,Ir,Pt,Au,Hg,Tl,Pb,Bi,Po,At,Rn,Fr,Ra,Ac,Th,Pa,U,Np,Pu,Am,Cm,Bk,Cf,Es,Fm,Md,No,Lr,Rf,Db,Sg,Bh,Hs,Mt,Ds,Rg,Cn,Nh,Fl,Mc,Lv,Ts,Og".split(',');
+        
+        const matDark = new THREE.MeshPhysicalMaterial({ color: 0x222222, transparent: true, opacity: 0.9, roughness: 0.1, metalness: 0.5 });
+        const matAlkali = new THREE.MeshPhysicalMaterial({ color: 0xff3333, transparent: true, opacity: 0.5, roughness: 0.1 });
+        const matTrans = new THREE.MeshPhysicalMaterial({ color: 0x3388ff, transparent: true, opacity: 0.5, roughness: 0.1 });
+        const matRare = new THREE.MeshPhysicalMaterial({ color: 0x22cc44, transparent: true, opacity: 0.5, roughness: 0.1 });
+        const matNon = new THREE.MeshPhysicalMaterial({ color: 0xffaa00, transparent: true, opacity: 0.5, roughness: 0.1 });
+        const nucMat = new THREE.MeshBasicMaterial({ color: 0xff8822 });
+        const elecMat = new THREE.MeshBasicMaterial({ color: 0xffffaa });
+
+        function getPeriod(Z) {
+            if(Z <= 2) return 1; if(Z <= 10) return 2; if(Z <= 18) return 3;
+            if(Z <= 36) return 4; if(Z <= 54) return 5; if(Z <= 86) return 6; return 7;
+        }
+
+        function getGrid(Z) {
+            if(Z===1) return {c:1, r:1}; if(Z===2) return {c:18, r:1};
+            if(Z>=3&&Z<=4) return {c:Z-2, r:2}; if(Z>=5&&Z<=10) return {c:Z+8, r:2};
+            if(Z>=11&&Z<=12) return {c:Z-10, r:3}; if(Z>=13&&Z<=18) return {c:Z, r:3};
+            if(Z>=19&&Z<=36) return {c:Z-18, r:4}; if(Z>=37&&Z<=54) return {c:Z-36, r:5};
+            if(Z>=55&&Z<=56) return {c:Z-54, r:6}; if(Z>=72&&Z<=86) return {c:Z-72+4, r:6};
+            if(Z>=87&&Z<=88) return {c:Z-86, r:7}; if(Z>=104&&Z<=118) return {c:Z-104+4, r:7};
+            if(Z>=57&&Z<=71) return {c:Z-57+4, r:8}; 
+            if(Z>=89&&Z<=103) return {c:Z-89+4, r:9}; 
+            return {c:1, r:1};
+        }
+
+        function getMat(Z) {
+            if ([43, 61, 85, 87].includes(Z) || Z >= 93) return matDark;
+            if ((Z>=57 && Z<=71) || (Z>=89 && Z<=103) || Z === 21 || Z === 39) return matRare;
+            if ([3,4,11,12,19,20,37,38,55,56,87,88].includes(Z)) return matAlkali;
+            if ([1,2,5,6,7,8,9,10,14,15,16,17,18,33,34,35,36,52,53,54,85,86,117,118].includes(Z)) return matNon;
+            return matTrans;
+        }
+
+        function createText(Z, sym) {
+            const cvs = document.createElement('canvas'); cvs.width = 128; cvs.height = 128;
+            const ctx = cvs.getContext('2d');
+            ctx.fillStyle = '#ffffff'; ctx.textAlign = 'center';
+            ctx.font = 'bold 36px Arial'; ctx.fillText(Z.toString(), 64, 46);
+            ctx.font = 'bold 52px Arial'; ctx.fillText(sym, 64, 100);
+            return new THREE.CanvasTexture(cvs);
+        }
+
+        const glassGeo = new THREE.BoxGeometry(0.5, 0.5, 0.5).translate(0, 0.25, 0);
+
+        for(let z=1; z<=118; z++) {
+            const eGroup = new THREE.Group();
+            const grid = getGrid(z);
+            
+            const bX = (grid.c - 9.5) * 0.6;
+            const bY = -2.0;
+            const bZ = (grid.r - 5) * 0.6;
+            eGroup.position.set(bX, bY, bZ);
+            
+            const bAngle = Math.random() * Math.PI * 2;
+            const bRad = Math.random() * 2.8;
+            const bHeight = -3.5 + Math.random() * 2.0; 
+
+            const centerDir = new THREE.Vector3(-bX, 0, -bZ);
+            const distToCenter = centerDir.length();
+            if (distToCenter > 0.001) centerDir.normalize(); else centerDir.set(1, 0, 0);
+            const rollAxis = new THREE.Vector3(0, 1, 0).cross(centerDir).normalize();
+            if (rollAxis.lengthSq() < 0.001) rollAxis.set(1, 0, 0);
+
+            eGroup.userData = {
+                basePos: new THREE.Vector3(bX, bY, bZ),
+                distToCenter: distToCenter,
+                rollAxis: rollAxis,
+                bowlPos: new THREE.Vector3(Math.cos(bAngle)*bRad, bHeight, Math.sin(bAngle)*bRad),
+                bowlRot: new THREE.Euler(Math.random()*Math.PI, Math.random()*Math.PI, Math.random()*Math.PI),
+                fallRotSpeed: new THREE.Vector3((Math.random()-0.5)*Math.PI*8, (Math.random()-0.5)*Math.PI*8, (Math.random()-0.5)*Math.PI*8)
+            };
+            
+            const glass = new THREE.Mesh(glassGeo, getMat(z));
+            glass.scale.set(1, 0.01, 1); 
+            eGroup.add(glass);
+            
+            const textPlane = new THREE.Mesh(
+                new THREE.PlaneGeometry(0.4, 0.4), 
+                new THREE.MeshBasicMaterial({ map: createText(z, symbols[z-1]), transparent: true, depthTest: false })
+            );
+            textPlane.rotation.x = -Math.PI / 2; textPlane.position.set(0, 0.51, 0); textPlane.scale.setScalar(0.01); 
+            eGroup.add(textPlane);
+            
+            const bohrGroup = new THREE.Group();
+            bohrGroup.position.set(0, 0.25, 0); bohrGroup.scale.setScalar(0.01); 
+            
+            const nucScale = 0.03 + (z * 0.0006);
+            const nucleus = new THREE.Mesh(new THREE.DodecahedronGeometry(nucScale), nucMat);
+            bohrGroup.add(nucleus);
+
+            const rings = getPeriod(z);
+            for(let r=1; r<=rings; r++) {
+                const orbR = nucScale + (r * 0.025);
+                const ring = new THREE.Mesh(new THREE.TorusGeometry(orbR, 0.003, 3, 24), elecMat);
+                ring.rotation.set(Math.random()*Math.PI, Math.random()*Math.PI, 0);
+                const elec = new THREE.Mesh(new THREE.SphereGeometry(0.015, 8, 8), elecMat);
+                elec.position.set(orbR, 0, 0); ring.add(elec);
+                bohrGroup.add(ring);
+                globalOrbitals.push({ mesh: ring, rx: (Math.random()-0.5)*0.05, ry: (Math.random()-0.5)*0.05 });
+            }
+            eGroup.add(bohrGroup);
+
+            ptGroup.add(eGroup);
+            ptElements.push({ group: eGroup, glass, textPlane, bohrGroup, nucleus });
+        }
+
+
+        // ==========================================
+        // 4. MOVIE DIRECTOR & TIMELINE CONTROLS
+        // ==========================================
+        const uiText = document.getElementById('ui-layer');
+        const controls = new OrbitControls(camera, renderer.domElement);
+        controls.autoRotate = true; controls.enableDamping = true; controls.maxDistance = 45;
+        
+        const clock = new THREE.Clock();
+        let movieTime = 0, isPaused = false, prePauseText = "", currentPhase = -1;
+        let timeElapsed = 0; const frameInterval = 1/30;
+        
+        const camStart = new THREE.Vector3();
+        const ctrlTargetStart = new THREE.Vector3();
+
+        const phaseMarkers = [0, 4, 6, 8, 10, 12, 18, 19, 27, 30, 32, 32.5, 36, 38, 46, 51, 53, 59, 65, 67, 75, 79];
+
+        window.addEventListener('keydown', (e) => {
+            if (e.code === 'Space') {
+                isPaused = !isPaused;
+                if(isPaused) { prePauseText = uiText.innerText; uiText.innerText = "PAUSED"; } 
+                else uiText.innerText = prePauseText;
+            } else if (e.code === 'ArrowRight') {
+                const next = phaseMarkers.find(t => t > movieTime + 0.1);
+                if (next !== undefined) jumpToTime(next);
+            } else if (e.code === 'ArrowLeft') {
+                const prev = [...phaseMarkers].reverse().find(t => t < movieTime - 1.0);
+                if (prev !== undefined) jumpToTime(prev);
+                else jumpToTime(0);
+            }
+        });
+
+        function jumpToTime(t) {
+            resetMovie();
+            movieTime = t;
+            timeElapsed = frameInterval; 
+            currentPhase = -1; 
+        }
+
+        function updateText(msg) { if(!isPaused && uiText.innerText !== msg) uiText.innerText = msg; }
+        function hideAllMeshes() { mesh0.visible = mesh0_5.visible = mesh1.visible = mesh2.visible = mesh3.visible = false; }
+
+        function resetMovie() {
+            movieTime = 0; currentPhase = -1; isExploding = false;
+            renderer.localClippingEnabled = true;
+            dustMesh.visible = false; ptGroup.visible = false;
+            
+            camera.position.set(12, 10, 15);
+            controls.target.set(0, 0, 0);
+            
+            innerSun.visible = true; innerSun.scale.set(1, 1, 1); innerSun.position.set(0, 0, 0);
+            eggWhite.visible = false;
+            sunMat.color.set(0xffdd44); sunMat.emissive.set(0xffaa00); sunMat.emissiveIntensity = 1.0;
+            sunMat.roughness = 0.2; sunMat.metalness = 0.1; sunLight.intensity = 200;
+
+            roomMat.roughness = 0.9; roomMat.metalness = 0.0; roomMat.color.set(0xcccccc);
+            
+            for(let i=0; i<pos3.length; i++) {
+                currentPositions3[i].copy(pos3[i]);
+                velocities[i*3] = velocities[i*3+1] = velocities[i*3+2] = 0;
+                rotVelocities[i*3] = rotVelocities[i*3+1] = rotVelocities[i*3+2] = 0;
+                rotations[i].set(0,0,0);
+                dummy.position.copy(pos3[i]); dummy.rotation.set(0,0,0);
+                dummy.updateMatrix(); mesh3.setMatrixAt(i, dummy.matrix);
+            }
+            mesh3.instanceMatrix.needsUpdate = true;
+
+            ptCover.scale.setScalar(0.001);
+            blackHole.scale.setScalar(0.001); blackHole.visible = false;
+            mixingBowl.position.y = -6; mixingBowl.visible = false;
+
+            ptElements.forEach(e => {
+                e.group.visible = true;
+                e.glass.visible = true;
+                e.glass.scale.set(1, 0.01, 1);
+                e.textPlane.scale.setScalar(0.01);
+                e.bohrGroup.scale.setScalar(0.01);
+                e.group.position.copy(e.group.userData.basePos);
+                e.group.rotation.set(0, 0, 0);
+            });
+        }
+
+        function triggerExplosion() {
+            isExploding = true;
+            for (let i = 0; i < pos3.length; i++) {
+                const dir = pos3[i].clone().normalize();
+                velocities[i*3] = dir.x * (4 + Math.random() * 8);
+                velocities[i*3+1] = 5 + Math.random() * 10;
+                velocities[i*3+2] = dir.z * (4 + Math.random() * 8);
+                rotVelocities[i*3] = (Math.random()-0.5)*0.5; rotVelocities[i*3+1] = (Math.random()-0.5)*0.5; rotVelocities[i*3+2] = (Math.random()-0.5)*0.5;
+            }
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            timeElapsed += clock.getDelta();
+            
+            controls.autoRotate = (!isPaused && (movieTime < 46.0 || movieTime >= 79.0));
+
+            if (timeElapsed >= frameInterval) {
+                const dt = Math.min(timeElapsed, 0.1);
+                
+                // --- REAL-TIME ROOM REFLECTIONS ---
+                if (roomMat.metalness > 0.05) {
+                    roomBox.visible = false; 
+                    cubeCamera.update(renderer, scene);
+                    roomBox.visible = true;
+                }
+
+                if (!isPaused) {
+                    movieTime += dt;
+                    let newPhase = -1;
+
+                    // 1-5: Menger Growth
+                    if (movieTime < 4.0) { newPhase=0; hideAllMeshes(); mesh0.visible=true; spongeGroup.position.y = -4 + (movieTime/4.0)*4; updateText("Reveal"); } 
+                    else if (movieTime < 6.0) { newPhase=1; hideAllMeshes(); mesh0_5.visible=true; spongeGroup.position.y=0; updateText("Subdivide"); }
+                    else if (movieTime < 8.0) { newPhase=2; hideAllMeshes(); mesh1.visible=true; updateText("Holes (9x9x9)"); } 
+                    else if (movieTime < 10.0) { newPhase=3; hideAllMeshes(); mesh2.visible=true; updateText("Subdivide"); }
+                    else if (movieTime < 12.0) { newPhase=4; hideAllMeshes(); mesh3.visible=true; updateText("Holes (27x27x27)"); }
+                    
+                    // 6: Explosion
+                    else if (movieTime < 18.0) {
+                        newPhase=5; hideAllMeshes(); mesh3.visible=true;
+                        if(!isExploding) { triggerExplosion(); updateText("BOOM!"); renderer.localClippingEnabled = false; }
+                        
+                        const bLim = tableY+box3/2, fLim = floorY+0.05+box3/2, tBnd = tableWidth/2, wLim = roomSize/2-box3;
+                        for (let i = 0; i < pos3.length; i++) {
+                            const pos = currentPositions3[i], rot = rotations[i], vIdx = i*3;
+                            velocities[vIdx+1] -= 25*dt; 
+                            pos.x += velocities[vIdx]*dt; pos.y += velocities[vIdx+1]*dt; pos.z += velocities[vIdx+2]*dt;
+                            if(Math.abs(pos.x)>wLim) { pos.x = Math.sign(pos.x)*wLim; velocities[vIdx]*=-0.5; }
+                            if(Math.abs(pos.z)>wLim) { pos.z = Math.sign(pos.z)*wLim; velocities[vIdx+2]*=-0.5; }
+                            if(pos.y<bLim && Math.abs(pos.x)<tBnd && Math.abs(pos.z)<tBnd) {
+                                pos.y = bLim; velocities[vIdx+1]*=-0.4; velocities[vIdx]*=0.85; velocities[vIdx+2]*=0.85;
+                                rotVelocities[vIdx]*=0.8; rotVelocities[vIdx+1]*=0.8; rotVelocities[vIdx+2]*=0.8;
+                            } else if(pos.y<fLim) {
+                                pos.y = fLim; velocities[vIdx+1]*=-0.3; velocities[vIdx]*=0.7; velocities[vIdx+2]*=0.7;
+                                rotVelocities[vIdx]*=0.5; rotVelocities[vIdx+1]*=0.5; rotVelocities[vIdx+2]*=0.5;
+                            }
+                            rot.x += rotVelocities[vIdx]; rot.y += rotVelocities[vIdx+1]; rot.z += rotVelocities[vIdx+2];
+                            dummy.position.copy(pos); dummy.rotation.copy(rot); dummy.updateMatrix(); mesh3.setMatrixAt(i, dummy.matrix);
+                        }
+                        mesh3.instanceMatrix.needsUpdate = true;
+                    } 
+                    // 7: Drop down TWICE cube size & hide
+                    else if (movieTime < 19.0) {
+                        newPhase=6; hideAllMeshes(); mesh3.visible = true; updateText("Absorbing...");
+                        for(let i=0; i<pos3.length; i++) {
+                            currentPositions3[i].y -= (box3 * 2.0) * dt; 
+                            dummy.position.copy(currentPositions3[i]); dummy.rotation.copy(rotations[i]); dummy.updateMatrix(); mesh3.setMatrixAt(i, dummy.matrix);
+                        }
+                        mesh3.instanceMatrix.needsUpdate = true;
+                    }
+                    // 8: Dust & Mirror Walls (19 to 27s)
+                    else if (movieTime < 27.0) {
+                        newPhase=7; hideAllMeshes(); mesh3.visible = false; dustMesh.visible = true; updateText("Orbital Plane");
+                        const mProg = Math.min(1.0, (movieTime - 19.0)/4.0);
+                        
+                        roomMat.roughness = THREE.MathUtils.lerp(0.9, 0.02, mProg);
+                        roomMat.metalness = THREE.MathUtils.lerp(0.0, 0.9, mProg);
+                        roomMat.color.lerp(new THREE.Color(0x333333), 0.05); 
+                    }
+                    // 9: Rainbow Collapse (27 to 30s)
+                    else if (movieTime < 30.0) {
+                        newPhase=8; updateText("Rainbow Collapse");
+                        const prog = (movieTime-27.0)/3.0;
+                        sunMat.color.setHSL((prog*1.5)%1.0, 1.0, 0.5*(1.0-prog));
+                        sunMat.emissive.setHSL((prog*1.5)%1.0, 1.0, 0.5*(1.0-prog));
+                        sunMat.emissiveIntensity = 1.0-prog; sunLight.intensity = 200*(1.0-prog);
+                    }
+                    // 10: The Egg Morph
+                    else if (movieTime < 32.0) {
+                        newPhase=9; updateText("The Egg"); dustMesh.visible = false; 
+                        const prog = (movieTime-30.0)/2.0;
+                        innerSun.scale.set(1.0-(0.3*prog), 1.0+(0.4*prog), 1.0-(0.3*prog));
+                    }
+                    // 11: The Drop & Splat
+                    else if (movieTime < 36.0) {
+                        if (movieTime < 32.5) {
+                            newPhase=10; updateText("Dropping...");
+                            innerSun.position.y = -1.9 * Math.pow((movieTime-32.0)/0.5, 2);
+                        } else {
+                            newPhase=11; updateText("Sunny-Side Up");
+                            innerSun.position.y = -1.9; 
+                            const sProg = Math.min(1.0, (movieTime-32.5)/1.0); 
+                            innerSun.scale.set(0.7+(sProg*0.5), 1.4-(sProg*1.1), 0.7+(sProg*0.5));
+                            sunMat.color.setHex(0xffaa00); sunMat.roughness = 0.3;
+                            eggWhite.visible = true; eggWhite.scale.set(sProg*4, 1, sProg*4);
+                        }
+                    }
+                    // 12: Yolk Shrinks
+                    else if (movieTime < 38.0) {
+                        newPhase=12; updateText("Absorbing Yolk");
+                        const shrink = 1.0 - Math.min(1.0, (movieTime-36.0)/2.0);
+                        innerSun.scale.setScalar(shrink * 1.2);
+                        eggWhite.scale.set(shrink * 4, 1, shrink * 4);
+                        if(shrink <= 0.05) { innerSun.visible = false; eggWhite.visible = false; }
+                    }
+                    // 13: Periodic Table & White Cover Growth
+                    else if (movieTime < 46.0) {
+                        newPhase=13; updateText("The Elements");
+                        ptGroup.visible = true;
+                        
+                        const growProg = Math.min(1.0, (movieTime-38.0)/4.0);
+                        ptElements.forEach(e => {
+                            e.glass.scale.set(1, growProg, 1);
+                            const innerProg = Math.max(0, growProg - 0.2) / 0.8;
+                            e.textPlane.scale.setScalar(Math.max(0.01, innerProg));
+                            e.bohrGroup.scale.setScalar(Math.max(0.01, innerProg));
+                        });
+
+                        if (movieTime > 42.0) {
+                            const coverProg = THREE.MathUtils.smoothstep(Math.min(1.0, (movieTime - 42.0) / 4.0), 0, 1);
+                            ptCover.scale.setScalar(Math.max(0.001, coverProg));
+                        }
+                    }
+                    // 14: Automated Camera - Top-Down View
+                    else if (movieTime < 51.0) {
+                        newPhase=14; updateText("Top-Down View");
+                        const prog = THREE.MathUtils.smoothstep((movieTime - 46.0) / 5.0, 0, 1);
+                        camera.position.lerpVectors(camStart, new THREE.Vector3(0, 15, 0.1), prog);
+                        controls.target.lerpVectors(ctrlTargetStart, new THREE.Vector3(0, -2, 0), prog);
+                    }
+                    // 15: Hold Top-Down
+                    else if (movieTime < 53.0) {
+                        newPhase=15; updateText("Top-Down View");
+                    }
+                    // 16: Automated Camera - Left Side 20 Degree Angle View
+                    else if (movieTime < 59.0) {
+                        newPhase=16; updateText("Left Side 20° View");
+                        const prog = THREE.MathUtils.smoothstep((movieTime - 53.0) / 6.0, 0, 1);
+                        camera.position.lerpVectors(camStart, new THREE.Vector3(-7.8, 0.05, 0), prog);
+                        controls.target.lerpVectors(new THREE.Vector3(0, -2, 0), new THREE.Vector3(0, -2, 0), prog);
+                    }
+                    // 17: ELEMENTAL WAVE
+                    else if (movieTime < 65.0) {
+                        newPhase=17; updateText("Elemental Wave");
+                        const waveTime = movieTime - 59.0;
+                        const waveCenter = 5.0 * Math.cos(Math.PI * waveTime / 3.0);
+                        
+                        ptElements.forEach(e => {
+                            const dist = Math.abs(e.group.userData.basePos.x - waveCenter);
+                            let yOffset = 0;
+                            if (dist < 1.5) yOffset = 1.2 * Math.pow(Math.cos(dist * Math.PI / 3.0), 2);
+                            e.group.position.y = e.group.userData.basePos.y + yOffset;
+                        });
+                    }
+                    // 18: Hold before The Void
+                    else if (movieTime < 67.0) {
+                        newPhase=18;
+                        ptElements.forEach(e => e.group.position.y = e.group.userData.basePos.y);
+                    }
+                    // 19: THE VOID - Elements Float in Cluster
+                    else if (movieTime < 75.0) {
+                        newPhase=19; updateText("The Void");
+                        const bhTime = movieTime - 67.0;
+                        const bhProg = Math.min(1.0, bhTime / 3.0); 
+                        
+                        ptCover.scale.setScalar(Math.max(0.001, 1.0 - bhProg * 2.0));
+                        
+                        blackHole.visible = true;
+                        blackHole.scale.setScalar(0.001 + bhProg * 2.0); 
+
+                        if (bhTime > 0.5) {
+                            const floatProg = Math.min(1.0, (bhTime - 0.5) / 7.0);
+                            const easeIn = floatProg * floatProg * floatProg; 
+                            
+                            ptElements.forEach((e, idx) => {
+                                e.glass.visible = true; 
+                                const bPos = e.group.userData.basePos;
+                                
+                                const currentX = THREE.MathUtils.lerp(bPos.x, 0, easeIn);
+                                const currentZ = THREE.MathUtils.lerp(bPos.z, 0, easeIn);
+                                
+                                // Float up to y = 0.0 with a gentle zero-gravity bobbing effect
+                                const hoverOffset = Math.sin(bhTime * 3.0 + idx) * 0.5;
+                                const currentY = THREE.MathUtils.lerp(bPos.y, 0.0 + hoverOffset, easeIn);
+                                
+                                e.group.position.set(currentX, currentY, currentZ);
+                                
+                                // Tumble gently as they float inward
+                                const distTraveled = easeIn * e.group.userData.distToCenter;
+                                const rollAngle = distTraveled / 0.3; 
+                                e.group.setRotationFromAxisAngle(e.group.userData.rollAxis, rollAngle);
+                                
+                                // Keep scales fully formed at 1.0 (no shrinking into the hole)
+                                e.textPlane.scale.setScalar(1.0);
+                                e.bohrGroup.scale.setScalar(1.0);
+                                e.glass.scale.setScalar(1.0);
+                            });
+                        }
+                    }
+                    // 20: Black Hole Closes & Mixing Bowl Rises
+                    else if (movieTime < 79.0) {
+                        newPhase=20; updateText("Mixing Bowl");
+                        const mixTime = movieTime - 75.0;
+                        const closeProg = Math.min(1.0, mixTime / 1.5);
+                        
+                        blackHole.scale.setScalar(Math.max(0.001, 2.0 - closeProg * 2.0));
+                        if (closeProg >= 1.0) blackHole.visible = false;
+
+                        mixingBowl.visible = true;
+                        const riseProg = Math.min(1.0, mixTime / 3.0);
+                        mixingBowl.position.y = -6 + riseProg * 8;
+
+                        ptElements.forEach((e, idx) => {
+                            e.group.visible = true; 
+                            e.glass.visible = true; 
+                            
+                            const bPos = e.group.userData.bowlPos;
+                            const bRot = e.group.userData.bowlRot;
+                            
+                            // Start positions capture the exact floating state from Phase 19 end
+                            const hoverOffset = Math.sin((8.0) * 3.0 + idx) * 0.5;
+                            const startY = 0.0 + hoverOffset;
+                            const targetY = mixingBowl.position.y + 0.5 + bPos.y;
+                            
+                            // Seamless transition from floating cluster directly into the bowl
+                            e.group.position.x = THREE.MathUtils.lerp(0, bPos.x, riseProg);
+                            e.group.position.y = THREE.MathUtils.lerp(startY, targetY, riseProg);
+                            e.group.position.z = THREE.MathUtils.lerp(0, bPos.z, riseProg);
+                            
+                            if (riseProg >= 1.0) {
+                                e.group.rotation.copy(bRot);
+                            } else {
+                                e.group.rotation.x += dt * 2.0;
+                                e.group.rotation.y += dt * 2.0;
+                            }
+                            
+                            const scale = THREE.MathUtils.lerp(1.0, 0.4, riseProg);
+                            e.glass.scale.setScalar(scale);
+                            e.textPlane.scale.setScalar(scale);
+                            e.bohrGroup.scale.setScalar(scale);
+                        });
+                    }
+                    // 21: Resume Camera Rotation
+                    else if (movieTime < 82.0) {
+                        newPhase=21; updateText("Mixing Bowl");
+                        const camProg = Math.min(1.0, (movieTime - 79.0) / 3.0);
+                        camera.position.lerpVectors(camStart, new THREE.Vector3(12, 10, 15), camProg);
+                        controls.target.lerpVectors(ctrlTargetStart, new THREE.Vector3(0, -1, 0), camProg);
+                    }
+                    // 22: Hold
+                    else if (movieTime < 86.0) {
+                        newPhase=22;
+                    }
+                    // Reset Loop
+                    else { resetMovie(); }
+                    
+                    
+                    // --- UNIVERSAL PHYSICS ---
+                    if (dustMesh.visible && movieTime >= 19.0 && movieTime < 30.0) {
+                        const dTime = movieTime - 19.0;
+                        let pFact = 1.0; 
+                        if (dTime > 2.0) pFact = 1.0 - Math.min(1.0, (dTime - 2.0) / 4.0);
+                        
+                        for(let i=0; i<dustCount; i++) {
+                            const d = dustData[i]; 
+                            d.theta += d.speed * dt; d.planeFactor = pFact;
+                            if (d.isSmallSun && dTime > 2.0) { d.currentScale = Math.min(d.maxScale, d.currentScale + dt * 0.25); } 
+                            else if(!d.isSmallSun) { d.currentScale = Math.max(0, d.currentScale - dt * 0.2); }
+                            
+                            const cPhi = THREE.MathUtils.lerp(d.phi, Math.PI/2, 1.0 - d.planeFactor);
+                            dummy.position.set(d.radius*Math.sin(cPhi)*Math.cos(d.theta), d.radius*Math.cos(cPhi)*d.planeFactor, d.radius*Math.sin(cPhi)*Math.sin(d.theta));
+                            dummy.scale.setScalar(d.currentScale); dummy.updateMatrix(); dustMesh.setMatrixAt(i, dummy.matrix);
+                        }
+                        dustMesh.instanceMatrix.needsUpdate = true;
+                    }
+
+                    if (ptGroup.visible) {
+                        globalOrbitals.forEach(o => { o.mesh.rotation.x += o.rx; o.mesh.rotation.y += o.ry; });
+                        ptElements.forEach(e => { e.nucleus.rotation.y += 0.02; });
+                    }
+
+                    if (newPhase !== currentPhase && newPhase !== -1) {
+                        currentPhase = newPhase; triggerPhaseAudio(currentPhase);
+                        if (currentPhase >= 14) {
+                            camStart.copy(camera.position);
+                            ctrlTargetStart.copy(controls.target);
+                        }
+                    }
+                }
+
+                controls.update(); renderer.render(scene, camera);
+                timeElapsed = timeElapsed % frameInterval;
+            }
+        }
+
+        window.addEventListener('resize', () => { camera.aspect = window.innerWidth / window.innerHeight; camera.updateProjectionMatrix(); renderer.setSize(window.innerWidth, window.innerHeight); });
+
+        const startOverlay = document.getElementById('start-overlay');
+        startOverlay.addEventListener('click', () => {
+            startOverlay.style.display = 'none';
+            SoundEngine.init(); resetMovie(); animate();
+        });
+    </script>
+</body>
+</html>

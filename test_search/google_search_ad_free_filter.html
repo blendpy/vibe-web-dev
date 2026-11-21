@@ -1,0 +1,770 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Google Search - AI Powered & Ad Free</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        google: {
+                            blue: '#1a73e8',
+                            blueHover: '#1557b0',
+                            red: '#ea4335',
+                            yellow: '#fbbc05',
+                            green: '#34a853',
+                            gray: '#5f6368',
+                            hoverBg: '#f8f9fa',
+                            darkBg: '#202124',
+                            darkCard: '#303134',
+                            darkText: '#e8eaed',
+                            adBg: '#fef8ee',
+                            adBgDark: '#2c271d'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap');
+        body { font-family: 'Roboto', sans-serif; }
+        .ad-card { transition: all 0.25s ease-in-out; }
+        .tab-active { color: #1a73e8 !important; border-bottom: 3px solid #1a73e8 !important; font-weight: 500; }
+        @keyframes spin-slow {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .animate-spin-slow { animation: spin-slow 8s linear infinite; }
+    </style>
+</head>
+<body class="bg-white dark:bg-google-darkBg text-gray-800 dark:text-google-darkText min-h-screen flex flex-col transition-colors duration-200">
+
+    <header class="w-full p-4 flex justify-between items-center text-sm z-20 sticky top-0 bg-white/95 dark:bg-google-darkBg/95 backdrop-blur-md border-b border-gray-100 dark:border-gray-800 transition-all duration-200" id="appHeader">
+        <div class="flex items-center space-x-4">
+            <button id="logoHomeBtn" class="hidden items-center space-x-1 cursor-pointer font-medium text-lg focus:outline-none">
+                <span class="text-google-blue">G</span><span class="text-google-red">o</span><span class="text-google-yellow">o</span><span class="text-google-blue">g</span><span class="text-google-green">l</span><span class="text-google-red">e</span>
+            </button>
+        </div>
+
+        <div class="flex items-center space-x-3 sm:space-x-4">
+            <!-- Ad Blocker Switch -->
+            <div class="flex items-center bg-gray-100 dark:bg-google-darkCard p-1.5 px-3 rounded-full border border-gray-200 dark:border-gray-700 shadow-sm">
+                <i class="fa-solid fa-shield-halved text-google-blue mr-2 text-base"></i>
+                <span class="text-xs sm:text-sm font-medium mr-2.5 hidden xs:inline">Ad Free Filter</span>
+                <label class="relative inline-flex items-center cursor-pointer">
+                    <input type="checkbox" id="adBlockToggle" class="sr-only peer" checked>
+                    <div class="w-9 h-5 bg-gray-300 peer-focus:outline-none rounded-full peer dark:bg-gray-600 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-google-blue"></div>
+                </label>
+            </div>
+
+            <!-- Stats Badge -->
+            <div id="adStatsBadge" class="hidden sm:flex items-center bg-green-100 dark:bg-green-950/50 text-google-green dark:text-green-400 text-xs font-semibold px-2.5 py-1 rounded-full border border-green-200 dark:border-green-900/50">
+                <i class="fa-solid fa-ban mr-1.5"></i>
+                <span id="adCountText">0 Ads Hidden</span>
+            </div>
+
+            <!-- Dark Mode Toggle -->
+            <button id="themeToggleBtn" class="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300 transition-colors" title="Toggle Theme">
+                <i class="fa-solid fa-moon text-base" id="themeIcon"></i>
+            </button>
+
+            <!-- User Avatar -->
+            <div class="w-8 h-8 rounded-full bg-google-blue text-white flex items-center justify-center font-bold text-sm shadow">
+                U
+            </div>
+        </div>
+    </header>
+
+    <main id="homeView" class="flex-1 flex flex-col items-center justify-center px-4 -mt-12 transition-opacity duration-300">
+        <div class="text-center mb-8 select-none">
+            <h1 class="text-6xl sm:text-8xl font-bold tracking-tight">
+                <span class="text-google-blue">G</span><span class="text-google-red">o</span><span class="text-google-yellow">o</span><span class="text-google-blue">g</span><span class="text-google-green">l</span><span class="text-google-red">e</span>
+            </h1>
+            <div class="mt-3 inline-flex items-center space-x-1.5 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/40 dark:to-indigo-950/40 text-google-blue dark:text-blue-300 text-xs px-4 py-1.5 rounded-full border border-blue-200 dark:border-blue-900/60 font-medium shadow-xs">
+                <i class="fa-solid fa-wand-magic-sparkles text-amber-500"></i>
+                <span>Powered by Gemini Live Search & Ad-Free Protection</span>
+            </div>
+        </div>
+
+        <div class="w-full max-w-2xl px-2">
+            <form id="homeSearchForm" class="relative">
+                <div class="relative flex items-center shadow-md hover:shadow-lg focus-within:shadow-lg rounded-full border border-gray-200 dark:border-gray-700 bg-white dark:bg-google-darkCard transition-all">
+                    <i class="fa-solid fa-magnifying-glass text-gray-400 pl-5 pr-3 text-lg"></i>
+                    <input type="text" id="homeSearchInput" class="w-full py-3.5 pr-12 text-base bg-transparent focus:outline-none dark:text-white" placeholder="Search anything with Gemini Search..." autocomplete="off">
+                    <button type="button" id="clearHomeInput" class="hidden text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 pr-3">
+                        <i class="fa-solid fa-xmark text-lg"></i>
+                    </button>
+                    <i id="homeVoiceBtn" class="fa-solid fa-microphone text-google-blue pr-5 text-lg cursor-pointer hover:opacity-80" title="Voice search"></i>
+                </div>
+            </form>
+
+            <div class="flex justify-center space-x-3 mt-6">
+                <button type="submit" id="homeSearchBtn" class="px-5 py-2.5 bg-gray-50 dark:bg-google-darkCard hover:bg-gray-100 dark:hover:bg-gray-700 border border-gray-200 dark:border-gray-700 text-sm font-medium rounded-md shadow-sm transition-colors">
+                    Google Search
+                </button>
+                <button type="button" id="luckyBtn" class="px-5 py-2.5 bg-gray-50 dark:bg-google-darkCard hover:bg-gray-100 dark:hover:bg-gray-700 border border-gray-200 dark:border-gray-700 text-sm font-medium rounded-md shadow-sm transition-colors">
+                    I'm Feeling Lucky
+                </button>
+            </div>
+
+            <div class="mt-8 text-center">
+                <p class="text-xs text-gray-500 dark:text-gray-400 mb-2 font-medium">Try trending Gemini searches:</p>
+                <div class="flex flex-wrap justify-center gap-2">
+                    <button class="sample-query-btn text-xs bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 px-3 py-1.5 rounded-full transition-colors">latest breakthroughs in quantum computing</button>
+                    <button class="sample-query-btn text-xs bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 px-3 py-1.5 rounded-full transition-colors">best coffee makers 2026</button>
+                    <button class="sample-query-btn text-xs bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 px-3 py-1.5 rounded-full transition-colors">how to build a web app with AI</button>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <div id="resultsView" class="hidden flex-1 flex flex-col w-full">
+        <div class="border-b border-gray-200 dark:border-gray-800 bg-white dark:bg-google-darkBg px-4 sm:px-8 py-3 sticky top-[65px] z-10 shadow-xs">
+            <div class="max-w-7xl mx-auto flex flex-col sm:flex-row sm:items-center space-y-3 sm:space-y-0 sm:space-x-6">
+                <button id="resultsLogoBtn" class="flex items-center space-x-1 text-2xl font-bold cursor-pointer focus:outline-none">
+                    <span class="text-google-blue">G</span><span class="text-google-red">o</span><span class="text-google-yellow">o</span><span class="text-google-blue">g</span><span class="text-google-green">l</span><span class="text-google-red">e</span>
+                </button>
+
+                <form id="resultsSearchForm" class="flex-1 max-w-2xl">
+                    <div class="relative flex items-center shadow-sm hover:shadow focus-within:shadow rounded-full border border-gray-200 dark:border-gray-700 bg-white dark:bg-google-darkCard">
+                        <input type="text" id="resultsSearchInput" class="w-full py-2.5 pl-5 pr-10 text-sm bg-transparent focus:outline-none dark:text-white" autocomplete="off">
+                        <button type="button" id="clearResultsInput" class="hidden text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 pr-3">
+                            <i class="fa-solid fa-xmark"></i>
+                        </button>
+                        <i class="fa-solid fa-magnifying-glass text-google-blue pr-4 text-base cursor-pointer" id="resultsSearchIconBtn"></i>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Tabs -->
+            <div class="max-w-7xl mx-auto flex items-center space-x-6 mt-4 text-xs sm:text-sm text-gray-600 dark:text-gray-400 overflow-x-auto">
+                <button data-tab="all" class="tab-btn filter-tab tab-active hover:text-gray-900 dark:hover:text-white pb-2.5 flex items-center space-x-1.5 whitespace-nowrap">
+                    <i class="fa-solid fa-magnifying-glass text-xs"></i>
+                    <span>All</span>
+                </button>
+                <button data-tab="images" class="tab-btn filter-tab hover:text-gray-900 dark:hover:text-white pb-2.5 flex items-center space-x-1.5 whitespace-nowrap">
+                    <i class="fa-regular fa-image text-xs"></i>
+                    <span>Images</span>
+                </button>
+                <button data-tab="news" class="tab-btn filter-tab hover:text-gray-900 dark:hover:text-white pb-2.5 flex items-center space-x-1.5 whitespace-nowrap">
+                    <i class="fa-regular fa-newspaper text-xs"></i>
+                    <span>News</span>
+                </button>
+                <button data-tab="shopping" class="tab-btn filter-tab hover:text-gray-900 dark:hover:text-white pb-2.5 flex items-center space-x-1.5 whitespace-nowrap">
+                    <i class="fa-solid fa-tag text-xs"></i>
+                    <span>Shopping</span>
+                </button>
+                <button data-tab="videos" class="tab-btn filter-tab hover:text-gray-900 dark:hover:text-white pb-2.5 flex items-center space-x-1.5 whitespace-nowrap">
+                    <i class="fa-regular fa-circle-play text-xs"></i>
+                    <span>Videos</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Ad Alert Banner -->
+        <div id="adFilterAlert" class="bg-blue-50 dark:bg-blue-950/30 border-b border-blue-100 dark:border-blue-900/50 py-2.5 px-4 sm:px-8 text-xs text-google-blue dark:text-blue-300">
+            <div class="max-w-7xl mx-auto flex items-center justify-between">
+                <div class="flex items-center space-x-2">
+                    <i class="fa-solid fa-shield-check text-sm" id="alertIcon"></i>
+                    <span id="alertMessageText">Ad Blocker is Active: 0 ads hidden from search results.</span>
+                </div>
+                <button id="toggleAdBannerBtn" class="underline hover:text-blue-800 dark:hover:text-blue-200 font-medium">Turn Off Filter</button>
+            </div>
+        </div>
+
+        <!-- Loading Spinner Container -->
+        <div id="loadingIndicator" class="hidden flex-1 flex flex-col items-center justify-center py-20">
+            <div class="w-12 h-12 border-4 border-google-blue border-t-transparent rounded-full animate-spin mb-4"></div>
+            <p class="text-sm font-medium text-gray-600 dark:text-gray-300 animate-pulse">Gemini is searching the live web and generating results...</p>
+        </div>
+
+        <!-- Main Results Body -->
+        <div id="resultsMainBody" class="max-w-7xl w-full mx-auto px-4 sm:px-8 py-4 flex-1">
+            <p id="resultsStats" class="text-xs text-gray-500 dark:text-gray-400 mb-4">About 2,450,000 results generated by Gemini (0.34 seconds)</p>
+
+            <!-- All Results Tab -->
+            <div id="tabContentAll" class="tab-content grid grid-cols-1 lg:grid-cols-12 gap-8">
+                <div class="lg:col-span-7 space-y-6">
+                    <!-- AI Overview Card -->
+                    <div id="aiOverviewCard" class="border border-indigo-200 dark:border-indigo-900/60 rounded-2xl p-5 bg-gradient-to-br from-indigo-50/60 via-blue-50/30 to-white dark:from-indigo-950/30 dark:via-google-darkCard dark:to-google-darkCard shadow-sm">
+                        <div class="flex items-center space-x-2 mb-3">
+                            <div class="w-7 h-7 rounded-full bg-gradient-to-r from-blue-600 to-indigo-600 flex items-center justify-center text-white text-xs shadow-xs">
+                                <i class="fa-solid fa-wand-magic-sparkles"></i>
+                            </div>
+                            <span class="text-sm font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">Gemini AI Overview</span>
+                        </div>
+                        <p id="aiOverviewText" class="text-sm text-gray-700 dark:text-gray-200 leading-relaxed mb-3">Generating summary...</p>
+                        <div class="flex items-center text-[11px] text-gray-500 dark:text-gray-400 space-x-3 pt-2 border-t border-indigo-100 dark:border-indigo-900/30">
+                            <span><i class="fa-solid fa-check-circle text-google-green mr-1"></i> Grounded with Google Search</span>
+                            <span>• Verified by AI</span>
+                        </div>
+                    </div>
+
+                    <!-- Organic & Ad Results List -->
+                    <div id="searchResultsList" class="space-y-5">
+                        <!-- Rendered dynamically -->
+                    </div>
+                </div>
+
+                <!-- Knowledge Panel Column -->
+                <div id="knowledgePanelColumn" class="lg:col-span-5 hidden lg:block">
+                    <div class="sticky top-44 border border-gray-200 dark:border-gray-700 rounded-2xl p-5 bg-white dark:bg-google-darkCard shadow-sm">
+                        <div id="knowledgeContent">
+                            <!-- Populated dynamically -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Images Tab -->
+            <div id="tabContentImages" class="tab-content hidden">
+                <div id="imagesGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+                    <!-- Populated dynamically -->
+                </div>
+            </div>
+
+            <!-- News Tab -->
+            <div id="tabContentNews" class="tab-content hidden max-w-3xl space-y-4">
+                <div id="newsList" class="space-y-4">
+                    <!-- Populated dynamically -->
+                </div>
+            </div>
+
+            <!-- Generic/Fallback Tab -->
+            <div id="tabContentGeneric" class="tab-content hidden max-w-3xl py-12 text-center text-gray-500 dark:text-gray-400">
+                <i class="fa-solid fa-compass text-4xl mb-3 text-google-blue"></i>
+                <p class="text-sm">Explore category results above. All sponsored ads are successfully filtered out when Ad-Free is enabled.</p>
+            </div>
+        </div>
+    </div>
+
+    <footer class="bg-gray-100 dark:bg-google-darkCard text-gray-500 dark:text-gray-400 text-xs border-t border-gray-200 dark:border-gray-800 mt-auto">
+        <div class="px-6 py-3 border-b border-gray-200 dark:border-gray-800">
+            <span>United States • Raleigh, NC • Powered by Gemini API & Google Search</span>
+        </div>
+        <div class="px-6 py-3 flex flex-wrap justify-between items-center gap-4">
+            <div class="flex space-x-6">
+                <a href="https://about.google/" target="_blank" rel="noopener noreferrer" class="hover:underline">About</a>
+                <a href="https://ads.google.com" target="_blank" rel="noopener noreferrer" class="hover:underline">Advertising</a>
+                <a href="https://www.google.com/services/" target="_blank" rel="noopener noreferrer" class="hover:underline">Business</a>
+                <a href="https://www.google.com/search/howsearchworks/" target="_blank" rel="noopener noreferrer" class="hover:underline">How Search works</a>
+            </div>
+            <div class="flex space-x-6">
+                <a href="https://policies.google.com/privacy" target="_blank" rel="noopener noreferrer" class="hover:underline">Privacy</a>
+                <a href="https://policies.google.com/terms" target="_blank" rel="noopener noreferrer" class="hover:underline">Terms</a>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        const state = {
+            query: '',
+            isAdBlockActive: true,
+            currentData: null,
+            hiddenAdsCount: 0,
+            activeTab: 'all',
+            theme: 'light'
+        };
+
+        const homeView = document.getElementById('homeView');
+        const resultsView = document.getElementById('resultsView');
+        const homeSearchForm = document.getElementById('homeSearchForm');
+        const homeSearchInput = document.getElementById('homeSearchInput');
+        const resultsSearchForm = document.getElementById('resultsSearchForm');
+        const resultsSearchInput = document.getElementById('resultsSearchInput');
+        const clearHomeInput = document.getElementById('clearHomeInput');
+        const clearResultsInput = document.getElementById('clearResultsInput');
+        const searchResultsList = document.getElementById('searchResultsList');
+        const adBlockToggle = document.getElementById('adBlockToggle');
+        const adStatsBadge = document.getElementById('adStatsBadge');
+        const adCountText = document.getElementById('adCountText');
+        const alertMessageText = document.getElementById('alertMessageText');
+        const toggleAdBannerBtn = document.getElementById('toggleAdBannerBtn');
+        const knowledgeContent = document.getElementById('knowledgeContent');
+        const logoHomeBtn = document.getElementById('logoHomeBtn');
+        const resultsLogoBtn = document.getElementById('resultsLogoBtn');
+        const themeToggleBtn = document.getElementById('themeToggleBtn');
+        const themeIcon = document.getElementById('themeIcon');
+        const alertIcon = document.getElementById('alertIcon');
+        const loadingIndicator = document.getElementById('loadingIndicator');
+        const resultsMainBody = document.getElementById('resultsMainBody');
+        const aiOverviewText = document.getElementById('aiOverviewText');
+
+        function init() {
+            if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+                setTheme('dark');
+            }
+
+            homeSearchForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                performSearch(homeSearchInput.value);
+            });
+
+            resultsSearchForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                performSearch(resultsSearchInput.value);
+            });
+
+            document.getElementById('homeSearchBtn').addEventListener('click', () => {
+                performSearch(homeSearchInput.value);
+            });
+
+            document.getElementById('luckyBtn').addEventListener('click', () => {
+                const terms = [
+                    'latest breakthroughs in quantum computing',
+                    'best coffee makers 2026',
+                    'how to build a web app with AI'
+                ];
+                const randomTerm = terms[Math.floor(Math.random() * terms.length)];
+                homeSearchInput.value = randomTerm;
+                performSearch(randomTerm);
+            });
+
+            document.querySelectorAll('.sample-query-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const q = e.target.innerText;
+                    homeSearchInput.value = q;
+                    performSearch(q);
+                });
+            });
+
+            adBlockToggle.addEventListener('change', (e) => {
+                state.isAdBlockActive = e.target.checked;
+                updateAdBlockState();
+            });
+
+            toggleAdBannerBtn.addEventListener('click', () => {
+                state.isAdBlockActive = !state.isAdBlockActive;
+                adBlockToggle.checked = state.isAdBlockActive;
+                updateAdBlockState();
+            });
+
+            homeSearchInput.addEventListener('input', (e) => {
+                clearHomeInput.classList.toggle('hidden', !e.target.value);
+            });
+
+            resultsSearchInput.addEventListener('input', (e) => {
+                clearResultsInput.classList.toggle('hidden', !e.target.value);
+            });
+
+            clearHomeInput.addEventListener('click', () => {
+                homeSearchInput.value = '';
+                clearHomeInput.classList.add('hidden');
+            });
+
+            clearResultsInput.addEventListener('click', () => {
+                resultsSearchInput.value = '';
+                clearResultsInput.classList.add('hidden');
+            });
+
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const tab = e.currentTarget.dataset.tab;
+                    switchTab(tab);
+                });
+            });
+
+            logoHomeBtn.addEventListener('click', goHome);
+            resultsLogoBtn.addEventListener('click', goHome);
+
+            themeToggleBtn.addEventListener('click', () => {
+                setTheme(state.theme === 'light' ? 'dark' : 'light');
+            });
+
+            document.getElementById('homeVoiceBtn').addEventListener('click', () => {
+                homeSearchInput.placeholder = "Listening... Speak your query";
+                setTimeout(() => {
+                    const query = "latest breakthroughs in quantum computing";
+                    homeSearchInput.value = query;
+                    homeSearchInput.placeholder = "Search anything with Gemini Search...";
+                    clearHomeInput.classList.remove('hidden');
+                    performSearch(query);
+                }, 2000);
+            });
+        }
+
+        function setTheme(theme) {
+            state.theme = theme;
+            if (theme === 'dark') {
+                document.documentElement.classList.add('dark');
+                themeIcon.className = 'fa-solid fa-sun text-yellow-400 text-base';
+            } else {
+                document.documentElement.classList.remove('dark');
+                themeIcon.className = 'fa-solid fa-moon text-base';
+            }
+        }
+
+        function goHome() {
+            homeView.classList.remove('hidden');
+            resultsView.classList.add('hidden');
+            logoHomeBtn.classList.add('hidden');
+            adStatsBadge.classList.add('hidden');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        async function performSearch(query) {
+            const trimmed = query.trim();
+            if (!trimmed) return;
+
+            state.query = trimmed;
+            homeSearchInput.value = trimmed;
+            resultsSearchInput.value = trimmed;
+            clearHomeInput.classList.remove('hidden');
+            clearResultsInput.classList.remove('hidden');
+
+            homeView.classList.add('hidden');
+            resultsView.classList.remove('hidden');
+            logoHomeBtn.classList.remove('hidden');
+            adStatsBadge.classList.remove('hidden');
+
+            loadingIndicator.classList.remove('hidden');
+            resultsMainBody.classList.add('hidden');
+
+            // Call Gemini API with Google Search grounding and JSON Schema
+            try {
+                const data = await fetchGeminiSearchResults(trimmed);
+                state.currentData = data;
+                renderResults();
+            } catch (err) {
+                console.error("Gemini API Error, using fallback generator:", err);
+                state.currentData = getFallbackData(trimmed);
+                renderResults();
+            } finally {
+                loadingIndicator.classList.add('hidden');
+                resultsMainBody.classList.remove('hidden');
+            }
+
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        async function fetchGeminiSearchResults(query) {
+            const apiKey = "";
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
+
+            const systemPrompt = `You are a professional search engine generator. Given the user query, use Google Search grounding to gather up-to-date information, and generate structured search results JSON including an AI overview, knowledge panel, organic results, sponsored ad results (include 2 sponsored ads marked with isAd: true), image previews, and news items.`;
+
+            const userQueryPrompt = `Generate structured search engine data for the query: "${query}".`;
+
+            const schema = {
+                type: "OBJECT",
+                properties: {
+                    aiOverview: { type: "STRING" },
+                    knowledgePanel: {
+                        type: "OBJECT",
+                        properties: {
+                            title: { type: "STRING" },
+                            subtitle: { type: "STRING" },
+                            description: { type: "STRING" },
+                            mainImage: { type: "STRING" },
+                            attributes: {
+                                type: "ARRAY",
+                                items: {
+                                    type: "OBJECT",
+                                    properties: {
+                                        label: { type: "STRING" },
+                                        value: { type: "STRING" }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    results: {
+                        type: "ARRAY",
+                        items: {
+                            type: "OBJECT",
+                            properties: {
+                                title: { type: "STRING" },
+                                url: { type: "STRING" },
+                                displayUrl: { type: "STRING" },
+                                snippet: { type: "STRING" },
+                                isAd: { type: "BOOLEAN" },
+                                image: { type: "STRING" }
+                            }
+                        }
+                    },
+                    images: {
+                        type: "ARRAY",
+                        items: { type: "STRING" }
+                    },
+                    news: {
+                        type: "ARRAY",
+                        items: {
+                            type: "OBJECT",
+                            properties: {
+                                title: { type: "STRING" },
+                                url: { type: "STRING" },
+                                snippet: { type: "STRING" },
+                                source: { type: "STRING" }
+                            }
+                        }
+                    }
+                },
+                required: ["aiOverview", "knowledgePanel", "results", "images", "news"]
+            };
+
+            const payload = {
+                contents: [{ role: "user", parts: [{ text: userQueryPrompt }] }],
+                tools: [{ "google_search": {} }],
+                systemInstruction: { parts: [{ text: systemPrompt }] },
+                generationConfig: {
+                    responseMimeType: "application/json",
+                    responseSchema: schema
+                }
+            };
+
+            // Implement exponential backoff retry
+            let response;
+            let delay = 1000;
+            for (let attempt = 0; attempt < 3; attempt++) {
+                try {
+                    response = await fetch(apiUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+                    if (response.ok) break;
+                } catch (e) {
+                    if (attempt === 2) throw e;
+                }
+                await new Promise(res => setTimeout(res, delay));
+                delay *= 2;
+            }
+
+            const resultJson = await response.json();
+            const candidate = resultJson.candidates?.[0];
+            if (candidate && candidate.content?.parts?.[0]?.text) {
+                return JSON.parse(candidate.content.parts[0].text);
+            } else {
+                throw new Error("Invalid response from Gemini API");
+            }
+        }
+
+        function getFallbackData(query) {
+            const clean = query.charAt(0).toUpperCase() + query.slice(1);
+            return {
+                aiOverview: `${clean} is an important topic involving advanced technologies, current market trends, and comprehensive global resources. Gemini live search provides verified insights, documentation, and expert perspectives.`,
+                knowledgePanel: {
+                    title: clean,
+                    subtitle: "Topic Overview",
+                    description: `Key reference and verified documentation for ${clean}.`,
+                    mainImage: "https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&w=800&q=80",
+                    attributes: [
+                        { label: "Query", value: query },
+                        { label: "Status", value: "Verified Active" }
+                    ]
+                },
+                results: [
+                    {
+                        isAd: true,
+                        title: `Sponsored: Premium ${clean} Deals & Services`,
+                        url: "https://www.google.com/search?q=" + encodeURIComponent(query),
+                        displayUrl: `https://www.sponsored-deals.com › ${encodeURIComponent(query)}`,
+                        snippet: `Get exclusive offers and top rated services for ${clean}. Save today with limited time promotions.`
+                    },
+                    {
+                        isAd: true,
+                        title: `Buy ${clean} Online - Fast Shipping`,
+                        url: "https://www.google.com/search?q=" + encodeURIComponent(query),
+                        displayUrl: `https://www.top-market-store.com › ${encodeURIComponent(query)}`,
+                        snippet: `Shop premier brands and verified solutions for ${clean} with 24/7 customer support.`
+                    },
+                    {
+                        isAd: false,
+                        title: `${clean} - Comprehensive Guide & Wikipedia Reference`,
+                        url: `https://en.wikipedia.org/wiki/${encodeURIComponent(query)}`,
+                        displayUrl: `https://en.wikipedia.org › wiki › ${encodeURIComponent(query)}`,
+                        image: "https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=300&q=80",
+                        snippet: `Explore authoritative information, background history, and modern applications regarding ${clean}.`
+                    },
+                    {
+                        isAd: false,
+                        title: `Latest News and Developments on ${clean}`,
+                        url: `https://www.google.com/search?q=${encodeURIComponent(query)}`,
+                        displayUrl: `https://www.reuters.com › search › ${encodeURIComponent(query)}`,
+                        snippet: `Read breaking international reports, expert commentary, and market updates about ${clean}.`
+                    }
+                ],
+                images: [
+                    "https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&w=500&q=80",
+                    "https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=500&q=80",
+                    "https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?auto=format&fit=crop&w=500&q=80"
+                ],
+                news: [
+                    {
+                        title: `New Breakthroughs in ${clean}`,
+                        url: `https://www.google.com/search?q=${encodeURIComponent(query)}`,
+                        snippet: `Recent industry developments showcase remarkable advancements in ${clean}.`,
+                        source: "Tech News Daily"
+                    }
+                ]
+            };
+        }
+
+        function renderResults() {
+            const data = state.currentData;
+            aiOverviewText.innerText = data.aiOverview || "No AI overview available.";
+
+            // Render Knowledge Panel
+            const kn = data.knowledgePanel;
+            if (kn) {
+                let attrsHtml = kn.attributes ? kn.attributes.map(a => `
+                    <div class="py-2 border-b border-gray-100 dark:border-gray-800 text-xs flex justify-between">
+                        <span class="text-gray-500 font-medium">${a.label}</span>
+                        <span class="text-gray-800 dark:text-gray-200 font-semibold text-right">${a.value}</span>
+                    </div>
+                `).join('') : '';
+
+                knowledgeContent.innerHTML = `
+                    <div class="rounded-xl overflow-hidden mb-4 border border-gray-100 dark:border-gray-700 h-44">
+                        <img src="${kn.mainImage || 'https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&w=800&q=80'}" alt="${kn.title}" class="w-full h-full object-cover">
+                    </div>
+                    <h3 class="text-xl font-bold text-gray-900 dark:text-white mb-0.5">${kn.title}</h3>
+                    <p class="text-xs text-gray-500 mb-3">${kn.subtitle || ''}</p>
+                    <p class="text-xs text-gray-600 dark:text-gray-300 mb-4 leading-relaxed">${kn.description}</p>
+                    <div class="space-y-0.5">${attrsHtml}</div>
+                `;
+            }
+
+            // Render Search Results List
+            searchResultsList.innerHTML = '';
+            let adsCount = 0;
+
+            data.results.forEach((item) => {
+                if (item.isAd) adsCount++;
+
+                const card = document.createElement('div');
+                card.className = `ad-card border rounded-xl p-4 transition-all duration-200 ${
+                    item.isAd 
+                        ? 'is-ad-card bg-google-adBg dark:bg-google-adBgDark/40 border-amber-200 dark:border-amber-900/40' 
+                        : 'bg-white dark:bg-google-darkCard border-gray-100 dark:border-gray-800 shadow-xs hover:shadow-md'
+                }`;
+
+                let badgeHtml = item.isAd ? `
+                    <div class="flex items-center space-x-1.5 mb-1.5">
+                        <span class="text-[11px] font-bold text-amber-900 dark:text-amber-200 bg-amber-200 dark:bg-amber-900/60 rounded px-1.5 py-0.5 leading-none">Sponsored</span>
+                        <span class="text-xs text-gray-500 truncate">${item.displayUrl}</span>
+                    </div>
+                ` : `
+                    <p class="text-xs text-gray-600 dark:text-gray-400 mb-1 truncate">${item.displayUrl}</p>
+                `;
+
+                let imgThumbnail = item.image ? `
+                    <div class="shrink-0 w-20 h-20 sm:w-24 sm:h-24 rounded-lg overflow-hidden border border-gray-100 dark:border-gray-700 ml-3">
+                        <img src="${item.image}" alt="Thumbnail" class="w-full h-full object-cover">
+                    </div>
+                ` : '';
+
+                card.innerHTML = `
+                    <div class="flex items-start justify-between">
+                        <div class="flex-1 pr-2">
+                            ${badgeHtml}
+                            <h3 class="text-base sm:text-lg font-normal mb-1">
+                                <a href="${item.url || '#'}" target="_blank" rel="noopener noreferrer" class="text-google-blue dark:text-blue-400 hover:underline flex items-center gap-1.5 inline-flex">
+                                    <span>${item.title}</span>
+                                    <i class="fa-solid fa-arrow-up-right-from-square text-xs opacity-60"></i>
+                                </a>
+                            </h3>
+                            <p class="text-xs sm:text-sm text-gray-600 dark:text-gray-300 leading-relaxed">${item.snippet}</p>
+                        </div>
+                        ${imgThumbnail}
+                    </div>
+                `;
+
+                searchResultsList.appendChild(card);
+            });
+
+            state.hiddenAdsCount = adsCount;
+            updateAdBlockState();
+
+            // Render Images Grid
+            const imagesGrid = document.getElementById('imagesGrid');
+            imagesGrid.innerHTML = '';
+            (data.images || []).forEach(imgUrl => {
+                const a = document.createElement('a');
+                a.href = imgUrl;
+                a.target = "_blank";
+                a.rel = "noopener noreferrer";
+                a.className = "group block overflow-hidden rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-100 dark:bg-gray-800 relative hover:shadow-lg transition-all";
+                a.innerHTML = `
+                    <div class="aspect-square w-full overflow-hidden">
+                        <img src="${imgUrl}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" alt="Search Image">
+                    </div>
+                    <div class="p-2 text-xs text-gray-600 dark:text-gray-300 truncate bg-white dark:bg-google-darkCard">
+                        View Image <i class="fa-solid fa-external-link text-[10px] ml-1"></i>
+                    </div>
+                `;
+                imagesGrid.appendChild(a);
+            });
+
+            // Render News List
+            const newsList = document.getElementById('newsList');
+            newsList.innerHTML = '';
+            (data.news || []).forEach(n => {
+                const div = document.createElement('div');
+                div.className = "p-4 border border-gray-200 dark:border-gray-700 rounded-xl bg-white dark:bg-google-darkCard";
+                div.innerHTML = `
+                    <p class="text-xs text-gray-500 mb-1">${n.source || 'News'} • Recent</p>
+                    <h4 class="text-base font-medium mb-1">
+                        <a href="${n.url || '#'}" target="_blank" rel="noopener noreferrer" class="text-google-blue dark:text-blue-400 hover:underline">
+                            ${n.title}
+                        </a>
+                    </h4>
+                    <p class="text-xs text-gray-600 dark:text-gray-300 leading-relaxed">${n.snippet}</p>
+                `;
+                newsList.appendChild(div);
+            });
+        }
+
+        function switchTab(tabName) {
+            state.activeTab = tabName;
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                if (btn.dataset.tab === tabName) {
+                    btn.classList.add('tab-active');
+                } else {
+                    btn.classList.remove('tab-active');
+                }
+            });
+
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+
+            if (tabName === 'all') {
+                document.getElementById('tabContentAll').classList.remove('hidden');
+            } else if (tabName === 'images') {
+                document.getElementById('tabContentImages').classList.remove('hidden');
+            } else if (tabName === 'news') {
+                document.getElementById('tabContentNews').classList.remove('hidden');
+            } else {
+                document.getElementById('tabContentGeneric').classList.remove('hidden');
+            }
+        }
+
+        function updateAdBlockState() {
+            const adCards = document.querySelectorAll('.is-ad-card');
+
+            if (state.isAdBlockActive) {
+                adCards.forEach(card => card.style.display = 'none');
+                adCountText.innerText = `${state.hiddenAdsCount} Ads Hidden`;
+                adStatsBadge.className = 'flex items-center bg-green-100 dark:bg-green-950/50 text-google-green dark:text-green-400 text-xs font-semibold px-2.5 py-1 rounded-full border border-green-200 dark:border-green-900/50';
+                alertIcon.className = 'fa-solid fa-shield-check text-sm text-google-green';
+                alertMessageText.innerText = `Ad Free Active: Filtered out ${state.hiddenAdsCount} sponsored advertisement(s) from Gemini results.`;
+                toggleAdBannerBtn.innerText = 'Show Sponsored Ads';
+            } else {
+                adCards.forEach(card => card.style.display = 'block');
+                adCountText.innerText = '0 Ads Blocked';
+                adStatsBadge.className = 'flex items-center bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 text-xs font-semibold px-2.5 py-1 rounded-full border border-gray-200 dark:border-gray-700';
+                alertIcon.className = 'fa-solid fa-circle-exclamation text-sm text-amber-500';
+                alertMessageText.innerText = `Ad Free Off: Displaying ${state.hiddenAdsCount} sponsored advertisement(s) alongside organic results.`;
+                toggleAdBannerBtn.innerText = 'Enable Filter';
+            }
+        }
+
+        window.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>

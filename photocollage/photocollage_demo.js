@@ -1,5 +1,18 @@
 "use strict";
 
+// Safe translation helper: uses window.t() if loaded, otherwise falls back to English
+function _td(key, englishFallback, params = {}) {
+    if (typeof window.t === "function") {
+        const res = window.t(key, params, englishFallback);
+        if (res && res !== key) return res;
+    }
+    let out = englishFallback || key;
+    for (const [k, v] of Object.entries(params)) {
+        out = out.replace(new RegExp(`\\{${k}\\}`, "g"), String(v));
+    }
+    return out;
+}
+
 // ======================================================================
 // TITLE FORMATTER UTILITIES
 // ======================================================================
@@ -56,7 +69,10 @@ function formatWikimediaTitle(pageTitle, extmetadata) {
 // STATUS BAR / PROGRESS CONTROLLER
 // ======================================================================
 class DemoProgressTracker {
-    constructor(title = "Downloading Media...", subtitle = "Fetching image assets...") {
+    constructor(
+        title = _td("demo.progressDefaultTitle", "Downloading Media..."),
+        subtitle = _td("demo.progressDefaultSub", "Fetching image assets...")
+    ) {
         ensureDemoModalDom();
         this.overlay = document.getElementById("demoLoadingOverlay");
         this.bar = document.getElementById("demoProgressBar");
@@ -214,7 +230,10 @@ function applyPhotosToCollage(app, photos, clearCollage = true) {
 // DEMO 1: DAILY BING & NATURE WALLPAPERS (With Category & Year Filtering)
 // ======================================================================
 async function loadBingWallpapers(app, count = 8, clearCollage = true, category = "random", year = "random") {
-    const progress = new DemoProgressTracker("Downloading Bing Wallpapers...", "Searching wallpaper archives...");
+    const progress = new DemoProgressTracker(
+        _td("demo.bingProgressTitle", "Downloading Bing Wallpapers..."),
+        _td("demo.bingProgressSub", "Searching wallpaper archives...")
+    );
 
     const availableYears = ["2026", "2025", "2024", "2023", "2022", "2021", "2020"];
     const chosenYear = (year === "random")
@@ -308,7 +327,13 @@ async function loadBingWallpapers(app, count = 8, clearCollage = true, category 
         if (loadedItems.length > 0) {
             applyPhotosToCollage(app, loadedItems, clearCollage);
             const yearLabel = chosenYear ? ` • ${chosenYear}` : "";
-            showToast(`Loaded ${loadedItems.length} Bing wallpapers (${formatTitle(chosenCatKey)}${yearLabel})`, "success");
+            showToast(
+                _td("demo.toastBingLoaded", "Loaded {count} Bing wallpapers ({detail})", {
+                    count: loadedItems.length,
+                    detail: `${formatTitle(chosenCatKey)}${yearLabel}`
+                }),
+                "success"
+            );
         } else {
             throw new Error("Zero photo assets decoded");
         }
@@ -337,10 +362,10 @@ async function loadBingWallpapers(app, count = 8, clearCollage = true, category 
             const loadedItems = results.filter(Boolean);
             if (loadedItems.length > 0) {
                 applyPhotosToCollage(app, loadedItems, clearCollage);
-                showToast(`Loaded ${loadedItems.length} wallpapers`, "success");
+                showToast(_td("demo.toastWallpapersLoaded", "Loaded {count} wallpapers", { count: loadedItems.length }), "success");
             }
         } catch (_) {
-            showToast("Could not download wallpapers. Please try again.", "error");
+            showToast(_td("demo.toastBingError", "Could not download wallpapers. Please try again."), "error");
         }
     } finally {
         progress.finish();
@@ -351,7 +376,10 @@ async function loadBingWallpapers(app, count = 8, clearCollage = true, category 
 // DEMO 2: WIKIMEDIA COMMONS (With Default Random Topic Support)
 // ======================================================================
 async function loadWikimediaDemo(app, count = 8, clearCollage = true, topic = "random") {
-    const progress = new DemoProgressTracker("Loading Wikimedia Works...", "Fetching landscape art & photography...");
+    const progress = new DemoProgressTracker(
+        _td("demo.wikiProgressTitle", "Loading Wikimedia Works..."),
+        _td("demo.wikiProgressSub", "Fetching landscape art & photography...")
+    );
 
     const randomTopics = [
         "mountain landscape", "national park", "scenic valley", "castle landscape",
@@ -411,13 +439,19 @@ async function loadWikimediaDemo(app, count = 8, clearCollage = true, topic = "r
 
         if (loadedItems.length > 0) {
             applyPhotosToCollage(app, loadedItems, clearCollage);
-            showToast(`Loaded ${loadedItems.length} Wikimedia works (${formatTitle(activeTopic)})`, "success");
+            showToast(
+                _td("demo.toastWikiLoaded", "Loaded {count} Wikimedia works ({topic})", {
+                    count: loadedItems.length,
+                    topic: formatTitle(activeTopic)
+                }),
+                "success"
+            );
         } else {
             throw new Error("Unable to decode Wikimedia thumbnails");
         }
     } catch (err) {
         console.error("Wikimedia loader error:", err);
-        showToast("Could not load Wikimedia images. Please try again.", "error");
+        showToast(_td("demo.toastWikiError", "Could not load Wikimedia images. Please try again."), "error");
     } finally {
         progress.finish();
     }
@@ -427,7 +461,10 @@ async function loadWikimediaDemo(app, count = 8, clearCollage = true, topic = "r
 // DEMO 3: HELIO SOLAR SYSTEM
 // ======================================================================
 async function loadHelioDemo(app, clearCollage = true) {
-    const progress = new DemoProgressTracker("Loading Helio Solar System...", "Generating astronomical assets & infographics...");
+    const progress = new DemoProgressTracker(
+        _td("demo.helioProgressTitle", "Loading Helio Solar System..."),
+        _td("demo.helioProgressSub", "Generating astronomical assets & infographics...")
+    );
     const HELIO_BASE = "https://blendpy.github.io/vibe-web-dev/helio/infographics";
 
     try {
@@ -472,7 +509,7 @@ async function loadHelioDemo(app, clearCollage = true) {
 
         if (loadedItems.length > 0) {
             applyPhotosToCollage(app, loadedItems, clearCollage);
-            showToast(`Loaded ${loadedItems.length} Helio slides`, "success");
+            showToast(_td("demo.toastHelioLoaded", "Loaded {count} Helio slides", { count: loadedItems.length }), "success");
         }
     } finally {
         progress.finish();
@@ -486,6 +523,18 @@ const DEMO_TAB_STORAGE_KEY = "photocollage_active_demo_tab";
 let currentDemoCategory = localStorage.getItem(DEMO_TAB_STORAGE_KEY) || "bing";
 let selectedChapterColor = "#dc2626";
 
+function translateDemoDom(root) {
+    if (!root) return;
+    if (typeof window.applyTranslations === "function") {
+        window.applyTranslations(root);
+    }
+    root.querySelectorAll("[data-i18n-placeholder]").forEach((el) => {
+        const key = el.getAttribute("data-i18n-placeholder");
+        const val = key ? _td(key, el.getAttribute("placeholder") || "") : null;
+        if (val) el.setAttribute("placeholder", val);
+    });
+}
+
 function ensureDemoModalDom() {
     if (document.getElementById("demoPickerModal")) return;
 
@@ -493,8 +542,8 @@ function ensureDemoModalDom() {
     <!-- Demo Loading Progress Overlay -->
     <div id="demoLoadingOverlay" class="hidden fixed inset-0 modal-backdrop flex items-center justify-center z-50 p-4">
         <div class="bg-white rounded-2xl shadow-2xl border border-slate-200 p-6 w-80 text-center animate-fadeIn">
-            <p id="lblDemoLoadingTitle" class="text-sm font-bold text-slate-800 mb-1">Downloading Media...</p>
-            <p id="lblDemoLoadingStatus" class="text-xs text-slate-500 mb-4">Fetching image assets...</p>
+            <p id="lblDemoLoadingTitle" data-i18n="demo.progressDefaultTitle" class="text-sm font-bold text-slate-800 mb-1">Downloading Media...</p>
+            <p id="lblDemoLoadingStatus" data-i18n="demo.progressDefaultSub" class="text-xs text-slate-500 mb-4">Fetching image assets...</p>
             <div class="w-full h-3 bg-slate-100 rounded-full overflow-hidden border border-slate-200">
                 <div id="demoProgressBar" class="h-full bg-blue-600 transition-all duration-150" style="width: 0%"></div>
             </div>
@@ -509,45 +558,45 @@ function ensureDemoModalDom() {
             <div class="px-6 py-4 bg-slate-50 border-b border-slate-200 flex items-center justify-between shrink-0">
                 <div class="flex items-center gap-2">
                     <span class="text-xl">🖼️</span>
-                    <h2 class="text-base font-bold text-slate-800">Select Demo Photo Collection</h2>
+                    <h2 data-i18n="demo.modalTitle" class="text-base font-bold text-slate-800">Select Demo Photo Collection</h2>
                 </div>
                 <button id="btnDemoModalClose" class="text-slate-400 hover:text-slate-700 text-lg font-bold p-1">✕</button>
             </div>
 
             <!-- Tab Navigation Bar (Reordered) -->
             <div class="flex items-center gap-1.5 px-6 pt-3 bg-slate-100/70 border-b border-slate-200 overflow-x-auto shrink-0">
-                <button id="tabDemoBing" class="px-3.5 py-2 text-xs font-medium rounded-t-lg bg-slate-200 text-slate-700 whitespace-nowrap transition">Bing Wallpapers</button>
-                <button id="tabDemoWiki" class="px-3.5 py-2 text-xs font-medium rounded-t-lg bg-slate-200 text-slate-700 whitespace-nowrap transition">Wikimedia</button>
-                <button id="tabDemoHelio" class="px-3.5 py-2 text-xs font-medium rounded-t-lg bg-slate-200 text-slate-700 whitespace-nowrap transition">Helio Space</button>
-                <button id="tabDemoCurated" class="px-3.5 py-2 text-xs font-medium rounded-t-lg bg-slate-200 text-slate-700 whitespace-nowrap transition">Curated Art</button>
-                <button id="tabDemoChapter" class="px-3.5 py-2 text-xs font-medium rounded-t-lg bg-slate-200 text-slate-700 whitespace-nowrap transition">Color Panels</button>
+                <button id="tabDemoBing" data-i18n="demo.tabBing" class="px-3.5 py-2 text-xs font-medium rounded-t-lg bg-slate-200 text-slate-700 whitespace-nowrap transition">Bing Wallpapers</button>
+                <button id="tabDemoWiki" data-i18n="demo.tabWiki" class="px-3.5 py-2 text-xs font-medium rounded-t-lg bg-slate-200 text-slate-700 whitespace-nowrap transition">Wikimedia</button>
+                <button id="tabDemoHelio" data-i18n="demo.tabHelio" class="px-3.5 py-2 text-xs font-medium rounded-t-lg bg-slate-200 text-slate-700 whitespace-nowrap transition">Helio Space</button>
+                <button id="tabDemoCurated" data-i18n="demo.tabCurated" class="px-3.5 py-2 text-xs font-medium rounded-t-lg bg-slate-200 text-slate-700 whitespace-nowrap transition">Curated Art</button>
+                <button id="tabDemoChapter" data-i18n="demo.tabPanels" class="px-3.5 py-2 text-xs font-medium rounded-t-lg bg-slate-200 text-slate-700 whitespace-nowrap transition">Color Panels</button>
             </div>
 
             <!-- Modal Content Panels (Reordered) -->
             <div class="p-6 overflow-y-auto space-y-4 flex-1">
                 <!-- Panel 1: Bing Wallpapers -->
                 <div id="panelDemoBing" class="space-y-4">
-                    <p class="text-xs text-slate-600 leading-relaxed">
+                    <p data-i18n="demo.bingDesc" class="text-xs text-slate-600 leading-relaxed">
                         Fetches high-resolution Bing landscape and nature wallpapers filtered by category and year.
                     </p>
                     <div class="space-y-3 bg-slate-50 p-3.5 rounded-xl border border-slate-200">
                         <!-- Category Dropdown -->
                         <div class="flex items-center justify-between gap-3">
-                            <label for="selBingCategory" class="text-xs font-semibold text-slate-700 shrink-0">Category:</label>
+                            <label for="selBingCategory" data-i18n="demo.lblCategory" class="text-xs font-semibold text-slate-700 shrink-0">Category:</label>
                             <select id="selBingCategory" class="flex-1 px-3 py-1.5 rounded-lg border border-slate-300 bg-white text-xs font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500">
-                                <option value="random" selected>Random (All Categories)</option>
-                                <option value="nature">Nature & Landscapes</option>
-                                <option value="wildlife">Wildlife & Animals</option>
-                                <option value="architecture">Architecture & Cities</option>
-                                <option value="ocean">Oceans & Beaches</option>
-                                <option value="space">Space & Astronomy</option>
+                                <option value="random" data-i18n="demo.catRandom" selected>Random (All Categories)</option>
+                                <option value="nature" data-i18n="demo.catNature">Nature &amp; Landscapes</option>
+                                <option value="wildlife" data-i18n="demo.catWildlife">Wildlife &amp; Animals</option>
+                                <option value="architecture" data-i18n="demo.catArch">Architecture &amp; Cities</option>
+                                <option value="ocean" data-i18n="demo.catOcean">Oceans &amp; Beaches</option>
+                                <option value="space" data-i18n="demo.catSpace">Space &amp; Astronomy</option>
                             </select>
                         </div>
                         <!-- Year Dropdown -->
                         <div class="flex items-center justify-between gap-3 pt-1 border-t border-slate-200/70">
-                            <label for="selBingYear" class="text-xs font-semibold text-slate-700 shrink-0">Year:</label>
+                            <label for="selBingYear" data-i18n="demo.lblYear" class="text-xs font-semibold text-slate-700 shrink-0">Year:</label>
                             <select id="selBingYear" class="flex-1 px-3 py-1.5 rounded-lg border border-slate-300 bg-white text-xs font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500">
-                                <option value="random" selected>Random Year</option>
+                                <option value="random" data-i18n="demo.yearRandom" selected>Random Year</option>
                                 <option value="2026">2026</option>
                                 <option value="2025">2025</option>
                                 <option value="2024">2024</option>
@@ -555,17 +604,17 @@ function ensureDemoModalDom() {
                                 <option value="2022">2022</option>
                                 <option value="2021">2021</option>
                                 <option value="2020">2020</option>
-                                <option value="all">All Years</option>
+                                <option value="all" data-i18n="demo.yearAll">All Years</option>
                             </select>
                         </div>
                         <!-- Photo Count Dropdown -->
                         <div class="flex items-center justify-between gap-3 pt-1 border-t border-slate-200/70">
-                            <label for="selBingCount" class="text-xs font-semibold text-slate-700">Number of photos:</label>
+                            <label for="selBingCount" data-i18n="demo.lblPhotoCount" class="text-xs font-semibold text-slate-700">Number of photos:</label>
                             <select id="selBingCount" class="px-3 py-1.5 rounded-lg border border-slate-300 bg-white text-xs font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500">
-                                <option value="4">4 Photos</option>
-                                <option value="8" selected>8 Photos</option>
-                                <option value="12">12 Photos</option>
-                                <option value="16">16 Photos</option>
+                                <option value="4" data-i18n="demo.count4">4 Photos</option>
+                                <option value="8" data-i18n="demo.count8" selected>8 Photos</option>
+                                <option value="12" data-i18n="demo.count12">12 Photos</option>
+                                <option value="16" data-i18n="demo.count16">16 Photos</option>
                             </select>
                         </div>
                     </div>
@@ -573,31 +622,31 @@ function ensureDemoModalDom() {
 
                 <!-- Panel 2: Wikimedia Commons -->
                 <div id="panelDemoWiki" class="space-y-4 hidden">
-                    <p class="text-xs text-slate-600 leading-relaxed">
+                    <p data-i18n="demo.wikiDesc" class="text-xs text-slate-600 leading-relaxed">
                         Searches and streams public domain and Creative Commons landscape photography directly from Wikimedia Commons.
                     </p>
                     <div class="space-y-3 bg-slate-50 p-3.5 rounded-xl border border-slate-200">
                         <div class="flex items-center justify-between gap-3">
-                            <label for="selWikiTopic" class="text-xs font-semibold text-slate-700 shrink-0">Search Theme:</label>
+                            <label for="selWikiTopic" data-i18n="demo.lblSearchTheme" class="text-xs font-semibold text-slate-700 shrink-0">Search Theme:</label>
                             <select id="selWikiTopic" class="flex-1 px-3 py-1.5 rounded-lg border border-slate-300 bg-white text-xs font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500">
-                                <option value="random" selected>Random (All Themes)</option>
-                                <option value="mountain landscape">Mountain Landscapes</option>
-                                <option value="national park">National Parks</option>
-                                <option value="castle landscape">Castle Landscapes</option>
-                                <option value="glacier national park">Glacial Scenery</option>
-                                <option value="coastline cliff">Coastlines & Cliffs</option>
-                                <option value="forest waterfall">Forests & Waterfalls</option>
-                                <option value="desert dunes">Deserts & Dunes</option>
-                                <option value="aurora borealis">Aurora & Night Sky</option>
+                                <option value="random" data-i18n="demo.themeRandom" selected>Random (All Themes)</option>
+                                <option value="mountain landscape" data-i18n="demo.themeMountains">Mountain Landscapes</option>
+                                <option value="national park" data-i18n="demo.themeParks">National Parks</option>
+                                <option value="castle landscape" data-i18n="demo.themeCastles">Castle Landscapes</option>
+                                <option value="glacier national park" data-i18n="demo.themeGlaciers">Glacial Scenery</option>
+                                <option value="coastline cliff" data-i18n="demo.themeCoastlines">Coastlines &amp; Cliffs</option>
+                                <option value="forest waterfall" data-i18n="demo.themeWaterfalls">Forests &amp; Waterfalls</option>
+                                <option value="desert dunes" data-i18n="demo.themeDeserts">Deserts &amp; Dunes</option>
+                                <option value="aurora borealis" data-i18n="demo.themeAurora">Aurora &amp; Night Sky</option>
                             </select>
                         </div>
                         <div class="flex items-center justify-between gap-3 pt-1 border-t border-slate-200/70">
-                            <label for="selWikiCount" class="text-xs font-semibold text-slate-700">Number of photos:</label>
+                            <label for="selWikiCount" data-i18n="demo.lblPhotoCount" class="text-xs font-semibold text-slate-700">Number of photos:</label>
                             <select id="selWikiCount" class="px-3 py-1.5 rounded-lg border border-slate-300 bg-white text-xs font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500">
-                                <option value="4">4 Photos</option>
-                                <option value="8" selected>8 Photos</option>
-                                <option value="12">12 Photos</option>
-                                <option value="16">16 Photos</option>
+                                <option value="4" data-i18n="demo.count4">4 Photos</option>
+                                <option value="8" data-i18n="demo.count8" selected>8 Photos</option>
+                                <option value="12" data-i18n="demo.count12">12 Photos</option>
+                                <option value="16" data-i18n="demo.count16">16 Photos</option>
                             </select>
                         </div>
                     </div>
@@ -605,50 +654,50 @@ function ensureDemoModalDom() {
 
                 <!-- Panel 3: Helio Solar System -->
                 <div id="panelDemoHelio" class="space-y-4 hidden">
-                    <p class="text-xs text-slate-600 leading-relaxed">
+                    <p data-i18n="demo.helioDesc" class="text-xs text-slate-600 leading-relaxed">
                         Loads astronomical infographics including the Sun, planets, major solar system moons, and comets.
                     </p>
                     <div class="bg-indigo-50/70 border border-indigo-200/80 rounded-xl p-3.5 text-xs text-indigo-950 space-y-1">
                         <div class="font-semibold flex items-center gap-1.5">
                             <span>🪐</span>
-                            <span>Complete Solar System Set</span>
+                            <span data-i18n="demo.helioBoxTitle">Complete Solar System Set</span>
                         </div>
-                        <p class="text-indigo-800 text-[11px]">Includes high-resolution planetary photography from NASA/JPL archives.</p>
+                        <p data-i18n="demo.helioBoxSub" class="text-indigo-800 text-[11px]">Includes high-resolution planetary photography from NASA/JPL archives.</p>
                     </div>
                 </div>
 
-                <!-- Panel 4: Curated Art (Default) -->
+                <!-- Panel 4: Curated Art -->
                 <div id="panelDemoCurated" class="space-y-4 hidden">
-                    <p class="text-xs text-slate-600 leading-relaxed">
+                    <p data-i18n="demo.curatedDesc" class="text-xs text-slate-600 leading-relaxed">
                         Generates the 8 procedural art photographs loaded at startup.
                     </p>
-                    <div class="bg-emerald-50 border border-emerald-200 rounded-xl p-3 text-xs text-emerald-900">
+                    <div data-i18n="demo.curatedBox" class="bg-emerald-50 border border-emerald-200 rounded-xl p-3 text-xs text-emerald-900">
                         ✨ Instant 0ms generation with mathematical landscapes, cityscapes, and varied aspect ratios.
                     </div>
                 </div>
 
                 <!-- Panel 5: Color & Title Panels -->
                 <div id="panelDemoChapter" class="space-y-4 hidden">
-                    <p class="text-xs text-slate-600 leading-relaxed">
+                    <p data-i18n="demo.chapterDesc" class="text-xs text-slate-600 leading-relaxed">
                         Generate solid or gradient title panels to use as dividers, collage backdrops, or color blocks.
                     </p>
                     <div class="space-y-3 bg-slate-50 p-3.5 rounded-xl border border-slate-200">
                         <div>
-                            <label for="txtChapterTitle" class="block text-xs font-semibold text-slate-700 mb-1">Panel Title (Optional)</label>
-                            <input type="text" id="txtChapterTitle" placeholder="e.g., Vacation 2026" class="w-full px-3 py-1.5 rounded-lg border border-slate-300 text-xs font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <label for="txtChapterTitle" data-i18n="demo.lblPanelTitle" class="block text-xs font-semibold text-slate-700 mb-1">Panel Title (Optional)</label>
+                            <input type="text" id="txtChapterTitle" data-i18n-placeholder="demo.phPanelTitle" placeholder="e.g., Vacation 2026" class="w-full px-3 py-1.5 rounded-lg border border-slate-300 text-xs font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500">
                         </div>
                         <div class="flex items-center justify-between pt-1">
                             <label class="inline-flex items-center gap-2 cursor-pointer">
                                 <input type="checkbox" id="chkChapterGradient" checked class="w-4 h-4 rounded text-blue-600 focus:ring-blue-500 border-slate-300">
-                                <span class="text-xs font-medium text-slate-700">Apply Dark Gradient Vignette</span>
+                                <span data-i18n="demo.chkDarkGradient" class="text-xs font-medium text-slate-700">Apply Dark Gradient Vignette</span>
                             </label>
                             <div class="flex items-center gap-2">
-                                <label for="pickerCustomChapterColor" class="text-xs text-slate-600 font-medium">Custom:</label>
+                                <label for="pickerCustomChapterColor" data-i18n="demo.lblCustomColor" class="text-xs text-slate-600 font-medium">Custom:</label>
                                 <input type="color" id="pickerCustomChapterColor" value="#dc2626" class="w-7 h-7 rounded border border-slate-300 cursor-pointer p-0.5 bg-white">
                             </div>
                         </div>
                         <div>
-                            <label class="block text-xs font-semibold text-slate-700 mb-1.5">Preset Swatches:</label>
+                            <label data-i18n="demo.lblPresetSwatches" class="block text-xs font-semibold text-slate-700 mb-1.5">Preset Swatches:</label>
                             <div id="chapterColorSwatches" class="flex flex-wrap gap-2"></div>
                         </div>
                     </div>
@@ -658,19 +707,19 @@ function ensureDemoModalDom() {
                 <div class="pt-2">
                     <label class="inline-flex items-center gap-2 cursor-pointer">
                         <input type="checkbox" id="chkDemoClearCollage" checked class="w-4 h-4 rounded text-blue-600 focus:ring-blue-500 border-slate-300">
-                        <span class="text-xs font-medium text-slate-700">Replace existing collage photos (uncheck to append)</span>
+                        <span data-i18n="demo.replaceExisting" class="text-xs font-medium text-slate-700">Replace existing collage photos (uncheck to append)</span>
                     </label>
                 </div>
             </div>
 
             <!-- Modal Footer -->
             <div class="px-6 py-3.5 bg-slate-50 border-t border-slate-200 flex items-center justify-between shrink-0 gap-2.5">
-                <button id="btnDemoCancel" class="px-4 py-2 rounded-lg border border-slate-300 bg-white hover:bg-slate-100 text-slate-700 text-xs sm:text-sm font-medium transition">
+                <button id="btnDemoCancel" data-i18n="common.cancel" class="px-4 py-2 rounded-lg border border-slate-300 bg-white hover:bg-slate-100 text-slate-700 text-xs sm:text-sm font-medium transition">
                     Cancel
                 </button>
                 <button id="btnDemoConfirmLoad" class="px-5 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white text-xs sm:text-sm font-medium shadow-sm transition flex items-center gap-1.5">
                     <span>🖼️</span>
-                    <span id="lblDemoConfirmText">Load Collection</span>
+                    <span id="lblDemoConfirmText" data-i18n="demo.loadCollection">Load Collection</span>
                 </button>
             </div>
         </div>
@@ -678,6 +727,7 @@ function ensureDemoModalDom() {
 
     const wrapper = document.createElement("div");
     wrapper.innerHTML = modalHtml;
+    translateDemoDom(wrapper);
     while (wrapper.firstChild) {
         document.body.appendChild(wrapper.firstChild);
     }
@@ -692,6 +742,7 @@ function openDemoPickerModal(app) {
         return;
     }
 
+    translateDemoDom(modal);
     modal.classList.remove("hidden");
 
     const tabs = {
@@ -731,11 +782,11 @@ function openDemoPickerModal(app) {
         });
 
         if (lblConfirm) {
-            if (tabKey === "bing") lblConfirm.textContent = "Load Wallpapers";
-            else if (tabKey === "wiki") lblConfirm.textContent = "Load Wikimedia Works";
-            else if (tabKey === "helio") lblConfirm.textContent = "Load Helio Slides";
-            else if (tabKey === "curated") lblConfirm.textContent = "Load Curated Art";
-            else if (tabKey === "chapter") lblConfirm.textContent = "Add Color Panel";
+            if (tabKey === "bing") lblConfirm.textContent = _td("demo.btnLoadBing", "Load Wallpapers");
+            else if (tabKey === "wiki") lblConfirm.textContent = _td("demo.btnLoadWiki", "Load Wikimedia Works");
+            else if (tabKey === "helio") lblConfirm.textContent = _td("demo.btnLoadHelio", "Load Helio Slides");
+            else if (tabKey === "curated") lblConfirm.textContent = _td("demo.btnLoadCurated", "Load Curated Art");
+            else if (tabKey === "chapter") lblConfirm.textContent = _td("demo.btnAddPanel", "Add Color Panel");
         }
     };
 
@@ -814,13 +865,13 @@ function openDemoPickerModal(app) {
             } else if (active === "curated") {
                 const demoPhotos = createDemoPhotoList();
                 applyPhotosToCollage(app, demoPhotos, clear);
-                showToast("Loaded standard curated demo photos!", "success");
+                showToast(_td("demo.toastCuratedLoaded", "Loaded standard curated demo photos!"), "success");
             } else if (active === "chapter") {
                 const titleText = document.getElementById("txtChapterTitle")?.value || "";
                 const isGrad = document.getElementById("chkChapterGradient")?.checked ?? true;
                 const slide = createChapterSlide(titleText, selectedChapterColor, isGrad);
                 applyPhotosToCollage(app, [slide], clear);
-                showToast("Added color panel", "success");
+                showToast(_td("demo.toastPanelAdded", "Added color panel"), "success");
             }
         };
     }

@@ -52,7 +52,7 @@
             </div>
             <div class="hidden sm:block">
                 <h1 class="text-sm font-bold text-slate-800 leading-tight">PhotoCollage</h1>
-                <p class="text-[11px] text-slate-500 leading-none">Interactive Grid Studio</p>
+                <p data-i18n="header.subtitle" class="text-[11px] text-slate-500 leading-none">Interactive Grid Studio</p>
             </div>
         </div>
 
@@ -62,24 +62,24 @@
         <!-- 2. Settings Button -->
         <button id="btnSettings" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-900 active:bg-black text-white text-xs sm:text-sm font-medium shadow-sm transition flex items-center gap-1.5">
             <span>⚙️</span>
-            <span>Settings</span>
+            <span data-i18n="toolbar.settings">Settings</span>
         </button>
 
         <!-- 3. Regenerate Button -->
         <button id="btnNewLayout" disabled class="px-3 py-1.5 rounded-lg bg-white hover:bg-slate-50 active:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed text-slate-700 border border-slate-300 text-xs sm:text-sm font-medium shadow-sm transition flex items-center gap-1.5">
             <span>🔄</span>
-            <span>Regenerate</span>
+            <span data-i18n="toolbar.regenerate">Regenerate</span>
         </button>
 
         <!-- 4. Undo / History Index / Redo -->
         <div class="flex items-center bg-slate-100 rounded-lg p-0.5 border border-slate-200">
-            <button id="btnUndo" disabled class="px-2.5 py-1 rounded-md hover:bg-white disabled:opacity-40 disabled:hover:bg-transparent text-slate-700 text-xs sm:text-sm font-medium transition" title="Undo layout change">
+            <button id="btnUndo" disabled data-i18n-title="toolbar.undoTitle" class="px-2.5 py-1 rounded-md hover:bg-white disabled:opacity-40 disabled:hover:bg-transparent text-slate-700 text-xs sm:text-sm font-medium transition" title="Undo layout change">
                 ↩️
             </button>
             <span id="lblHistoryIndex" class="px-2.5 text-xs font-semibold text-slate-600 min-w-[2.5rem] text-center">
                 -
             </span>
-            <button id="btnRedo" disabled class="px-2.5 py-1 rounded-md hover:bg-white disabled:opacity-40 disabled:hover:bg-transparent text-slate-700 text-xs sm:text-sm font-medium transition" title="Redo layout change">
+            <button id="btnRedo" disabled data-i18n-title="toolbar.redoTitle" class="px-2.5 py-1 rounded-md hover:bg-white disabled:opacity-40 disabled:hover:bg-transparent text-slate-700 text-xs sm:text-sm font-medium transition" title="Redo layout change">
                 ↪️
             </button>
         </div>
@@ -93,33 +93,33 @@
         <!-- 5. Add Images Button -->
         <button id="btnChooseImages" class="px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white text-xs sm:text-sm font-medium shadow-sm transition flex items-center gap-1.5">
             <span>➕</span>
-            <span>Add Images</span>
+            <span data-i18n="toolbar.addImages">Add Images</span>
         </button>
 
         <!-- 6. Load Demo Photos Button -->
-        <button id="btnLoadDemo" class="px-3 py-1.5 rounded-lg bg-indigo-50 hover:bg-indigo-100 active:bg-indigo-200 text-indigo-700 border border-indigo-200 text-xs sm:text-sm font-medium transition flex items-center gap-1.5" title="Load sample photos to test layout, resizing, panning, and zoom">
+        <button id="btnLoadDemo" data-i18n-title="toolbar.loadDemoTitle" class="px-3 py-1.5 rounded-lg bg-indigo-50 hover:bg-indigo-100 active:bg-indigo-200 text-indigo-700 border border-indigo-200 text-xs sm:text-sm font-medium transition flex items-center gap-1.5" title="Load sample photos to test layout, resizing, panning, and zoom">
             <span>🖼️</span>
-            <span>Load Demo</span>
+            <span data-i18n="toolbar.loadDemo">Load Demo</span>
         </button>
 
         <!-- 7. Clear Button (Trash Can Only) -->
-        <button id="btnClearAll" disabled class="px-2.5 py-1.5 rounded-lg bg-white hover:bg-red-50 active:bg-red-100 disabled:opacity-40 disabled:cursor-not-allowed text-red-600 border border-slate-200 hover:border-red-200 text-xs sm:text-sm font-medium transition flex items-center justify-center" title="Clear all photos">
+        <button id="btnClearAll" disabled data-i18n-title="toolbar.clearTitle" class="px-2.5 py-1.5 rounded-lg bg-white hover:bg-red-50 active:bg-red-100 disabled:opacity-40 disabled:cursor-not-allowed text-red-600 border border-slate-200 hover:border-red-200 text-xs sm:text-sm font-medium transition flex items-center justify-center" title="Clear all photos">
             <span>🗑️</span>
         </button>
 
         <!-- Breakline / Divider -->
         <div class="h-6 w-px bg-slate-200 mx-1"></div>
 
-        <!-- 8. Preview Button (Renamed from Preview All / Preview Movie) -->
-        <button id="btnZoomAll" disabled class="px-3 py-1.5 rounded-lg bg-amber-50 hover:bg-amber-100 active:bg-amber-200 disabled:opacity-40 disabled:cursor-not-allowed text-amber-800 border border-amber-300 text-xs sm:text-sm font-medium shadow-sm transition flex items-center gap-1.5" title="Preview collage slideshow">
+        <!-- 8. Preview Button -->
+        <button id="btnZoomAll" disabled data-i18n-title="toolbar.previewTitle" class="px-3 py-1.5 rounded-lg bg-amber-50 hover:bg-amber-100 active:bg-amber-200 disabled:opacity-40 disabled:cursor-not-allowed text-amber-800 border border-amber-300 text-xs sm:text-sm font-medium shadow-sm transition flex items-center gap-1.5" title="Preview collage slideshow">
             <span>🔍</span>
-            <span id="lblZoomAll">Preview</span>
+            <span id="lblZoomAll" data-i18n="toolbar.preview">Preview</span>
         </button>
 
         <!-- 9. Save Poster Button -->
         <button id="btnSavePoster" disabled class="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 disabled:bg-slate-200 disabled:text-slate-400 disabled:cursor-not-allowed text-white text-xs sm:text-sm font-medium shadow-sm transition flex items-center gap-1.5">
             <span>💾</span>
-            <span>Save Poster</span>
+            <span data-i18n="toolbar.savePoster">Save Poster</span>
         </button>
     </header>
 
@@ -133,22 +133,22 @@
         <div id="dropOverlay" class="hidden absolute inset-4 rounded-2xl border-4 border-dashed border-blue-500 bg-blue-500/15 backdrop-blur-[1px] pointer-events-none flex flex-col items-center justify-center z-30">
             <div class="bg-white px-6 py-4 rounded-xl shadow-xl flex items-center gap-3 text-blue-700 font-semibold text-lg">
                 <span>📥</span>
-                <span>Drop images or videos to add to collage</span>
+                <span data-i18n="canvas.dropOverlay">Drop images or videos to add to collage</span>
             </div>
         </div>
 
         <!-- Sequential Zoom HUD Navigation Pill (Shown during Preview) -->
         <div id="zoomHud" class="hidden absolute bottom-5 left-1/2 -translate-x-1/2 bg-slate-900/85 text-white px-4 py-2 rounded-full shadow-xl border border-slate-700 flex items-center gap-3 text-xs font-medium z-20 backdrop-blur-md">
-            <button id="btnHudPrev" class="hover:text-amber-300 transition px-1.5 py-0.5 rounded bg-slate-800 border border-slate-700" title="Previous Photo (Left Arrow)">◀ Prev</button>
-            <span id="lblHudStatus" class="text-slate-200">Previewing photos... (Use ←/→ or Space/Esc)</span>
-            <button id="btnHudNext" class="hover:text-amber-300 transition px-1.5 py-0.5 rounded bg-slate-800 border border-slate-700" title="Next Photo (Right Arrow)">Next ▶</button>
-            <button id="btnHudStop" class="ml-1 text-red-400 hover:text-red-300 font-semibold">⏹ Stop</button>
+            <button id="btnHudPrev" data-i18n="hud.prev" data-i18n-title="hud.prevTitle" class="hover:text-amber-300 transition px-1.5 py-0.5 rounded bg-slate-800 border border-slate-700" title="Previous Photo (Left Arrow)">◀ Prev</button>
+            <span id="lblHudStatus" data-i18n="hud.statusDefault" class="text-slate-200">Previewing photos... (Use ←/→ or Space/Esc)</span>
+            <button id="btnHudNext" data-i18n="hud.next" data-i18n-title="hud.nextTitle" class="hover:text-amber-300 transition px-1.5 py-0.5 rounded bg-slate-800 border border-slate-700" title="Next Photo (Right Arrow)">Next ▶</button>
+            <button id="btnHudStop" data-i18n="hud.stop" class="ml-1 text-red-400 hover:text-red-300 font-semibold">⏹ Stop</button>
         </div>
 
         <!-- Computing Progress Dialog -->
         <div id="computingDialog" class="hidden absolute inset-0 modal-backdrop flex items-center justify-center z-40">
             <div class="bg-white rounded-xl shadow-2xl border border-slate-200 p-5 w-80 text-center">
-                <p id="lblComputingTitle" class="text-sm font-semibold text-slate-800 mb-3">Performing image computation...</p>
+                <p id="lblComputingTitle" data-i18n="computing.defaultTitle" class="text-sm font-semibold text-slate-800 mb-3">Performing image computation...</p>
                 <div class="w-full h-3 bg-slate-200 rounded-full overflow-hidden">
                     <div id="computingBar" class="h-full bg-blue-600 transition-all duration-150" style="width: 0%"></div>
                 </div>
@@ -168,7 +168,7 @@
             <span class="text-slate-300 hidden sm:inline">|</span>
             <span id="statusCols" class="hidden sm:inline">Columns: 0</span>
         </div>
-        <div id="statusHint" class="text-slate-500 truncate max-w-xl">
+        <div id="statusHint" data-i18n="hint.default" class="text-slate-500 truncate max-w-xl">
             Tip: Click a photo to zoom full-size • Drag inside a cell to pan or swap • Drag yellow borders to resize
         </div>
     </footer>
@@ -182,33 +182,33 @@
             <div class="px-6 py-4 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
                 <div class="flex items-center gap-2">
                     <span class="text-lg">⚙️</span>
-                    <h2 class="text-base font-bold text-slate-800">Settings</h2>
+                    <h2 data-i18n="settings.title" class="text-base font-bold text-slate-800">Settings</h2>
                 </div>
-                <span class="text-xs px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 font-medium border border-blue-200">Live Preview Enabled</span>
+                <span data-i18n="settings.livePreview" class="text-xs px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 font-medium border border-blue-200">Live Preview Enabled</span>
             </div>
 
             <!-- Modal Body -->
             <div class="p-6 space-y-5 max-h-[80vh] overflow-y-auto">
                 <!-- Section 1: Output Image Size -->
                 <div>
-                    <h3 class="text-sm font-bold text-slate-800 mb-3">Output image size</h3>
+                    <h3 data-i18n="settings.outputSize" class="text-sm font-bold text-slate-800 mb-3">Output image size</h3>
                     <div class="flex items-center gap-2 mb-3">
                         <input type="number" id="etrOutW" min="100" max="12000" value="800" class="w-28 px-3 py-1.5 rounded-lg border border-slate-300 text-sm font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500">
                         <span class="text-slate-500 font-bold">×</span>
                         <input type="number" id="etrOutH" min="100" max="12000" value="600" class="w-28 px-3 py-1.5 rounded-lg border border-slate-300 text-sm font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500">
-                        <span class="text-sm text-slate-600">pixels</span>
+                        <span data-i18n="settings.pixels" class="text-sm text-slate-600">pixels</span>
                     </div>
 
                     <!-- Template Dropdown & Orientation Checkbox -->
                     <div class="space-y-2.5 bg-slate-50 p-3.5 rounded-xl border border-slate-200">
                         <div class="flex flex-col sm:flex-row sm:items-center gap-2">
-                            <label for="cmbTemplate" class="text-xs font-semibold text-slate-700 shrink-0">Apply a template:</label>
+                            <label for="cmbTemplate" data-i18n="settings.applyTemplate" class="text-xs font-semibold text-slate-700 shrink-0">Apply a template:</label>
                             <select id="cmbTemplate" class="flex-1 px-2.5 py-1.5 rounded-lg border border-slate-300 bg-white text-xs sm:text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500">
                             </select>
                         </div>
                         <label class="inline-flex items-center gap-2 cursor-pointer pt-1">
                             <input type="checkbox" id="chkLandscape" checked class="w-4 h-4 rounded text-blue-600 focus:ring-blue-500 border-slate-300">
-                            <span class="text-xs sm:text-sm font-medium text-slate-700">Landscape Orientation</span>
+                            <span data-i18n="settings.landscape" class="text-xs sm:text-sm font-medium text-slate-700">Landscape Orientation</span>
                         </label>
                     </div>
                 </div>
@@ -217,19 +217,19 @@
 
                 <!-- Section 2: Border & Layout -->
                 <div>
-                    <h3 class="text-sm font-bold text-slate-800 mb-3">Border &amp; Layout</h3>
+                    <h3 data-i18n="settings.borderLayout" class="text-sm font-bold text-slate-800 mb-3">Border &amp; Layout</h3>
                     
                     <!-- Random Location Checkbox -->
                     <label class="flex items-center gap-2.5 cursor-pointer mb-4 p-2.5 rounded-lg hover:bg-slate-50 border border-transparent hover:border-slate-200 transition">
                         <input type="checkbox" id="chkRandomLoc" class="w-4 h-4 rounded text-blue-600 focus:ring-blue-500 border-slate-300">
-                        <span class="text-xs sm:text-sm font-medium text-slate-700">Show images in a random location without a border</span>
+                        <span data-i18n="settings.randomLocation" class="text-xs sm:text-sm font-medium text-slate-700">Show images in a random location without a border</span>
                     </label>
 
                     <!-- Thickness & Color Controls Container -->
                     <div id="borderControlsContainer" class="flex flex-col sm:flex-row sm:items-center gap-4 bg-slate-50 p-3.5 rounded-xl border border-slate-200">
                         <div class="flex-1">
                             <div class="flex justify-between text-xs font-medium text-slate-700 mb-1">
-                                <label for="thicknessScale">Thickness:</label>
+                                <label for="thicknessScale" data-i18n="settings.thickness">Thickness:</label>
                                 <span id="lblThicknessVal" class="font-bold text-blue-600">10 (1.0%)</span>
                             </div>
                             <input type="range" id="thicknessScale" min="0" max="40" step="1" value="10" class="w-full cursor-pointer">
@@ -241,7 +241,7 @@
                         </div>
 
                         <div class="flex items-center gap-2.5 sm:border-l sm:border-slate-200 sm:pl-4">
-                            <label for="colorButton" class="text-xs font-medium text-slate-700">Color:</label>
+                            <label for="colorButton" data-i18n="settings.color" class="text-xs font-medium text-slate-700">Color:</label>
                             <input type="color" id="colorButton" value="#000000" class="w-10 h-9 rounded-lg border border-slate-300 cursor-pointer p-0.5 bg-white">
                         </div>
                     </div>
@@ -251,10 +251,10 @@
 
                 <!-- Section 3: Animation Settings -->
                 <div>
-                    <h3 class="text-sm font-bold text-slate-800 mb-3">Animation Settings</h3>
+                    <h3 data-i18n="settings.animation" class="text-sm font-bold text-slate-800 mb-3">Animation Settings</h3>
                     <div class="bg-slate-50 p-3.5 rounded-xl border border-slate-200">
                         <div class="flex justify-between text-xs font-medium text-slate-700 mb-1">
-                            <label for="pauseScale">Pause Duration:</label>
+                            <label for="pauseScale" data-i18n="settings.pauseDuration">Pause Duration:</label>
                             <span id="lblPauseVal" class="font-bold text-blue-600">5 (0.5s)</span>
                         </div>
                         <input type="range" id="pauseScale" min="0" max="100" step="1" value="5" class="w-full cursor-pointer">
@@ -267,21 +267,26 @@
                 </div>
             </div>
 
-            <!-- Modal Footer: Source on left, Cancel / OK on right -->
+            <!-- Modal Footer: Source & Language on left, Cancel / OK on right -->
             <div class="px-6 py-3.5 bg-slate-50 border-t border-slate-200 flex items-center justify-between gap-2.5">
-                <!-- Source Button Relocated Here -->
-                <a href="https://github.com/adrienverge/PhotoCollage" target="_blank" rel="noopener noreferrer" class="px-3 py-1.5 rounded-lg bg-white hover:bg-slate-100 active:bg-slate-200 text-slate-700 border border-slate-300 text-xs sm:text-sm font-medium shadow-sm transition flex items-center gap-1.5" title="View original PhotoCollage Python repository on GitHub&#10;This HTML version was AI generated from the python source code.">
-                    <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24" aria-hidden="true">
-                        <path fill-rule="evenodd" clip-rule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.53 1.032 1.53 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"/>
-                    </svg>
-                    <span>Source</span>
-                </a>
+                <div class="flex items-center gap-2">
+                    <a href="https://github.com/adrienverge/PhotoCollage" target="_blank" rel="noopener noreferrer" data-i18n-title="settings.sourceTitle" class="px-3 py-1.5 rounded-lg bg-white hover:bg-slate-100 active:bg-slate-200 text-slate-700 border border-slate-300 text-xs sm:text-sm font-medium shadow-sm transition flex items-center gap-1.5" title="View original PhotoCollage Python repository on GitHub&#10;This HTML version was AI generated from the python source code.">
+                        <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24" aria-hidden="true">
+                            <path fill-rule="evenodd" clip-rule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.53 1.032 1.53 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"/>
+                        </svg>
+                        <span data-i18n="settings.source">Source</span>
+                    </a>
+                    <a href="language.html" class="px-3 py-1.5 rounded-lg bg-white hover:bg-slate-100 active:bg-slate-200 text-slate-700 border border-slate-300 text-xs sm:text-sm font-medium shadow-sm transition flex items-center gap-1.5" title="Open language selection page">
+                        <span>🌐</span>
+                        <span data-i18n="settings.language">Language</span>
+                    </a>
+                </div>
 
                 <div class="flex items-center gap-2.5">
-                    <button id="btnSettingsCancel" class="px-4 py-2 rounded-lg border border-slate-300 bg-white hover:bg-slate-100 text-slate-700 text-xs sm:text-sm font-medium transition">
+                    <button id="btnSettingsCancel" data-i18n="common.cancel" class="px-4 py-2 rounded-lg border border-slate-300 bg-white hover:bg-slate-100 text-slate-700 text-xs sm:text-sm font-medium transition">
                         Cancel
                     </button>
-                    <button id="btnSettingsOk" class="px-5 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs sm:text-sm font-medium shadow-sm transition">
+                    <button id="btnSettingsOk" data-i18n="common.ok" class="px-5 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs sm:text-sm font-medium shadow-sm transition">
                         OK
                     </button>
                 </div>
@@ -296,21 +301,21 @@
         <div class="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-md overflow-hidden">
             <div class="px-6 py-4 bg-slate-50 border-b border-slate-200 flex items-center gap-2">
                 <span class="text-lg">💾</span>
-                <h2 class="text-base font-bold text-slate-800">Save Collage Poster</h2>
+                <h2 data-i18n="save.title" class="text-base font-bold text-slate-800">Save Collage Poster</h2>
             </div>
             <div class="p-6 space-y-4">
                 <div>
-                    <label for="saveFilename" class="block text-xs font-semibold text-slate-700 mb-1">File Name</label>
+                    <label for="saveFilename" data-i18n="save.fileName" class="block text-xs font-semibold text-slate-700 mb-1">File Name</label>
                     <input type="text" id="saveFilename" value="photocollage-poster" class="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500">
                 </div>
                 <div>
-                    <label for="saveFormat" class="block text-xs font-semibold text-slate-700 mb-1">Image Format</label>
+                    <label for="saveFormat" data-i18n="save.imageFormat" class="block text-xs font-semibold text-slate-700 mb-1">Image Format</label>
                     <select id="saveFormat" class="w-full px-3 py-2 rounded-lg border border-slate-300 bg-white text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500">
-                        <option value="image/webp">WebP Image (.webp) — Modern High Compression</option>
-                        <option value="image/png">PNG Image (.png) — Lossless Quality</option>
-                        <option value="image/jpeg">JPEG Image (.jpg) — Compact Size</option>
-                        <option value="video/animation">Create Animation Video (.webm)</option>
-                        <option value="extract/images">Extract All Images (Original Files)</option>
+                        <option value="image/webp" data-i18n="save.fmtWebp">WebP Image (.webp) — Modern High Compression</option>
+                        <option value="image/png" data-i18n="save.fmtPng">PNG Image (.png) — Lossless Quality</option>
+                        <option value="image/jpeg" data-i18n="save.fmtJpeg">JPEG Image (.jpg) — Compact Size</option>
+                        <option value="video/animation" data-i18n="save.fmtVideo">Create Animation Video (.webm)</option>
+                        <option value="extract/images" data-i18n="save.fmtExtract">Extract All Images (Original Files)</option>
                     </select>
                 </div>
                 
@@ -322,17 +327,17 @@
             
             <!-- Modal Footer -->
             <div class="px-6 py-3.5 bg-slate-50 border-t border-slate-200 flex flex-wrap items-center justify-between gap-2.5">
-                <button id="btnSaveCancel" class="px-4 py-2 rounded-lg border border-slate-300 bg-white hover:bg-slate-100 text-slate-700 text-xs sm:text-sm font-medium transition">
+                <button id="btnSaveCancel" data-i18n="common.cancel" class="px-4 py-2 rounded-lg border border-slate-300 bg-white hover:bg-slate-100 text-slate-700 text-xs sm:text-sm font-medium transition">
                     Cancel
                 </button>
                 <div class="grid grid-cols-2 gap-2.5">
-                    <button id="btnSaveProject" class="px-3 sm:px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-xs sm:text-sm font-medium shadow-sm transition flex items-center justify-center text-center gap-1.5" title="Save session as a standalone HTML file that reopens with images and layout intact">
+                    <button id="btnSaveProject" data-i18n-title="save.saveProjectTitle" class="px-3 sm:px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-xs sm:text-sm font-medium shadow-sm transition flex items-center justify-center text-center gap-1.5" title="Save session as a standalone HTML file that reopens with images and layout intact">
                         <span>📦</span>
-                        <span>Save Project as HTML</span>
+                        <span data-i18n="save.saveProject">Save Project as HTML</span>
                     </button>
                     <button id="btnSaveConfirm" class="px-3 sm:px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs sm:text-sm font-medium shadow-sm transition flex items-center justify-center text-center gap-1.5">
                         <span id="lblSaveConfirmIcon">💾</span>
-                        <span id="lblSaveConfirmText">Download Poster<br class="hidden sm:inline">(as One Image)</span>
+                        <span id="lblSaveConfirmText" data-i18n-html="save.downloadPoster">Download Poster<br class="hidden sm:inline">(as One Image)</span>
                     </button>
                 </div>
             </div>
@@ -344,6 +349,7 @@
     <!-- ======================================================================= -->
     <div id="toastContainer" class="fixed top-16 right-4 z-50 flex flex-col gap-2 pointer-events-none"></div>
 
+<script src="photocollage_i18n.js"></script>
 <script src="photocollage.js"></script>
 <script src="photocollage_demo.js"></script>
 <script src="photocollage_appcontrol.js"></script>

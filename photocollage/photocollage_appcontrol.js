@@ -2,14 +2,28 @@
 // PHASE 3: INTERACTIVE PREVIEW AREA & APPLICATION CONTROLLER
 // ======================================================================
 
-const MODE = {
+var MODE = window.MODE || {
     INSENSITIVE: 0,
     FLYING: 1,
     SWAPPING_OR_MOVING: 2,
     RESIZING: 3
 };
+window.MODE = MODE;
 
-class PhotoCollageApp {
+// Safe translation wrapper: defaults to English fallback if i18n file is missing or key is absent
+function _t(key, englishFallback, params = {}) {
+    if (typeof window.t === "function") {
+        const result = window.t(key, params, englishFallback);
+        if (result && result !== key) return result;
+    }
+    let text = englishFallback || key;
+    for (const [k, v] of Object.entries(params)) {
+        text = text.replace(new RegExp(`\\{${k}\\}`, "g"), String(v));
+    }
+    return text;
+}
+
+var PhotoCollageApp = window.PhotoCollageApp || class PhotoCollageApp {
     constructor() {
         this.history = [];
         this.history_index = -1;
@@ -64,30 +78,35 @@ class PhotoCollageApp {
         this.current_cell = null;
         this.is_running_sequential_zoom = false;
 
-        this.landscape_templates = [
-            ["Custom Size", null],
-            ["███ 800 × 600", [800, 600]],
-            ["███ 1600 × 1200", [1600, 1200]],
-            ["███ 1920 × 1080", [1920, 1080]],
-            ["███ 3508 x 2480 - A4 landscape (300ppi)", [3508, 2480]],
-            ["███ 4960 x 3508 - A3 landscape (300ppi)", [4960, 3508]],
-            ["███ 3300 x 2550 - US-Letter landscape (300ppi)", [3300, 2550]]
-        ];
-
-        this.portrait_templates = [
-            ["Custom Size", null],
-            ["█ 600 × 800", [600, 800]],
-            ["█ 1200 × 1600", [1200, 1600]],
-            ["█ 1080 x 1920", [1080, 1920]],
-            ["█ 2480 x 3508 - A4 portrait (300ppi)", [2480, 3508]],
-            ["█ 3508 x 4960 - A3 portrait (300ppi)", [3508, 4960]],
-            ["█ 2550 x 3300 - US-Letter portrait (300ppi)", [2550, 3300]]
-        ];
-        this.current_templates = this.landscape_templates;
+        this.current_templates = this.getLandscapeTemplates();
         this.updating_live = false;
 
         this.initBindings();
         this.resizeCanvasToContainer();
+    }
+
+    getLandscapeTemplates() {
+        return [
+            [_t("settings.customSize", "Custom Size"), null],
+            ["███ 800 × 600", [800, 600]],
+            ["███ 1600 × 1200", [1600, 1200]],
+            ["███ 1920 × 1080", [1920, 1080]],
+            [`███ 3508 x 2480 - ${_t("settings.a4Landscape", "A4 landscape (300ppi)")}`, [3508, 2480]],
+            [`███ 4960 x 3508 - ${_t("settings.a3Landscape", "A3 landscape (300ppi)")}`, [4960, 3508]],
+            [`███ 3300 x 2550 - ${_t("settings.letterLandscape", "US-Letter landscape (300ppi)")}`, [3300, 2550]]
+        ];
+    }
+
+    getPortraitTemplates() {
+        return [
+            [_t("settings.customSize", "Custom Size"), null],
+            ["█ 600 × 800", [600, 800]],
+            ["█ 1200 × 1600", [1200, 1600]],
+            ["█ 1080 x 1920", [1080, 1920]],
+            [`█ 2480 x 3508 - ${_t("settings.a4Portrait", "A4 portrait (300ppi)")}`, [2480, 3508]],
+            [`█ 3508 x 4960 - ${_t("settings.a3Portrait", "A3 portrait (300ppi)")}`, [3508, 4960]],
+            [`█ 2550 x 3300 - ${_t("settings.letterPortrait", "US-Letter portrait (300ppi)")}`, [2550, 3300]]
+        ];
     }
 
     updateSaveModalUi() {
@@ -104,24 +123,36 @@ class PhotoCollageApp {
 
         if (format === "video/animation") {
             infoBox.className = "bg-amber-50 border border-amber-200 rounded-xl p-3 text-xs text-amber-900 transition-colors";
-            lblInfo.innerHTML = "A slideshow animation video will be recorded cycling through all collage photos at <strong>" + this.opts.out_w + " × " + this.opts.out_h + "</strong> resolution.";
+            lblInfo.innerHTML = _t(
+                "save.infoVideo",
+                "A slideshow animation video will be recorded cycling through all collage photos at <strong>{w} × {h}</strong> resolution.",
+                { w: this.opts.out_w, h: this.opts.out_h }
+            );
             lblConfirmIcon.textContent = "🎬";
-            lblConfirmText.innerHTML = "Create Animation<br class=\"hidden sm:inline\">(as WebM Video)";
+            lblConfirmText.innerHTML = _t("save.createAnimation", "Create Animation<br class=\"hidden sm:inline\">(as WebM Video)");
             btnConfirm.className = "px-3 sm:px-4 py-2 rounded-lg bg-amber-600 hover:bg-amber-700 text-white text-xs sm:text-sm font-medium shadow-sm transition flex items-center justify-center text-center gap-1.5";
         } else if (format === "extract/images") {
             const count = (this.history[this.history_index] && this.history[this.history_index].photolist) 
                 ? this.history[this.history_index].photolist.length 
                 : 0;
             infoBox.className = "bg-blue-50 border border-blue-200 rounded-xl p-3 text-xs text-blue-900 transition-colors";
-            lblInfo.innerHTML = "All <strong>" + count + "</strong> loaded photos will be extracted and saved individually in their original resolutions.";
+            lblInfo.innerHTML = _t(
+                "save.infoExtract",
+                "All <strong>{count}</strong> loaded photos will be extracted and saved individually in their original resolutions.",
+                { count }
+            );
             lblConfirmIcon.textContent = "📂";
-            lblConfirmText.innerHTML = "Extract All Images<br class=\"hidden sm:inline\">(Individual Files)";
+            lblConfirmText.innerHTML = _t("save.extractAll", "Extract All Images<br class=\"hidden sm:inline\">(Individual Files)");
             btnConfirm.className = "px-3 sm:px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs sm:text-sm font-medium shadow-sm transition flex items-center justify-center text-center gap-1.5";
         } else {
             infoBox.className = "bg-emerald-50 border border-emerald-200 rounded-xl p-3 text-xs text-emerald-800 transition-colors";
-            lblInfo.innerHTML = "Poster will be rendered at full resolution: <strong>" + this.opts.out_w + " × " + this.opts.out_h + "</strong> pixels.";
+            lblInfo.innerHTML = _t(
+                "save.infoPoster",
+                "Poster will be rendered at full resolution: <strong>{w} × {h}</strong> pixels.",
+                { w: this.opts.out_w, h: this.opts.out_h }
+            );
             lblConfirmIcon.textContent = "💾";
-            lblConfirmText.innerHTML = "Download Poster<br class=\"hidden sm:inline\">(as One Image)";
+            lblConfirmText.innerHTML = _t("save.downloadPoster", "Download Poster<br class=\"hidden sm:inline\">(as One Image)");
             btnConfirm.className = "px-3 sm:px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs sm:text-sm font-medium shadow-sm transition flex items-center justify-center text-center gap-1.5";
         }
     }
@@ -151,13 +182,13 @@ class PhotoCollageApp {
             });
         }
 
-    bindBtn("btnLoadDemo", () => {
-    if (typeof openDemoPickerModal === "function") {
-        openDemoPickerModal(this);
-    } else {
-        this.loadDemoPhotos();
-    }
-    });
+        bindBtn("btnLoadDemo", () => {
+            if (typeof openDemoPickerModal === "function") {
+                openDemoPickerModal(this);
+            } else {
+                this.loadDemoPhotos();
+            }
+        });
         bindBtn("btnSavePoster", () => this.openSaveModal());
         bindBtn("btnUndo", () => this.select_prev_layout());
         bindBtn("btnRedo", () => this.select_next_layout());
@@ -246,8 +277,6 @@ class PhotoCollageApp {
         }, { passive: false });
 
         window.addEventListener("keydown", (e) => this.on_window_key_press(e));
-
-        // Clipboard Paste Listener (Supports Copy Image, blocks Copy Image Address)
         window.addEventListener("paste", (e) => this.handle_paste_event(e));
 
         this.resizeTimeout = null;
@@ -267,7 +296,6 @@ class PhotoCollageApp {
     }
 
     handle_paste_event(e) {
-        // Do not intercept pasting if active inside an input or textarea (e.g. filename)
         if (["INPUT", "TEXTAREA"].includes(document.activeElement?.tagName)) {
             return;
         }
@@ -299,13 +327,12 @@ class PhotoCollageApp {
             e.preventDefault();
             this.handleFilesSelected(imageFiles);
         } else {
-            // Check if user copied an image URL/address instead of the image itself
             const pastedText = clipboardData.getData("text/plain")?.trim() || "";
             const isUrlLike = /^(https?:\/\/|data:image\/|\/)/i.test(pastedText) || /\.(png|jpe?g|webp|gif|svg)(\?.*)?$/i.test(pastedText);
 
             if (isUrlLike) {
                 e.preventDefault();
-                showToast("Pasting image URLs is disabled. Right-click the image and choose 'Copy Image' instead.", "info");
+                showToast(_t("toast.pasteUrlBlocked", "Pasting image URLs is disabled. Right-click the image and choose 'Copy Image' instead."), "info");
             }
         }
     }
@@ -322,7 +349,7 @@ class PhotoCollageApp {
         const results = [];
         const badFiles = [];
 
-        this.showComputingDialog(true, "Loading media files...");
+        this.showComputingDialog(true, _t("computing.loadingMedia", "Loading media files..."));
         for (let i = 0; i < files.length; i++) {
             try {
                 const photo = await loadMediaFileAsPhoto(files[i]);
@@ -335,12 +362,15 @@ class PhotoCollageApp {
         this.showComputingDialog(false);
 
         if (badFiles.length > 0) {
-            showToast(`Could not open: ${badFiles.join(", ")}`, "error");
+            showToast(_t("toast.couldNotOpen", "Could not open: {files}", { files: badFiles.join(", ") }), "error");
         }
 
         if (results.length > 0) {
             this.update_photolist(results);
-            showToast(`Added ${results.length} media item${results.length > 1 ? "s" : ""}`, "success");
+            const unit = results.length === 1
+                ? _t("toast.mediaSingular", "item")
+                : _t("toast.mediaPlural", "items");
+            showToast(_t("toast.addedMedia", "Added {count} media {unit}", { count: results.length, unit }), "success");
         }
     }
 
@@ -352,7 +382,7 @@ class PhotoCollageApp {
         const new_collage = new UserCollage(demoPhotos);
         new_collage.make_page(this.opts);
         this.render_from_new_collage(new_collage);
-        showToast("Loaded demo photos! Click any photo to zoom or drag borders to resize.", "info");
+        showToast(_t("toast.loadedDemo", "Loaded demo photos! Click any photo to zoom or drag borders to resize."), "info");
     }
 
     clearAllPhotos() {
@@ -365,7 +395,7 @@ class PhotoCollageApp {
         this.history_index = -1;
         this.update_tool_buttons();
         this.on_paint();
-        showToast("Cleared collage workspace", "info");
+        showToast(_t("toast.clearedWorkspace", "Cleared collage workspace"), "info");
     }
 
     update_photolist(newPhotoObjects) {
@@ -455,15 +485,18 @@ class PhotoCollageApp {
 
         const photoCount = hasValidCollage ? this.history[this.history_index].photolist.length : 0;
         const colCount = (hasValidCollage && this.history[this.history_index].page) ? this.history[this.history_index].page.no_cols : 0;
-        
+        const unit = photoCount === 1
+            ? _t("status.photoSingular", "photo")
+            : _t("status.photoPlural", "photos");
+
         const elPhotos = document.getElementById("statusPhotos");
-        if (elPhotos) elPhotos.textContent = `${photoCount} photo${photoCount === 1 ? "" : "s"} loaded`;
+        if (elPhotos) elPhotos.textContent = _t("status.photosLoaded", "{count} {unit} loaded", { count: photoCount, unit });
         
         const elRes = document.getElementById("statusResolution");
-        if (elRes) elRes.textContent = `Output: ${this.opts.out_w} × ${this.opts.out_h} px`;
+        if (elRes) elRes.textContent = _t("status.outputRes", "Output: {w} × {h} px", { w: this.opts.out_w, h: this.opts.out_h });
         
         const elCols = document.getElementById("statusCols");
-        if (elCols) elCols.textContent = `Columns: ${colCount}`;
+        if (elCols) elCols.textContent = _t("status.columns", "Columns: {count}", { count: colCount });
     }
 
     render_preview(show_computing = false) {
@@ -488,7 +521,7 @@ class PhotoCollageApp {
         collage_obj.page.scale_to_fit(w, h);
 
         if (show_computing) {
-            this.showComputingDialog(true, "Performing image computation...");
+            this.showComputingDialog(true, _t("computing.defaultTitle", "Performing image computation..."));
             this.updateComputingDialog(0.5);
         }
 
@@ -511,7 +544,7 @@ class PhotoCollageApp {
         this.on_paint();
     }
 
-    showComputingDialog(visible, title = "Performing image computation...") {
+    showComputingDialog(visible, title = _t("computing.defaultTitle", "Performing image computation...")) {
         const dlg = document.getElementById("computingDialog");
         const lbl = document.getElementById("lblComputingTitle");
         if (lbl) lbl.textContent = title;
@@ -653,7 +686,7 @@ class PhotoCollageApp {
         if (this.collage.photolist.length > 0) {
             this.collage.make_page(this.opts);
             this.render_from_new_collage(this.collage);
-            showToast(`Removed "${targetPhoto.filename}"`, "info");
+            showToast(_t("toast.removedPhoto", "Removed \"{filename}\"", { filename: targetPhoto.filename }), "info");
         } else {
             this.renderedImageCanvas = null;
             this.collage = null;
@@ -781,13 +814,13 @@ class PhotoCollageApp {
                         this.paint_vertical_line(line_x, 0, this.renderedImageCanvas.height);
                         this.canvas.style.cursor = "ew-resize";
                         const hint = document.getElementById("statusHint");
-                        if (hint) hint.textContent = "Drag left or right to resize adjacent columns";
+                        if (hint) hint.textContent = _t("hint.resizeCols", "Drag left or right to resize adjacent columns");
                     } else if (edge === "top" || edge === "bottom") {
                         const line_y = edge === "top" ? closest_cell.y : closest_cell.y + closest_cell.h;
                         this.paint_horizontal_line(line_y, 0, this.renderedImageCanvas.width);
                         this.canvas.style.cursor = "ns-resize";
                         const hint = document.getElementById("statusHint");
-                        if (hint) hint.textContent = "Drag up or down to resize adjacent cells";
+                        if (hint) hint.textContent = _t("hint.resizeCells", "Drag up or down to resize adjacent cells");
                     }
                 } else {
                     const active = this.collage.page.get_cell_at_position(this.x, this.y);
@@ -795,16 +828,16 @@ class PhotoCollageApp {
                         const hint = document.getElementById("statusHint");
                         if (this.is_over_delete_button(active, this.x, this.y)) {
                             this.canvas.style.cursor = "pointer";
-                            if (hint) hint.textContent = `Click to remove "${active.photo.filename}" from collage`;
+                            if (hint) hint.textContent = _t("hint.removePhoto", "Click to remove \"{filename}\" from collage", { filename: active.photo.filename });
                         } else {
                             this.canvas.style.cursor = "move";
-                            if (hint) hint.textContent = `"${active.photo.filename}" — Click to zoom full size • Drag to pan or swap with another cell • Press Del to delete`;
+                            if (hint) hint.textContent = _t("hint.activePhoto", "\"{filename}\" — Click to zoom full size • Drag to pan or swap with another cell • Press Del to delete", { filename: active.photo.filename });
                         }
                         this.paint_image_delete_button(active);
                     } else {
                         this.canvas.style.cursor = "default";
                         const hint = document.getElementById("statusHint");
-                        if (hint) hint.textContent = "Tip: Click a photo to zoom full-size • Drag inside a cell to pan or swap • Drag yellow borders to resize";
+                        if (hint) hint.textContent = _t("hint.default", "Tip: Click a photo to zoom full-size • Drag inside a cell to pan or swap • Drag yellow borders to resize");
                     }
                 }
             } else if (this.mode === MODE.SWAPPING_OR_MOVING && !this.animating) {
@@ -813,9 +846,9 @@ class PhotoCollageApp {
                 const hint = document.getElementById("statusHint");
                 if (cell && cell !== this.swap_origin.cell) {
                     this.paint_image_border(cell, [5, 5]);
-                    if (hint) hint.textContent = `Release mouse to swap with "${cell.photo.filename}"`;
+                    if (hint) hint.textContent = _t("hint.swapTarget", "Release mouse to swap with \"{filename}\"", { filename: cell.photo.filename });
                 } else {
-                    if (hint) hint.textContent = "Drag inside cell to pan photo crop offset, or drag onto another cell to swap";
+                    if (hint) hint.textContent = _t("hint.panOrSwap", "Drag inside cell to pan photo crop offset, or drag onto another cell to swap");
                 }
             }
         } else {
@@ -824,7 +857,7 @@ class PhotoCollageApp {
             ctx.fillStyle = "rgba(255, 255, 255, 0.85)";
             ctx.strokeStyle = "#cbd5e1";
             ctx.lineWidth = 2;
-            const boxW = Math.min(520, w - 40);
+            const boxW = Math.min(560, w - 40);
             const boxH = 190;
             const bx = (w - boxW) / 2;
             const by = (h - boxH) / 2;
@@ -837,13 +870,13 @@ class PhotoCollageApp {
             ctx.font = "bold 16px Inter, sans-serif";
             ctx.textAlign = "center";
             const lines = [
-                "Drag & Drop Images Here (or Paste with Ctrl+V)",
-                "Drag a box to move/swap image",
-                "Move near line to resize",
-                "Click red circle or Del to delete an image"
+                _t("canvas.empty1", "Drag & Drop Images Here (or Paste with Ctrl+V)"),
+                _t("canvas.empty2", "Drag a box to move/swap image"),
+                _t("canvas.empty3", "Move near line to resize"),
+                _t("canvas.empty4", "Click red circle or Del to delete an image")
             ];
             lines.forEach((line, idx) => {
-                ctx.font = idx === 0 ? "bold 18px Inter, sans-serif" : "500 14px Inter, sans-serif";
+                ctx.font = idx === 0 ? "bold 17px Inter, sans-serif" : "500 14px Inter, sans-serif";
                 ctx.fillStyle = idx === 0 ? "#1e293b" : "#475569";
                 ctx.fillText(line, w / 2, by + 50 + idx * 32);
             });
@@ -854,8 +887,8 @@ class PhotoCollageApp {
             const elapsed = (performance.now() - this.anim_start_time) / 1000.0;
             const pause_dur = this.opts.pause_duration;
 
-            const t = Math.min(elapsed / this.zoom_duration, 1.0);
-            const easedT = 1 - Math.pow(1 - t, 2.5);
+            const tVal = Math.min(elapsed / this.zoom_duration, 1.0);
+            const easedT = 1 - Math.pow(1 - tVal, 2.5);
 
             let alpha = 1.0;
             if (elapsed > this.zoom_duration + pause_dur) {
@@ -1200,7 +1233,7 @@ class PhotoCollageApp {
 
         this.is_running_sequential_zoom = true;
         const lbl = document.getElementById("lblZoomAll");
-        if (lbl) lbl.textContent = "Stop";
+        if (lbl) lbl.textContent = _t("toolbar.stop", "Stop");
         const hud = document.getElementById("zoomHud");
         if (hud) hud.classList.remove("hidden");
         this.current_cell = null;
@@ -1218,7 +1251,13 @@ class PhotoCollageApp {
         this.current_cell = this.zoom_queue.shift();
         const currentIdx = allCells.indexOf(this.current_cell) + 1;
         const hudStatus = document.getElementById("lblHudStatus");
-        if (hudStatus) hudStatus.textContent = `Previewing ${currentIdx} / ${allCells.length}: ${this.current_cell.photo.filename}`;
+        if (hudStatus) {
+            hudStatus.textContent = _t(
+                "hud.statusItem",
+                "Previewing {current} / {total}: {filename}",
+                { current: currentIdx, total: allCells.length, filename: this.current_cell.photo.filename }
+            );
+        }
 
         const success = this.start_sequential_zoom(this.current_cell, () => {
             this.process_next_zoom_queue_item();
@@ -1264,7 +1303,7 @@ class PhotoCollageApp {
         this.is_running_sequential_zoom = false;
         this.current_cell = null;
         const lbl = document.getElementById("lblZoomAll");
-        if (lbl) lbl.textContent = "Preview All";
+        if (lbl) lbl.textContent = _t("toolbar.preview", "Preview");
         const hud = document.getElementById("zoomHud");
         if (hud) hud.classList.add("hidden");
     }
@@ -1450,7 +1489,7 @@ class PhotoCollageApp {
     update_templates_dropdown() {
         const chk = document.getElementById("chkLandscape");
         const isLandscape = chk ? chk.checked : true;
-        this.current_templates = isLandscape ? this.landscape_templates : this.portrait_templates;
+        this.current_templates = isLandscape ? this.getLandscapeTemplates() : this.getPortraitTemplates();
 
         const cmb = document.getElementById("cmbTemplate");
         if (!cmb) return;
@@ -1531,8 +1570,7 @@ class PhotoCollageApp {
 
     openSaveModal() {
         if (!this.history.length || this.history_index < 0) return;
-        const lbl = document.getElementById("lblSaveDims");
-        if (lbl) lbl.textContent = `${this.opts.out_w} × ${this.opts.out_h}`;
+        this.updateSaveModalUi();
         const modal = document.getElementById("saveModal");
         if (modal) modal.classList.remove("hidden");
     }
@@ -1555,7 +1593,7 @@ class PhotoCollageApp {
     }
 
     executeExportSingleImage(mimeType) {
-        this.showComputingDialog(true, "Rendering high-resolution poster...");
+        this.showComputingDialog(true, _t("computing.renderingPoster", "Rendering high-resolution poster..."));
         this.updateComputingDialog(0.3);
 
         setTimeout(() => {
@@ -1582,7 +1620,7 @@ class PhotoCollageApp {
                 finalCanvas.toBlob((blob) => {
                     this.showComputingDialog(false);
                     if (!blob) {
-                        showToast("Failed to encode poster image.", "error");
+                        showToast(_t("toast.encodeFailed", "Failed to encode poster image."), "error");
                         return;
                     }
                     const url = URL.createObjectURL(blob);
@@ -1593,11 +1631,15 @@ class PhotoCollageApp {
                     a.click();
                     a.remove();
                     setTimeout(() => URL.revokeObjectURL(url), 5000);
-                    showToast(`Poster saved as "${filename}" (${finalCanvas.width} × ${finalCanvas.height} px)!`, "success");
+                    showToast(_t(
+                        "toast.posterSaved",
+                        "Poster saved as \"{filename}\" ({w} × {h} px)!",
+                        { filename, w: finalCanvas.width, h: finalCanvas.height }
+                    ), "success");
                 }, mimeType, 0.95);
             } catch (err) {
                 this.showComputingDialog(false);
-                showToast(`Failed to save poster: ${err.message}`, "error");
+                showToast(_t("toast.savePosterError", "Failed to save poster: {error}", { error: err.message }), "error");
             }
         }, 60);
     }
@@ -1608,7 +1650,7 @@ class PhotoCollageApp {
 
         const cells = this.get_layout_cells();
         if (!cells.length) {
-            showToast("No photos available to animate.", "error");
+            showToast(_t("toast.noPhotosAnimate", "No photos available to animate."), "error");
             return;
         }
 
@@ -1623,7 +1665,7 @@ class PhotoCollageApp {
         outW = (outW % 2 === 0) ? outW : outW + 1;
         outH = (outH % 2 === 0) ? outH : outH + 1;
 
-        this.showComputingDialog(true, "Recording animation video...");
+        this.showComputingDialog(true, _t("computing.recordingVideo", "Recording animation video..."));
         this.updateComputingDialog(0.05);
 
         const exportCollage = collage.duplicate();
@@ -1651,7 +1693,7 @@ class PhotoCollageApp {
             mediaRecorder = new MediaRecorder(stream, { mimeType, videoBitsPerSecond: 8000000 });
         } catch (e) {
             this.showComputingDialog(false);
-            showToast("Video recording not supported in this browser.", "error");
+            showToast(_t("toast.videoUnsupported", "Video recording not supported in this browser."), "error");
             return;
         }
 
@@ -1676,7 +1718,7 @@ class PhotoCollageApp {
             setTimeout(() => URL.revokeObjectURL(url), 5000);
 
             this.showComputingDialog(false);
-            showToast(`Animation video saved as "${filename}"!`, "success");
+            showToast(_t("toast.videoSaved", "Animation video saved as \"{filename}\"!", { filename }), "success");
         };
 
         mediaRecorder.start();
@@ -1720,25 +1762,25 @@ class PhotoCollageApp {
                     const finalX = (outW - finalW) / 2;
                     const finalY = (outH - finalH) / 2;
 
-                    let t = 0;
+                    let tVal = 0;
                     let alpha = 1.0;
 
                     if (cellTime < zoomDur) {
-                        t = 1 - Math.pow(1 - (cellTime / zoomDur), 2.5);
+                        tVal = 1 - Math.pow(1 - (cellTime / zoomDur), 2.5);
                     } else if (cellTime < zoomDur + pauseDur) {
-                        t = 1.0;
+                        tVal = 1.0;
                     } else {
-                        t = 1.0;
+                        tVal = 1.0;
                         alpha = Math.max(0.0, 1.0 - ((cellTime - zoomDur - pauseDur) / fadeDur));
                     }
 
-                    const curX = cell.x + (finalX - cell.x) * t;
-                    const curY = cell.y + (finalY - cell.y) * t;
-                    const curW = cell.w + (finalW - cell.w) * t;
-                    const curH = cell.h + (finalH - cell.h) * t;
+                    const curX = cell.x + (finalX - cell.x) * tVal;
+                    const curY = cell.y + (finalY - cell.y) * tVal;
+                    const curW = cell.w + (finalW - cell.w) * tVal;
+                    const curH = cell.h + (finalH - cell.h) * tVal;
 
                     recCtx.save();
-                    recCtx.fillStyle = `rgba(15, 23, 42, ${0.6 * t * alpha})`;
+                    recCtx.fillStyle = `rgba(15, 23, 42, ${0.6 * tVal * alpha})`;
                     recCtx.fillRect(0, 0, outW, outH);
 
                     recCtx.globalAlpha = alpha;
@@ -1777,12 +1819,12 @@ class PhotoCollageApp {
     executeExtractAllImages() {
         const collage = this.history[this.history_index];
         if (!collage || !collage.photolist || !collage.photolist.length) {
-            showToast("No images to extract.", "error");
+            showToast(_t("toast.noImagesExtract", "No images to extract."), "error");
             return;
         }
 
         const photos = collage.photolist;
-        this.showComputingDialog(true, "Extracting images...");
+        this.showComputingDialog(true, _t("computing.extractingImages", "Extracting images..."));
         this.updateComputingDialog(0.05);
 
         let completed = 0;
@@ -1822,7 +1864,7 @@ class PhotoCollageApp {
                         if (completed === photos.length) {
                             setTimeout(() => {
                                 this.showComputingDialog(false);
-                                showToast(`Extracted ${completed} images successfully!`, "success");
+                                showToast(_t("toast.extractedSuccess", "Extracted {count} images successfully!", { count: completed }), "success");
                             }, 300);
                         }
                     }, "image/png");
@@ -1841,7 +1883,7 @@ class PhotoCollageApp {
         const modal = document.getElementById("saveModal");
         if (modal) modal.classList.add("hidden");
 
-        this.showComputingDialog(true, "Packaging project session into HTML...");
+        this.showComputingDialog(true, _t("computing.packagingHtml", "Packaging project session into HTML..."));
         this.updateComputingDialog(0.3);
 
         setTimeout(() => {
@@ -1897,7 +1939,10 @@ class PhotoCollageApp {
                 const stripRegex = new RegExp('<script id="saved-session-payload">[\\s\\S]*?' + tagEnd, 'gi');
                 let cleanHtml = htmlClone.replace(stripRegex, "");
 
-                // Replace local script references with CDN paths so standalone HTML works anywhere
+                cleanHtml = cleanHtml.replace(
+                    /<script\s+src=["']?photocollage_i18n\.js["']?>\s*<\/script>/i,
+                    '<script src="https://blendpy.github.io/vibe-web-dev/photocollage/photocollage_i18n.js"></script>'
+                );
                 cleanHtml = cleanHtml.replace(
                     /<script\s+src=["']?photocollage\.js["']?>\s*<\/script>/i,
                     '<script src="https://blendpy.github.io/vibe-web-dev/photocollage/photocollage.js"></script>'
@@ -1929,11 +1974,12 @@ class PhotoCollageApp {
                 a.remove();
                 setTimeout(() => URL.revokeObjectURL(url), 5000);
 
-                showToast(`Project successfully saved as "${filename}"!`, "success");
+                showToast(_t("toast.projectSaved", "Project successfully saved as \"{filename}\"!", { filename }), "success");
             } catch (err) {
                 this.showComputingDialog(false);
-                showToast(`Failed to save project HTML: ${err.message}`, "error");
+                showToast(_t("toast.projectSaveError", "Failed to save project HTML: {error}", { error: err.message }), "error");
             }
         }, 80);
     }
-}
+};
+window.PhotoCollageApp = PhotoCollageApp;

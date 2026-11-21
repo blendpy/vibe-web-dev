@@ -1,0 +1,1311 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>National Map & Global GIS Topo Explorer</title>
+    
+    <!-- Tailwind CSS for responsive GIS layout & modern UI components -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Stable Leaflet 1.9.4 CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+    
+    <!-- Font Awesome 6.4.0 Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    
+    <!-- Inter Font -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+    <style>
+        * {
+            box-sizing: border-box;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        }
+
+        .font-mono-code {
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        body, html {
+            height: 100%;
+            width: 100%;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background-color: #0f172a;
+        }
+
+        /* Custom Scrollbar for GIS Sidebar */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 3px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+
+        /* Basemap Thumbnail Patterns (Pure CSS + SVG so they never fail offline/locally) */
+        .thumb-usgs-topo {
+            background-color: #e8f0e4;
+            background-image: 
+                radial-gradient(circle at 30% 40%, transparent 18%, rgba(166, 124, 82, 0.35) 19%, rgba(166, 124, 82, 0.35) 21%, transparent 22%),
+                radial-gradient(circle at 30% 40%, transparent 32%, rgba(166, 124, 82, 0.3) 33%, rgba(166, 124, 82, 0.3) 35%, transparent 36%),
+                radial-gradient(circle at 75% 65%, transparent 15%, rgba(166, 124, 82, 0.35) 16%, rgba(166, 124, 82, 0.35) 18%, transparent 19%),
+                linear-gradient(135deg, #c7e5bd 0%, #e9f2e4 55%, #f2efe9 100%);
+        }
+
+        .thumb-world-topo {
+            background-color: #dceaf2;
+            background-image: 
+                radial-gradient(circle at 60% 35%, transparent 20%, rgba(120, 150, 130, 0.35) 21%, transparent 23%),
+                linear-gradient(125deg, #d4e6cd 0%, #eff5eb 50%, #cbe3f5 100%);
+        }
+
+        .thumb-imagery-topo {
+            background-color: #132a13;
+            background-image: 
+                linear-gradient(25deg, transparent 46%, rgba(250, 204, 21, 0.7) 48%, rgba(250, 204, 21, 0.7) 51%, transparent 53%),
+                radial-gradient(circle at 40% 50%, rgba(255,255,255,0.2) 0%, transparent 50%),
+                linear-gradient(135deg, #0b251c 0%, #1e3f20 45%, #385723 75%, #1c3144 100%);
+        }
+
+        .thumb-osm-voyager {
+            background-color: #f8f5ef;
+            background-image: 
+                linear-gradient(90deg, transparent 45%, #fde047 45%, #fde047 52%, transparent 52%),
+                linear-gradient(15deg, transparent 30%, #cbd5e1 30%, #cbd5e1 35%, transparent 35%),
+                linear-gradient(135deg, #d8f3dc 0%, #f8f5ef 40%, #bae6fd 100%);
+        }
+
+        .thumb-shaded-relief {
+            background-color: #d6d3d1;
+            background-image: 
+                radial-gradient(ellipse at 35% 35%, #f5f5f4 0%, #a8a29e 45%, #57534e 85%, #d6d3d1 100%);
+        }
+
+        .thumb-dark-carto {
+            background-color: #0f172a;
+            background-image: 
+                linear-gradient(35deg, transparent 42%, #334155 43%, #334155 46%, transparent 47%),
+                linear-gradient(115deg, transparent 60%, #1e293b 61%, #1e293b 65%, transparent 66%),
+                radial-gradient(circle at 50% 50%, #1e293b 0%, #090d16 100%);
+        }
+
+        .thumb-custom-dem {
+            background-color: #1e293b;
+            background-image:
+                radial-gradient(ellipse at 35% 40%, rgba(255, 255, 255, 0.28) 0%, transparent 55%),
+                linear-gradient(135deg, #1d4ed8 0%, #10b981 35%, #f59e0b 68%, #b91c1c 88%, #f8fafc 100%);
+        }
+
+        /* Leaflet Control Overrides for National Map Downloader Aesthetic */
+        .leaflet-control-zoom {
+            border: none !important;
+            box-shadow: 0 4px 12px rgba(15, 23, 42, 0.25) !important;
+            border-radius: 8px !important;
+            overflow: hidden;
+        }
+        .leaflet-control-zoom a {
+            background-color: #ffffff !important;
+            color: #1e293b !important;
+            border-bottom: 1px solid #e2e8f0 !important;
+            width: 34px !important;
+            height: 34px !important;
+            line-height: 34px !important;
+            font-weight: 700 !important;
+            transition: all 0.15s ease;
+        }
+        .leaflet-control-zoom a:hover {
+            background-color: #f1f5f9 !important;
+            color: #0284c7 !important;
+        }
+
+        /* Crosshair cursor when drawing AOI box */
+        .cursor-crosshair-map {
+            cursor: crosshair !important;
+        }
+
+        /* Graticule Grid Labels on Map */
+        .graticule-label {
+            background: rgba(15, 23, 42, 0.78);
+            color: #f8fafc;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 10px;
+            padding: 1px 5px;
+            border-radius: 4px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            white-space: nowrap;
+            pointer-events: none;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+        }
+
+        /* Custom Popup Styling */
+        .leaflet-popup-content-wrapper {
+            border-radius: 10px !important;
+            box-shadow: 0 10px 25px rgba(15, 23, 42, 0.25) !important;
+            padding: 2px !important;
+        }
+        .leaflet-popup-content {
+            margin: 12px 14px !important;
+            line-height: 1.45 !important;
+        }
+    </style>
+</head>
+<body class="flex flex-col h-screen w-screen overflow-hidden select-none">
+
+    <!-- TOP HEADER BAR (USGS National Map Downloader + Modern GIS Style) -->
+    <header class="bg-slate-900 text-white h-14 px-4 flex items-center justify-between border-b border-slate-700/80 shadow-lg z-[1001] shrink-0">
+        <!-- Brand Logo & Title -->
+        <div class="flex items-center gap-3">
+            <div class="w-9 h-9 rounded-lg bg-gradient-to-br from-emerald-500 to-sky-600 flex items-center justify-center shadow-inner">
+                <i class="fa-solid fa-mountain-sun text-white text-lg"></i>
+            </div>
+            <div>
+                <div class="flex items-center gap-2">
+                    <span class="font-bold text-sm md:text-base tracking-tight text-white">National Map & Global GIS</span>
+                    <span class="hidden sm:inline-block text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                        USGS + Seamless Global
+                    </span>
+                </div>
+                <p class="text-[11px] text-slate-400 hidden md:block">Topographic, 3DEP Elevation, Hydrography & Unblocked OSM Explorer</p>
+            </div>
+        </div>
+
+        <!-- Global Search Bar with Multi-Server Failover -->
+        <div class="flex-1 max-w-xl mx-3">
+            <div class="relative flex items-center">
+                <i class="fa-solid fa-magnifying-glass absolute left-3.5 text-slate-400 text-xs pointer-events-none"></i>
+                <input 
+                    type="text" 
+                    id="location-input" 
+                    placeholder="Search city, mountain, border (e.g. 'Niagara Falls', 'Banff', '36.05, -112.14')..."
+                    value="Raleigh, NC"
+                    class="w-full pl-9 pr-24 py-1.5 bg-slate-800/90 hover:bg-slate-800 focus:bg-white text-slate-100 focus:text-slate-900 placeholder-slate-400 focus:placeholder-slate-400 text-xs md:text-sm rounded-lg border border-slate-600 focus:border-sky-400 focus:outline-none focus:ring-2 focus:ring-sky-500/40 transition-all"
+                />
+                <div class="absolute right-1 flex items-center gap-1">
+                    <button 
+                        onclick="locateUserGPS()" 
+                        title="Center on My GPS Location"
+                        class="p-1.5 text-slate-400 hover:text-sky-400 focus:outline-none transition-colors"
+                    >
+                        <i class="fa-solid fa-location-crosshairs text-xs"></i>
+                    </button>
+                    <button 
+                        onclick="searchLocation()" 
+                        id="search-btn"
+                        class="bg-sky-600 hover:bg-sky-500 active:bg-sky-700 text-white text-xs font-semibold px-3 py-1 rounded-md transition-colors shadow-sm"
+                    >
+                        Search
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Live Cursor Coordinates, Elevation & Zoom Readout -->
+        <div class="hidden xl:flex items-center gap-4 text-xs bg-slate-800/90 px-3.5 py-1.5 rounded-lg border border-slate-700">
+            <div class="flex items-center gap-1.5">
+                <i class="fa-solid fa-compass text-sky-400"></i>
+                <span class="text-slate-400">Cursor:</span>
+                <span id="track-lat" class="font-mono-code text-white font-medium">35.7796</span>,
+                <span id="track-lon" class="font-mono-code text-white font-medium">-78.6382</span>
+            </div>
+            <div class="h-3.5 w-[1px] bg-slate-700"></div>
+            <div class="flex items-center gap-1.5">
+                <i class="fa-solid fa-layer-group text-emerald-400"></i>
+                <span class="text-slate-400">Zoom:</span>
+                <span id="track-zoom" class="font-mono-code text-emerald-300 font-semibold">12</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- MAIN WORKSPACE (Left GIS Control Drawer + Right Full-Screen Map) -->
+    <div class="flex-1 flex flex-col md:flex-row relative overflow-hidden">
+
+        <!-- LEFT SIDEBAR (USGS Downloader Inspired Controls) -->
+        <aside id="sidebar" class="w-full md:w-[360px] lg:w-[380px] bg-white border-r border-slate-200 flex flex-col h-[42vh] md:h-full z-[1000] shadow-xl shrink-0 order-2 md:order-1 overflow-hidden">
+            
+            <!-- Sidebar Navigation Tabs -->
+            <div class="grid grid-cols-3 bg-slate-100 p-1 border-b border-slate-200 text-xs font-semibold text-slate-600 shrink-0">
+                <button onclick="switchTab('layers')" id="tab-btn-layers" class="py-2 px-2 rounded-md bg-white text-slate-900 shadow-sm flex items-center justify-center gap-1.5 transition-all">
+                    <i class="fa-solid fa-map text-sky-600"></i> Basemaps
+                </button>
+                <button onclick="switchTab('overlays')" id="tab-btn-overlays" class="py-2 px-2 rounded-md hover:text-slate-900 flex items-center justify-center gap-1.5 transition-all">
+                    <i class="fa-solid fa-sliders text-emerald-600"></i> Overlays & Grid
+                </button>
+                <button onclick="switchTab('tools')" id="tab-btn-tools" class="py-2 px-2 rounded-md hover:text-slate-900 flex items-center justify-center gap-1.5 transition-all">
+                    <i class="fa-solid fa-vector-square text-amber-600"></i> AOI & Elev
+                </button>
+            </div>
+
+            <!-- Dynamic Notification Banner -->
+            <div id="status-msg" class="hidden mx-3 mt-2.5 px-3 py-2 rounded-lg text-xs font-medium flex items-center justify-between gap-2 shrink-0">
+                <span id="status-text"></span>
+                <button onclick="hideStatus()" class="text-current opacity-70 hover:opacity-100"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+
+            <!-- Scrollable Content Area -->
+            <div class="flex-1 overflow-y-auto p-3.5 space-y-4">
+
+                <!-- Quick Test Locations (Including US/Canada & US/Mexico Borders to verify seamless tiles) -->
+                <div>
+                    <div class="flex items-center justify-between mb-1.5">
+                        <span class="text-[11px] font-bold uppercase tracking-wider text-slate-400">Quick Jump & Border Presets</span>
+                        <span class="text-[10px] text-sky-600 font-medium">Test Cross-Border Topo</span>
+                    </div>
+                    <div class="flex flex-wrap gap-1.5">
+                        <button onclick="jumpPreset(43.0828, -79.0742, 13, 'Niagara Falls (US / Canada Border)')" class="text-[11px] px-2 py-1 rounded bg-slate-100 hover:bg-sky-50 hover:text-sky-700 text-slate-700 border border-slate-200 transition-colors">
+                            🇨🇦🇺🇸 Niagara Border
+                        </button>
+                        <button onclick="jumpPreset(48.9960, -113.9042, 11, 'Waterton-Glacier (US / Canada Border)')" class="text-[11px] px-2 py-1 rounded bg-slate-100 hover:bg-sky-50 hover:text-sky-700 text-slate-700 border border-slate-200 transition-colors">
+                            🏔️ Glacier/Waterton
+                        </button>
+                        <button onclick="jumpPreset(31.7587, -106.4869, 12, 'El Paso / Ciudad Juárez (US / Mexico)')" class="text-[11px] px-2 py-1 rounded bg-slate-100 hover:bg-sky-50 hover:text-sky-700 text-slate-700 border border-slate-200 transition-colors">
+                            🇲🇽🇺🇸 El Paso Border
+                        </button>
+                        <button onclick="jumpPreset(36.0553, -112.1218, 13, 'Grand Canyon National Park, AZ')" class="text-[11px] px-2 py-1 rounded bg-slate-100 hover:bg-sky-50 hover:text-sky-700 text-slate-700 border border-slate-200 transition-colors">
+                            🏜️ Grand Canyon
+                        </button>
+                        <button onclick="jumpPreset(46.8523, -121.7603, 13, 'Mount Rainier, WA')" class="text-[11px] px-2 py-1 rounded bg-slate-100 hover:bg-sky-50 hover:text-sky-700 text-slate-700 border border-slate-200 transition-colors">
+                            🌋 Mt. Rainier
+                        </button>
+                        <button onclick="jumpPreset(35.7796, -78.6382, 12, 'Raleigh, North Carolina')" class="text-[11px] px-2 py-1 rounded bg-slate-100 hover:bg-sky-50 hover:text-sky-700 text-slate-700 border border-slate-200 transition-colors">
+                            📍 Raleigh, NC
+                        </button>
+                    </div>
+                </div>
+
+                <!-- TAB 1: BASEMAPS -->
+                <div id="tab-panel-layers" class="space-y-4">
+                    <div>
+                        <div class="flex items-center justify-between mb-2">
+                            <h3 class="text-xs font-bold uppercase tracking-wider text-slate-500">Select Basemap Layer</h3>
+                            <span id="active-layer-badge" class="text-[10px] font-semibold bg-sky-100 text-sky-800 px-2 py-0.5 rounded">USGS + Global Topo</span>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-2.5">
+                            <!-- 1. USGS + Global Seamless Topo -->
+                            <div onclick="switchLayer('usgsTopo')" id="btn-usgsTopo" class="basemap-card group cursor-pointer rounded-xl border-2 border-sky-600 bg-sky-50/60 p-2 transition-all hover:shadow-md">
+                                <div class="thumb-usgs-topo h-16 w-full rounded-lg mb-2 relative overflow-hidden border border-slate-200/80 flex items-end p-1.5">
+                                    <span class="text-[9px] font-bold bg-slate-900/75 text-white px-1.5 py-0.5 rounded backdrop-blur-sm">US Quads + Global</span>
+                                </div>
+                                <div class="flex items-center justify-between">
+                                    <span class="text-xs font-bold text-slate-800">USGS Topographic</span>
+                                    <i class="fa-solid fa-circle-check text-sky-600 text-xs check-icon"></i>
+                                </div>
+                                <p class="text-[10px] text-slate-500 mt-0.5 leading-tight">Official 7.5' US Topo + seamless global borders</p>
+                            </div>
+
+                            <!-- 2. Seamless Global World Topo (Uniform across US/CA/MX borders) -->
+                            <div onclick="switchLayer('worldTopo')" id="btn-worldTopo" class="basemap-card group cursor-pointer rounded-xl border-2 border-slate-200 bg-white p-2 transition-all hover:border-slate-300 hover:shadow-md">
+                                <div class="thumb-world-topo h-16 w-full rounded-lg mb-2 relative overflow-hidden border border-slate-200/80 flex items-end p-1.5">
+                                    <span class="text-[9px] font-bold bg-emerald-900/75 text-white px-1.5 py-0.5 rounded backdrop-blur-sm">100% Uniform Borders</span>
+                                </div>
+                                <div class="flex items-center justify-between">
+                                    <span class="text-xs font-bold text-slate-800">Global World Topo</span>
+                                    <i class="fa-solid fa-circle-check text-sky-600 text-xs hidden check-icon"></i>
+                                </div>
+                                <p class="text-[10px] text-slate-500 mt-0.5 leading-tight">Consistent cartography across all international borders</p>
+                            </div>
+
+                            <!-- 3. USGS + Global Imagery + Topo Hybrid (FIXED) -->
+                            <div onclick="switchLayer('usgsImagery')" id="btn-usgsImagery" class="basemap-card group cursor-pointer rounded-xl border-2 border-slate-200 bg-white p-2 transition-all hover:border-slate-300 hover:shadow-md">
+                                <div class="thumb-imagery-topo h-16 w-full rounded-lg mb-2 relative overflow-hidden border border-slate-200/80 flex items-end p-1.5">
+                                    <span class="text-[9px] font-bold bg-amber-500/90 text-slate-950 px-1.5 py-0.5 rounded">Fixed Hybrid Z1-20</span>
+                                </div>
+                                <div class="flex items-center justify-between">
+                                    <span class="text-xs font-bold text-slate-800">Imagery + Topo</span>
+                                    <i class="fa-solid fa-circle-check text-sky-600 text-xs hidden check-icon"></i>
+                                </div>
+                                <p class="text-[10px] text-slate-500 mt-0.5 leading-tight">High-res satellite + USGS contours, roads & labels</p>
+                            </div>
+
+                            <!-- 4. OpenStreetMap (Unblocked CARTO Voyager) -->
+                            <div onclick="switchLayer('openMaps')" id="btn-openMaps" class="basemap-card group cursor-pointer rounded-xl border-2 border-slate-200 bg-white p-2 transition-all hover:border-slate-300 hover:shadow-md">
+                                <div class="thumb-osm-voyager h-16 w-full rounded-lg mb-2 relative overflow-hidden border border-slate-200/80 flex items-end p-1.5">
+                                    <span class="text-[9px] font-bold bg-sky-700/85 text-white px-1.5 py-0.5 rounded">Unblocked OSM</span>
+                                </div>
+                                <div class="flex items-center justify-between">
+                                    <span class="text-xs font-bold text-slate-800">OpenStreetMap</span>
+                                    <i class="fa-solid fa-circle-check text-sky-600 text-xs hidden check-icon"></i>
+                                </div>
+                                <p class="text-[10px] text-slate-500 mt-0.5 leading-tight">Full OSM streets & POIs with zero Referer blocks</p>
+                            </div>
+
+                            <!-- 5. USGS 3DEP + Global Shaded Relief -->
+                            <div onclick="switchLayer('shadedRelief')" id="btn-shadedRelief" class="basemap-card group cursor-pointer rounded-xl border-2 border-slate-200 bg-white p-2 transition-all hover:border-slate-300 hover:shadow-md">
+                                <div class="thumb-shaded-relief h-16 w-full rounded-lg mb-2 relative overflow-hidden border border-slate-200/80 flex items-end p-1.5">
+                                    <span class="text-[9px] font-bold bg-slate-800/80 text-white px-1.5 py-0.5 rounded">3DEP DEM Terrain</span>
+                                </div>
+                                <div class="flex items-center justify-between">
+                                    <span class="text-xs font-bold text-slate-800">3DEP Shaded Relief</span>
+                                    <i class="fa-solid fa-circle-check text-sky-600 text-xs hidden check-icon"></i>
+                                </div>
+                                <p class="text-[10px] text-slate-500 mt-0.5 leading-tight">LiDAR/DEM terrain elevation hillshade</p>
+                            </div>
+
+                            <!-- 6. CartoDB Dark Matter -->
+                            <div onclick="switchLayer('darkCarto')" id="btn-darkCarto" class="basemap-card group cursor-pointer rounded-xl border-2 border-slate-200 bg-white p-2 transition-all hover:border-slate-300 hover:shadow-md">
+                                <div class="thumb-dark-carto h-16 w-full rounded-lg mb-2 relative overflow-hidden border border-slate-200/80 flex items-end p-1.5">
+                                    <span class="text-[9px] font-bold bg-slate-700 text-slate-200 px-1.5 py-0.5 rounded">Dark GIS</span>
+                                </div>
+                                <div class="flex items-center justify-between">
+                                    <span class="text-xs font-bold text-slate-800">CartoDB Dark</span>
+                                    <i class="fa-solid fa-circle-check text-sky-600 text-xs hidden check-icon"></i>
+                                </div>
+                                <p class="text-[10px] text-slate-500 mt-0.5 leading-tight">High-contrast dark vector style for overlays</p>
+                            </div>
+
+                            <!-- 7. Custom Pre-baked DEM (Hillshade + Colormap) -->
+                            <div onclick="switchLayer('customDem')" id="btn-customDem" class="basemap-card group cursor-pointer rounded-xl border-2 border-slate-200 bg-white p-2 transition-all hover:border-slate-300 hover:shadow-md">
+                                <div class="thumb-custom-dem h-16 w-full rounded-lg mb-2 relative overflow-hidden border border-slate-200/80 flex items-end p-1.5">
+                                    <span class="text-[9px] font-bold bg-purple-900/85 text-white px-1.5 py-0.5 rounded">Local WebP Z0-6</span>
+                                </div>
+                                <div class="flex items-center justify-between">
+                                    <span class="text-xs font-bold text-slate-800">Custom DEM</span>
+                                    <i class="fa-solid fa-circle-check text-sky-600 text-xs hidden check-icon"></i>
+                                </div>
+                                <p class="text-[10px] text-slate-500 mt-0.5 leading-tight">Pre-baked hillshade &amp; elevation colormap</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Cross-Border USGS Quad Opacity Control -->
+                    <div class="bg-slate-50 border border-slate-200 rounded-xl p-3">
+                        <div class="flex items-center justify-between mb-1">
+                            <label for="usgs-border-slider" class="text-xs font-bold text-slate-700 flex items-center gap-1.5">
+                                <i class="fa-solid fa-border-all text-sky-600"></i>
+                                USGS US-Quad Blend at Borders
+                            </label>
+                            <span id="usgs-blend-val" class="text-[11px] font-mono-code font-semibold text-sky-700">100%</span>
+                        </div>
+                        <p class="text-[11px] text-slate-500 mb-2">
+                            USGS Topo tiles only cover US territory. Lower this slider near the Canada/Mexico border for 100% seamless cross-border maps.
+                        </p>
+                        <input 
+                            type="range" 
+                            id="usgs-border-slider" 
+                            min="0" 
+                            max="100" 
+                            value="100" 
+                            oninput="setUsgsQuadOpacity(this.value)"
+                            class="w-full accent-sky-600 cursor-pointer h-1.5 bg-slate-200 rounded-lg"
+                        />
+                    </div>
+                </div>
+
+                <!-- TAB 2: OVERLAYS & GRATICULE GRID -->
+                <div id="tab-panel-overlays" class="hidden space-y-3">
+                    <h3 class="text-xs font-bold uppercase tracking-wider text-slate-500">USGS & GIS Map Overlays</h3>
+
+                    <!-- Overlay 1: USGS Hydrography (NHD) -->
+                    <div class="p-3 rounded-xl border border-slate-200 bg-slate-50/70 flex items-start justify-between gap-3">
+                        <div>
+                            <div class="flex items-center gap-2">
+                                <i class="fa-solid fa-water text-sky-500 text-xs"></i>
+                                <span class="text-xs font-bold text-slate-800">USGS Hydrography (NHD)</span>
+                            </div>
+                            <p class="text-[11px] text-slate-500 mt-0.5">National Hydrography Dataset rivers, streams, lakes & watersheds</p>
+                        </div>
+                        <input type="checkbox" id="toggle-hydro" onchange="toggleOverlay('hydro', this.checked)" class="mt-1 w-4 h-4 accent-sky-600 rounded cursor-pointer" />
+                    </div>
+
+                    <!-- Overlay 2: 3DEP Hillshade Relief Overlay -->
+                    <div class="p-3 rounded-xl border border-slate-200 bg-slate-50/70 space-y-2">
+                        <div class="flex items-start justify-between gap-3">
+                            <div>
+                                <div class="flex items-center gap-2">
+                                    <i class="fa-solid fa-mountain text-emerald-600 text-xs"></i>
+                                    <span class="text-xs font-bold text-slate-800">3DEP Hillshade Enhancement</span>
+                                </div>
+                                <p class="text-[11px] text-slate-500 mt-0.5">Superimpose 3D terrain relief shading onto any street or topo map</p>
+                            </div>
+                            <input type="checkbox" id="toggle-hillshade" onchange="toggleOverlay('hillshade', this.checked)" class="mt-1 w-4 h-4 accent-sky-600 rounded cursor-pointer" />
+                        </div>
+                        <div class="flex items-center gap-2 pt-1">
+                            <span class="text-[10px] text-slate-500">Opacity:</span>
+                            <input type="range" min="10" max="85" value="40" oninput="updateHillshadeOpacity(this.value)" class="flex-1 accent-emerald-600 h-1 bg-slate-200 rounded cursor-pointer" />
+                            <span id="hillshade-opacity-label" class="text-[10px] font-mono-code text-slate-600">40%</span>
+                        </div>
+                    </div>
+
+                    <!-- Overlay 3: Place Labels & Highways Reference -->
+                    <div class="p-3 rounded-xl border border-slate-200 bg-slate-50/70 flex items-start justify-between gap-3">
+                        <div>
+                            <div class="flex items-center gap-2">
+                                <i class="fa-solid fa-road text-amber-500 text-xs"></i>
+                                <span class="text-xs font-bold text-slate-800">Highways & Place Boundaries</span>
+                            </div>
+                            <p class="text-[11px] text-slate-500 mt-0.5">Global administrative boundaries, cities & highway shields</p>
+                        </div>
+                        <input type="checkbox" id="toggle-labels" onchange="toggleOverlay('labels', this.checked)" class="mt-1 w-4 h-4 accent-sky-600 rounded cursor-pointer" />
+                    </div>
+
+                    <!-- Overlay 4: Coordinate Graticule Grid -->
+                    <div class="p-3 rounded-xl border border-slate-200 bg-slate-50/70 flex items-start justify-between gap-3">
+                        <div>
+                            <div class="flex items-center gap-2">
+                                <i class="fa-solid fa-table-cells text-indigo-500 text-xs"></i>
+                                <span class="text-xs font-bold text-slate-800">Lat/Lon Coordinate Graticule</span>
+                            </div>
+                            <p class="text-[11px] text-slate-500 mt-0.5">Dynamic latitude & longitude grid lines that scale with zoom</p>
+                        </div>
+                        <input type="checkbox" id="toggle-graticule" onchange="toggleGraticule(this.checked)" class="mt-1 w-4 h-4 accent-sky-600 rounded cursor-pointer" />
+                    </div>
+                </div>
+
+                <!-- TAB 3: NATIONAL MAP DOWNLOADER AOI & ELEVATION TOOLS -->
+                <div id="tab-panel-tools" class="hidden space-y-3.5">
+                    <!-- Area of Interest (AOI) Bounding Box Tool -->
+                    <div class="p-3.5 rounded-xl border border-slate-200 bg-slate-50 space-y-2.5">
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                                <i class="fa-solid fa-vector-square text-amber-600"></i>
+                                Area of Interest (AOI) Extent
+                            </span>
+                            <span id="aoi-area-badge" class="text-[10px] font-mono-code bg-amber-100 text-amber-800 px-2 py-0.5 rounded font-semibold">No Box</span>
+                        </div>
+                        <p class="text-[11px] text-slate-500">
+                            Draw a bounding box on the map (or capture current view) to inspect W/S/E/N coordinates and export GeoJSON.
+                        </p>
+                        <div class="grid grid-cols-3 gap-1.5">
+                            <button onclick="startAoiDraw()" id="btn-draw-aoi" class="py-1.5 px-2 rounded-lg bg-amber-600 hover:bg-amber-500 text-white font-semibold text-xs flex items-center justify-center gap-1 shadow-sm transition-colors">
+                                <i class="fa-solid fa-crop-simple"></i> Draw Box
+                            </button>
+                            <button onclick="setAoiFromCurrentView()" class="py-1.5 px-2 rounded-lg bg-slate-200 hover:bg-slate-300 text-slate-800 font-semibold text-xs flex items-center justify-center gap-1 transition-colors">
+                                <i class="fa-solid fa-expand"></i> Use View
+                            </button>
+                            <button onclick="clearAoiBox()" class="py-1.5 px-2 rounded-lg bg-slate-200 hover:bg-rose-100 hover:text-rose-700 text-slate-700 font-semibold text-xs flex items-center justify-center gap-1 transition-colors">
+                                <i class="fa-solid fa-trash-can"></i> Clear
+                            </button>
+                        </div>
+
+                        <!-- Bounding Box Readout Table -->
+                        <div id="aoi-coords-box" class="bg-white border border-slate-200 rounded-lg p-2.5 text-[11px] font-mono-code space-y-1">
+                            <div class="flex justify-between"><span class="text-slate-400">North (Max Lat):</span> <span id="aoi-n" class="text-slate-800 font-semibold">--</span></div>
+                            <div class="flex justify-between"><span class="text-slate-400">South (Min Lat):</span> <span id="aoi-s" class="text-slate-800 font-semibold">--</span></div>
+                            <div class="flex justify-between"><span class="text-slate-400">East (Max Lon):</span> <span id="aoi-e" class="text-slate-800 font-semibold">--</span></div>
+                            <div class="flex justify-between"><span class="text-slate-400">West (Min Lon):</span> <span id="aoi-w" class="text-slate-800 font-semibold">--</span></div>
+                        </div>
+
+                        <button onclick="copyAoiGeoJSON()" class="w-full py-1.5 px-3 rounded-lg bg-slate-800 hover:bg-slate-700 text-white text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors">
+                            <i class="fa-solid fa-copy"></i> Copy Extent & GeoJSON to Clipboard
+                        </button>
+                    </div>
+                </div>
+
+                <!-- SELECTED LOCATION & LIVE 3DEP ELEVATION INSPECTOR CARD (Always visible at bottom of sidebar) -->
+                <div class="bg-gradient-to-br from-slate-900 to-slate-800 text-white rounded-xl p-3.5 shadow-md border border-slate-700">
+                    <div class="flex items-start justify-between gap-2 mb-2">
+                        <div>
+                            <span class="text-[10px] font-bold uppercase tracking-wider text-sky-400 block">Selected Point & Elevation</span>
+                            <h4 id="loc-name" class="font-bold text-sm text-white leading-snug">Raleigh, North Carolina</h4>
+                        </div>
+                        <button onclick="centerOnTarget()" title="Re-center on Pin" class="bg-slate-700/80 hover:bg-sky-600 text-white p-2 rounded-lg text-xs transition-colors shrink-0">
+                            <i class="fa-solid fa-crosshairs"></i>
+                        </button>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-2 my-2.5 bg-slate-950/60 p-2.5 rounded-lg border border-slate-700/80 text-xs">
+                        <div>
+                            <span class="text-[10px] text-slate-400 block">Coordinates (WGS84)</span>
+                            <span id="loc-details" class="font-mono-code text-slate-100 font-medium text-[11px]">35.7796, -78.6382</span>
+                        </div>
+                        <div>
+                            <span class="text-[10px] text-slate-400 block">Terrain Elevation</span>
+                            <span id="loc-elevation" class="font-mono-code text-emerald-400 font-semibold text-[11px]">Querying DEM...</span>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center justify-between text-[11px] text-slate-300 pt-1">
+                        <span><i class="fa-solid fa-hand-pointer text-sky-400 mr-1"></i>Click anywhere on map to inspect elevation</span>
+                    </div>
+                </div>
+
+            </div>
+        </aside>
+
+        <!-- RIGHT FULL-SCREEN MAP VIEWPORT -->
+        <main class="flex-1 relative h-[58vh] md:h-full order-1 md:order-2">
+            <div id="map" class="w-full h-full bg-slate-200"></div>
+
+            <!-- Floating Top-Right Quick Map Pill (Status & Seamless Indicator) -->
+            <div class="absolute top-3 right-3 z-[999] flex items-center gap-2 pointer-events-auto">
+                <div class="bg-slate-900/90 backdrop-blur-md text-white px-3 py-1.5 rounded-full shadow-lg border border-slate-700 flex items-center gap-2 text-xs">
+                    <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                    <span id="floating-layer-label" class="font-semibold">USGS + Seamless Global Topo</span>
+                </div>
+            </div>
+        </main>
+
+    </div>
+
+    <!-- Stable Leaflet 1.9.4 JS Engine -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+
+    <script>
+        /*************************************************************************
+         * 1. TRANSPARENT FALLBACK TILE & GLOBAL STATE
+         * Prevents broken image icons when zooming past native resolution or
+         * panning outside US bounds on USGS-specific tile endpoints.
+         *************************************************************************/
+        const TRANSPARENT_TILE = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
+
+        let targetLat = 35.7796;
+        let targetLon = -78.6382;
+        let currentMarker = null;
+        let currentActiveLayer = 'usgsTopo';
+
+        // Approximate bounding box covering Continental US, Alaska, Hawaii, Puerto Rico
+        const US_BOUNDS = L.latLngBounds([17.5, -179.9], [71.6, -64.5]);
+
+        /*************************************************************************
+         * 2. INITIALIZE LEAFLET MAP
+         *************************************************************************/
+
+
+const map = L.map('map', {
+    center: [targetLat, targetLon],
+    zoom: 12,
+    minZoom: 2,
+    maxZoom: 20,
+    zoomControl: false,
+    worldCopyJump: true,
+    zoomSnap: 1,
+    zoomDelta: 1,
+    wheelPxPerZoomLevel: 120, // Increase to 180 if your mouse wheel still skips
+    wheelDebounceTime: 80
+});
+
+        L.control.zoom({ position: 'topleft' }).addTo(map);
+        L.control.scale({ position: 'bottomleft', imperial: true, metric: true }).addTo(map);
+
+        /*************************************************************************
+         * 3. CONSTRUCT COMPOSITE & SEAMLESS BASEMAP LAYERS
+         *************************************************************************/
+
+        // Dedicated reference to USGS Topo top layer so user can adjust cross-border opacity
+        const usgsNationalTopoSubLayer = L.tileLayer(
+            'https://basemap.nationalmap.gov/arcgis/rest/services/USGSTopo/MapServer/tile/{z}/{y}/{x}',
+            {
+                maxNativeZoom: 16,
+                maxZoom: 20,
+                bounds: US_BOUNDS,
+                errorTileUrl: TRANSPARENT_TILE,
+                attribution: 'USGS The National Map'
+            }
+        );
+
+
+// Allows skipping intermediate zoom levels (e.g., 8 -> 10) by scaling the nearest lower zoom
+const SparseTileLayer = L.TileLayer.extend({
+    _clampZoom: function (zoom) {
+        const zooms = this.options.availableZooms;
+        if (!zooms || zooms.length === 0) {
+            return L.TileLayer.prototype._clampZoom.call(this, zoom);
+        }
+        let best = zooms[0];
+        for (const z of zooms) {
+            if (z <= zoom) best = z;
+            else break;
+        }
+        return best;
+    }
+});
+
+        const basemaps = {
+            // 1. USGS Topographic + Global Seamless Base
+            usgsTopo: L.layerGroup([
+                L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}', {
+                    maxNativeZoom: 19,
+                    maxZoom: 20,
+                    attribution: 'Tiles &copy; Esri &mdash; USGS, NOAA, NRCan'
+                }),
+                usgsNationalTopoSubLayer
+            ]),
+
+            // 2. Pure Global World Topo (100% uniform style across US/Canada & US/Mexico borders)
+            worldTopo: L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}', {
+                maxNativeZoom: 19,
+                maxZoom: 20,
+                attribution: 'Tiles &copy; Esri &mdash; Esri, DeLorme, NAVTEQ, TomTom, Intermap, increment P Corp., GEBCO, USGS, FAO, NPS, NRCAN, GeoBase'
+            }),
+
+            // 3. Working USGS & Global Imagery + Topo Hybrid (Works globally & at all zoom levels 1-20)
+            usgsImagery: L.layerGroup([
+                L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+                    maxNativeZoom: 19,
+                    maxZoom: 20,
+                    attribution: 'Tiles &copy; Esri, Maxar, Earthstar Geographics'
+                }),
+                L.tileLayer('https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryTopo/MapServer/tile/{z}/{y}/{x}', {
+                    maxNativeZoom: 16,
+                    maxZoom: 20,
+                    bounds: US_BOUNDS,
+                    errorTileUrl: TRANSPARENT_TILE,
+                    attribution: 'USGS The National Map'
+                }),
+                L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Transportation/MapServer/tile/{z}/{y}/{x}', {
+                    maxNativeZoom: 19,
+                    maxZoom: 20,
+                    opacity: 0.85
+                }),
+                L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}', {
+                    maxNativeZoom: 19,
+                    maxZoom: 20
+                })
+            ]),
+
+            // 4. Unblocked OpenStreetMap (CARTO Voyager - zero Referer blocks on file:// or web)
+            openMaps: L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+                subdomains: 'abcd',
+                maxNativeZoom: 19,
+                maxZoom: 20,
+                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
+            }),
+
+            // 5. 3DEP & Global Shaded Relief
+            shadedRelief: L.layerGroup([
+                L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Shaded_Relief/MapServer/tile/{z}/{y}/{x}', {
+                    maxNativeZoom: 13,
+                    maxZoom: 20,
+                    attribution: 'Tiles &copy; Esri &mdash; Source: Esri'
+                }),
+                L.tileLayer('https://basemap.nationalmap.gov/arcgis/rest/services/USGSShadedReliefOnly/MapServer/tile/{z}/{y}/{x}', {
+                    maxNativeZoom: 16,
+                    maxZoom: 20,
+                    bounds: US_BOUNDS,
+                    errorTileUrl: TRANSPARENT_TILE,
+                    attribution: 'USGS 3DEP Elevation'
+                }),
+                L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}', {
+                    maxNativeZoom: 19,
+                    maxZoom: 20,
+                    opacity: 0.8
+                })
+            ]),
+
+            // 6. CartoDB Dark Matter
+            darkCarto: L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+                subdomains: 'abcd',
+                maxNativeZoom: 19,
+                maxZoom: 20,
+                attribution: '&copy; OpenStreetMap contributors &copy; CARTO'
+            }),
+
+            // 7. Custom Pre-baked DEM (Hillshade + Colormap)
+customDem: new SparseTileLayer('./dem_combined/{z}/{x}/{y}.webp', {
+    minZoom: 0,
+    maxZoom: 8,
+    availableZooms: [0, 1, 2, 3, 4, 5, 6, 7, 8], // Skip 9 (or any other levels you didn't export)
+    errorTileUrl: TRANSPARENT_TILE,
+    attribution: 'Custom Pre-baked DEM (Hillshade + Colormap)'
+})
+        };
+
+        // Add default basemap
+        basemaps[currentActiveLayer].addTo(map);
+
+        /*************************************************************************
+         * 4. OPTIONAL GIS OVERLAYS (Hydrography, Hillshade, Reference, Graticule)
+         *************************************************************************/
+        const overlayLayers = {
+            hydro: L.tileLayer('https://basemap.nationalmap.gov/arcgis/rest/services/USGSHydroCached/MapServer/tile/{z}/{y}/{x}', {
+                maxNativeZoom: 16,
+                maxZoom: 20,
+                errorTileUrl: TRANSPARENT_TILE,
+                opacity: 0.9,
+                attribution: 'USGS NHD Hydrography'
+            }),
+            hillshade: L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Elevation/World_Hillshade/MapServer/tile/{z}/{y}/{x}', {
+                maxNativeZoom: 16,
+                maxZoom: 20,
+                opacity: 0.40,
+                attribution: 'Esri World Hillshade'
+            }),
+            labels: L.layerGroup([
+                L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Transportation/MapServer/tile/{z}/{y}/{x}', {
+                    maxNativeZoom: 19,
+                    maxZoom: 20
+                }),
+                L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}', {
+                    maxNativeZoom: 19,
+                    maxZoom: 20
+                })
+            ])
+        };
+
+        function toggleOverlay(key, enabled) {
+            if (!overlayLayers[key]) return;
+            if (enabled) {
+                overlayLayers[key].addTo(map);
+            } else {
+                map.removeLayer(overlayLayers[key]);
+            }
+        }
+
+        function updateHillshadeOpacity(val) {
+            document.getElementById('hillshade-opacity-label').innerText = val + '%';
+            overlayLayers.hillshade.setOpacity(parseInt(val, 10) / 100);
+        }
+
+        function setUsgsQuadOpacity(val) {
+            document.getElementById('usgs-blend-val').innerText = val + '%';
+            usgsNationalTopoSubLayer.setOpacity(parseInt(val, 10) / 100);
+        }
+
+        /*************************************************************************
+         * 5. DYNAMIC LAT/LON GRATICULE GRID OVERLAY
+         *************************************************************************/
+        let graticuleEnabled = false;
+        const graticuleGroup = L.layerGroup();
+
+        function toggleGraticule(enabled) {
+            graticuleEnabled = enabled;
+            if (enabled) {
+                graticuleGroup.addTo(map);
+                drawGraticule();
+            } else {
+                graticuleGroup.clearLayers();
+                map.removeLayer(graticuleGroup);
+            }
+        }
+
+        function drawGraticule() {
+            if (!graticuleEnabled) return;
+            graticuleGroup.clearLayers();
+
+            const zoom = map.getZoom();
+            let step = 10;
+            if (zoom >= 15) step = 0.02;
+            else if (zoom >= 13) step = 0.05;
+            else if (zoom >= 11) step = 0.1;
+            else if (zoom >= 9) step = 0.25;
+            else if (zoom >= 7) step = 1;
+            else if (zoom >= 5) step = 2;
+            else if (zoom >= 4) step = 5;
+
+            const bounds = map.getBounds();
+            const south = Math.max(-85, Math.floor(bounds.getSouth() / step) * step);
+            const north = Math.min(85, Math.ceil(bounds.getNorth() / step) * step);
+            const west = Math.floor(bounds.getWest() / step) * step;
+            const east = Math.ceil(bounds.getEast() / step) * step;
+
+            const decimals = step < 0.1 ? 2 : (step < 1 ? 2 : 0);
+
+            // Latitude lines
+            for (let lat = south; lat <= north; lat += step) {
+                const fixedLat = Number(lat.toFixed(4));
+                L.polyline([[fixedLat, west], [fixedLat, east]], {
+                    color: '#38bdf8',
+                    weight: 1,
+                    opacity: 0.45,
+                    dashArray: '4,4',
+                    interactive: false
+                }).addTo(graticuleGroup);
+
+                L.marker([fixedLat, bounds.getWest() + (bounds.getEast() - bounds.getWest()) * 0.06], {
+                    icon: L.divIcon({
+                        className: '',
+                        html: `<span class="graticule-label">${fixedLat.toFixed(decimals)}°</span>`
+                    }),
+                    interactive: false
+                }).addTo(graticuleGroup);
+            }
+
+            // Longitude lines
+            for (let lon = west; lon <= east; lon += step) {
+                const fixedLon = Number(lon.toFixed(4));
+                L.polyline([[south, fixedLon], [north, fixedLon]], {
+                    color: '#38bdf8',
+                    weight: 1,
+                    opacity: 0.45,
+                    dashArray: '4,4',
+                    interactive: false
+                }).addTo(graticuleGroup);
+
+                L.marker([bounds.getNorth() - (bounds.getNorth() - bounds.getSouth()) * 0.08, fixedLon], {
+                    icon: L.divIcon({
+                        className: '',
+                        html: `<span class="graticule-label">${fixedLon.toFixed(decimals)}°</span>`
+                    }),
+                    interactive: false
+                }).addTo(graticuleGroup);
+            }
+        }
+
+        map.on('moveend zoomend', drawGraticule);
+
+        /*************************************************************************
+         * 6. BASEMAP LAYER SWITCHING LOGIC
+         *************************************************************************/
+        const layerTitles = {
+            usgsTopo: 'USGS + Seamless Global Topo',
+            worldTopo: 'Global World Topo (Seamless)',
+            usgsImagery: 'Imagery + Topo Hybrid',
+            openMaps: 'OpenStreetMap (CARTO Voyager)',
+            shadedRelief: '3DEP & Global Shaded Relief',
+            darkCarto: 'CartoDB Dark Matter',
+            customDem: 'Custom DEM (Hillshade + Color)'
+        };
+
+        function switchLayer(layerKey) {
+            if (!basemaps[layerKey]) return;
+
+            map.removeLayer(basemaps[currentActiveLayer]);
+            basemaps[layerKey].addTo(map);
+            currentActiveLayer = layerKey;
+
+            // Update visual card styles
+            document.querySelectorAll('.basemap-card').forEach(card => {
+                const isSelected = card.id === 'btn-' + layerKey;
+                card.classList.toggle('border-sky-600', isSelected);
+                card.classList.toggle('bg-sky-50/60', isSelected);
+                card.classList.toggle('border-slate-200', !isSelected);
+                card.classList.toggle('bg-white', !isSelected);
+
+                const icon = card.querySelector('.check-icon');
+                if (icon) icon.classList.toggle('hidden', !isSelected);
+            });
+
+            document.getElementById('active-layer-badge').innerText = layerTitles[layerKey];
+            document.getElementById('floating-layer-label').innerText = layerTitles[layerKey];
+        }
+
+        /*************************************************************************
+         * 7. CLICK-TO-QUERY TERRAIN ELEVATION (Open-Meteo DEM + USGS 3DEP Fallback)
+         *************************************************************************/
+        async function fetchElevation(lat, lon) {
+            const elevEl = document.getElementById('loc-elevation');
+            elevEl.innerText = 'Querying DEM...';
+
+            try {
+                // Primary: Global High-Speed Open-Meteo Elevation API (CORS-friendly, global 90m/30m DEM)
+                const res = await fetch(`https://api.open-meteo.com/v1/elevation?latitude=${lat.toFixed(5)}&longitude=${lon.toFixed(5)}`);
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data && Array.isArray(data.elevation) && data.elevation.length > 0) {
+                        const meters = data.elevation[0];
+                        const feet = meters * 3.28084;
+                        const formatted = `${Math.round(meters)} m (${Math.round(feet).toLocaleString()} ft)`;
+                        elevEl.innerText = formatted;
+                        return formatted;
+                    }
+                }
+                throw new Error('Fallback to USGS EPQS');
+            } catch (e) {
+                try {
+                    // Fallback: Official USGS 3DEP Elevation Point Query Service
+                    const usgsRes = await fetch(`https://epqs.nationalmap.gov/v1/json?x=${lon.toFixed(5)}&y=${lat.toFixed(5)}&wkid=4326&units=Meters&includeDate=false`);
+                    const usgsData = await usgsRes.json();
+                    if (usgsData && usgsData.value !== undefined && usgsData.value !== '-1000000') {
+                        const meters = parseFloat(usgsData.value);
+                        const feet = meters * 3.28084;
+                        const formatted = `${Math.round(meters)} m (${Math.round(feet).toLocaleString()} ft)`;
+                        elevEl.innerText = formatted;
+                        return formatted;
+                    }
+                } catch (innerErr) {
+                    // Silent graceful handling
+                }
+                elevEl.innerText = 'N/A (Ocean / Offline)';
+                return 'N/A';
+            }
+        }
+
+        /*************************************************************************
+         * 8. MARKER & MAP STATE UPDATES
+         *************************************************************************/
+        async function updateMapState(lat, lon, fullLabel, shortTitle = '', zoomLevel = null) {
+            targetLat = lat;
+            targetLon = lon;
+
+            if (zoomLevel !== null) {
+                map.setView([lat, lon], zoomLevel);
+            } else {
+                map.panTo([lat, lon]);
+            }
+
+            if (currentMarker) {
+                map.removeLayer(currentMarker);
+            }
+
+            const displayTitle = shortTitle || fullLabel.split(',')[0] || 'Selected Coordinates';
+            document.getElementById('loc-name').innerText = displayTitle;
+            document.getElementById('loc-details').innerText = `${lat.toFixed(4)}, ${lon.toFixed(4)}`;
+            document.getElementById('track-lat').innerText = lat.toFixed(4);
+            document.getElementById('track-lon').innerText = lon.toFixed(4);
+
+            currentMarker = L.marker([lat, lon]).addTo(map);
+            currentMarker.bindPopup(`
+                <div class="text-xs">
+                    <div class="font-bold text-slate-900 text-sm mb-0.5">${displayTitle}</div>
+                    <div class="text-slate-500 mb-1.5">${fullLabel}</div>
+                    <div class="font-mono-code text-[11px] bg-slate-100 px-2 py-1 rounded border border-slate-200">
+                        Lat: <b>${lat.toFixed(4)}</b>, Lon: <b>${lon.toFixed(4)}</b>
+                    </div>
+                    <div id="popup-elev-readout" class="mt-1.5 text-[11px] font-semibold text-emerald-700">
+                        <i class="fa-solid fa-mountain mr-1"></i>Fetching elevation...
+                    </div>
+                </div>
+            `).openPopup();
+
+            const elevText = await fetchElevation(lat, lon);
+            const popupElev = document.getElementById('popup-elev-readout');
+            if (popupElev) {
+                popupElev.innerHTML = `<i class="fa-solid fa-mountain mr-1"></i>Elevation: <b>${elevText}</b>`;
+            }
+        }
+
+        // Click anywhere on map (when not drawing AOI box) to inspect point & elevation
+        let isDrawingAoi = false;
+        map.on('click', function(e) {
+            if (isDrawingAoi) return;
+            const lat = e.latlng.lat;
+            const lon = e.latlng.lng;
+            updateMapState(lat, lon, `Point Inspection (${lat.toFixed(4)}, ${lon.toFixed(4)})`, 'Inspected Map Point', null);
+        });
+
+        /*************************************************************************
+         * 9. MULTI-PROVIDER UNBLOCKED GEOCODER
+         * Uses Photon (Komoot OSM) -> Open-Meteo Geocoding -> Offline Dictionary
+         *************************************************************************/
+        const offlineLocations = {
+            "raleigh": { lat: 35.7796, lon: -78.6382, zoom: 12, label: "Raleigh, North Carolina, USA" },
+            "raleigh, nc": { lat: 35.7796, lon: -78.6382, zoom: 12, label: "Raleigh, North Carolina, USA" },
+            "niagara falls": { lat: 43.0828, lon: -79.0742, zoom: 13, label: "Niagara Falls (US / Canada Border)" },
+            "grand canyon": { lat: 36.0553, lon: -112.1218, zoom: 13, label: "Grand Canyon National Park, AZ, USA" },
+            "mount rainier": { lat: 46.8523, lon: -121.7603, zoom: 13, label: "Mount Rainier, Washington, USA" },
+            "banff": { lat: 51.1784, lon: -115.5708, zoom: 12, label: "Banff National Park, Alberta, Canada" },
+            "colorado": { lat: 39.5501, lon: -105.7821, zoom: 10, label: "Colorado Rockies, USA" },
+            "paris": { lat: 48.8566, lon: 2.3522, zoom: 12, label: "Paris, Île-de-France, France" },
+            "tokyo": { lat: 35.6762, lon: 139.6503, zoom: 12, label: "Tokyo, Japan" },
+            "london": { lat: 51.5074, lon: -0.1278, zoom: 12, label: "London, United Kingdom" },
+            "new york": { lat: 40.7128, lon: -74.0060, zoom: 12, label: "New York City, NY, USA" }
+        };
+
+        async function searchLocation() {
+            const input = document.getElementById('location-input');
+            const query = input.value.trim();
+            if (!query) return;
+
+            const searchBtn = document.getElementById('search-btn');
+            searchBtn.innerText = '...';
+
+            // 1. Direct "lat, lon" coordinate check
+            const coordMatch = query.match(/^([-+]?\d+(?:\.\d+)?)\s*[,\s]\s*([-+]?\d+(?:\.\d+)?)$/);
+            if (coordMatch) {
+                const lat = parseFloat(coordMatch[1]);
+                const lon = parseFloat(coordMatch[2]);
+                searchBtn.innerText = 'Search';
+                updateMapState(lat, lon, `Direct Coordinates (${lat}, ${lon})`, `Coords: ${lat.toFixed(3)}, ${lon.toFixed(3)}`, 13);
+                showStatus(`Jumped to coordinates ${lat.toFixed(4)}, ${lon.toFixed(4)}`);
+                return;
+            }
+
+            try {
+                // 2. Primary API: Photon (Komoot) OpenStreetMap Geocoder (No Referer blocks!)
+                const photonRes = await fetch(`https://photon.komoot.io/api/?q=${encodeURIComponent(query)}&limit=1`);
+                if (photonRes.ok) {
+                    const photonData = await photonRes.json();
+                    if (photonData.features && photonData.features.length > 0) {
+                        const feat = photonData.features[0];
+                        const lon = feat.geometry.coordinates[0];
+                        const lat = feat.geometry.coordinates[1];
+                        const props = feat.properties;
+                        const name = props.name || props.city || query;
+                        const details = [props.name, props.state, props.country].filter(Boolean).join(', ');
+                        searchBtn.innerText = 'Search';
+                        updateMapState(lat, lon, details || name, name, 12);
+                        showStatus(`Located: ${details || name}`);
+                        return;
+                    }
+                }
+
+                // 3. Secondary API: Open-Meteo Global Geocoder
+                const meteoRes = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(query)}&count=1&language=en&format=json`);
+                if (meteoRes.ok) {
+                    const meteoData = await meteoRes.json();
+                    if (meteoData.results && meteoData.results.length > 0) {
+                        const item = meteoData.results[0];
+                        const details = [item.name, item.admin1, item.country].filter(Boolean).join(', ');
+                        searchBtn.innerText = 'Search';
+                        updateMapState(item.latitude, item.longitude, details, item.name, 12);
+                        showStatus(`Located: ${details}`);
+                        return;
+                    }
+                }
+
+                throw new Error('Not found on remote geocoders');
+            } catch (err) {
+                // 4. Offline Dictionary Fallback
+                const key = query.toLowerCase();
+                if (offlineLocations[key]) {
+                    const item = offlineLocations[key];
+                    updateMapState(item.lat, item.lon, item.label, item.label.split(',')[0], item.zoom);
+                    showStatus(`Located via built-in preset: ${item.label}`);
+                } else {
+                    showStatus(`Could not find "${query}". Try a city name or "lat, lon" coordinates.`, true);
+                }
+            } finally {
+                searchBtn.innerText = 'Search';
+            }
+        }
+
+        function jumpPreset(lat, lon, zoom, label) {
+            document.getElementById('location-input').value = label.split('(')[0].trim();
+            updateMapState(lat, lon, label, label.split('(')[0].trim(), zoom);
+            showStatus(`Loaded preset: ${label}`);
+        }
+
+        function centerOnTarget() {
+            map.setView([targetLat, targetLon], Math.max(map.getZoom(), 13));
+            if (currentMarker) currentMarker.openPopup();
+        }
+
+        function locateUserGPS() {
+            if (!navigator.geolocation) {
+                showStatus('Geolocation is not supported by your browser.', true);
+                return;
+            }
+            showStatus('Acquiring GPS coordinates...');
+            navigator.geolocation.getCurrentPosition(
+                (pos) => {
+                    const lat = pos.coords.latitude;
+                    const lon = pos.coords.longitude;
+                    updateMapState(lat, lon, 'Current GPS Position', 'My GPS Location', 14);
+                    showStatus('Centered on your GPS location.');
+                },
+                () => {
+                    showStatus('Unable to retrieve GPS location. Check browser permissions.', true);
+                }
+            );
+        }
+
+        /*************************************************************************
+         * 10. USGS DOWNLOADER "AREA OF INTEREST" (AOI) BOUNDING BOX TOOL
+         *************************************************************************/
+        let aoiRectangle = null;
+        let aoiStartLatLng = null;
+        let currentAoiBounds = null;
+
+        function startAoiDraw() {
+            isDrawingAoi = !isDrawingAoi;
+            const drawBtn = document.getElementById('btn-draw-aoi');
+            const mapEl = document.getElementById('map');
+
+            if (isDrawingAoi) {
+                map.dragging.disable();
+                mapEl.classList.add('cursor-crosshair-map');
+                drawBtn.classList.replace('bg-amber-600', 'bg-rose-600');
+                drawBtn.innerHTML = `<i class="fa-solid fa-xmark"></i> Cancel`;
+                showStatus('Click and drag on the map to draw an Area of Interest (AOI) bounding box.');
+            } else {
+                stopAoiDrawMode();
+            }
+        }
+
+        function stopAoiDrawMode() {
+            isDrawingAoi = false;
+            aoiStartLatLng = null;
+            map.dragging.enable();
+            document.getElementById('map').classList.remove('cursor-crosshair-map');
+            const drawBtn = document.getElementById('btn-draw-aoi');
+            drawBtn.classList.replace('bg-rose-600', 'bg-amber-600');
+            drawBtn.innerHTML = `<i class="fa-solid fa-crop-simple"></i> Draw Box`;
+        }
+
+        map.on('mousedown', function(e) {
+            if (!isDrawingAoi) return;
+            aoiStartLatLng = e.latlng;
+            if (aoiRectangle) {
+                map.removeLayer(aoiRectangle);
+            }
+            aoiRectangle = L.rectangle([aoiStartLatLng, aoiStartLatLng], {
+                color: '#d97706',
+                weight: 2,
+                fillColor: '#f59e0b',
+                fillOpacity: 0.2,
+                dashArray: '6, 4'
+            }).addTo(map);
+        });
+
+        map.on('mousemove', function(e) {
+            document.getElementById('track-lat').innerText = e.latlng.lat.toFixed(4);
+            document.getElementById('track-lon').innerText = e.latlng.lng.toFixed(4);
+
+            if (isDrawingAoi && aoiStartLatLng && aoiRectangle) {
+                const bounds = L.latLngBounds(aoiStartLatLng, e.latlng);
+                aoiRectangle.setBounds(bounds);
+                updateAoiReadout(bounds);
+            }
+        });
+
+        map.on('mouseup', function(e) {
+            if (isDrawingAoi && aoiStartLatLng) {
+                const bounds = L.latLngBounds(aoiStartLatLng, e.latlng);
+                updateAoiReadout(bounds);
+                stopAoiDrawMode();
+                showStatus('Area of Interest (AOI) bounding box captured.');
+            }
+        });
+
+        function setAoiFromCurrentView() {
+            const viewBounds = map.getBounds().pad(-0.15);
+            if (aoiRectangle) map.removeLayer(aoiRectangle);
+            aoiRectangle = L.rectangle(viewBounds, {
+                color: '#d97706',
+                weight: 2,
+                fillColor: '#f59e0b',
+                fillOpacity: 0.2,
+                dashArray: '6, 4'
+            }).addTo(map);
+            updateAoiReadout(viewBounds);
+            showStatus('AOI set from current map viewport.');
+        }
+
+        function clearAoiBox() {
+            if (aoiRectangle) {
+                map.removeLayer(aoiRectangle);
+                aoiRectangle = null;
+            }
+            currentAoiBounds = null;
+            document.getElementById('aoi-n').innerText = '--';
+            document.getElementById('aoi-s').innerText = '--';
+            document.getElementById('aoi-e').innerText = '--';
+            document.getElementById('aoi-w').innerText = '--';
+            document.getElementById('aoi-area-badge').innerText = 'No Box';
+        }
+
+        function updateAoiReadout(bounds) {
+            currentAoiBounds = bounds;
+            const n = bounds.getNorth();
+            const s = bounds.getSouth();
+            const e = bounds.getEast();
+            const w = bounds.getWest();
+
+            document.getElementById('aoi-n').innerText = n.toFixed(4) + '°';
+            document.getElementById('aoi-s').innerText = s.toFixed(4) + '°';
+            document.getElementById('aoi-e').innerText = e.toFixed(4) + '°';
+            document.getElementById('aoi-w').innerText = w.toFixed(4) + '°';
+
+            // Approximate spherical rectangle area in sq km
+            const R = 6371;
+            const latRad1 = (s * Math.PI) / 180;
+            const latRad2 = (n * Math.PI) / 180;
+            const dLonRad = (Math.abs(e - w) * Math.PI) / 180;
+            const areaKm2 = Math.abs(R * R * dLonRad * (Math.sin(latRad2) - Math.sin(latRad1)));
+            document.getElementById('aoi-area-badge').innerText = areaKm2 < 1
+                ? `${areaKm2.toFixed(2)} km²`
+                : `${Math.round(areaKm2).toLocaleString()} km²`;
+        }
+
+        function copyAoiGeoJSON() {
+            const b = currentAoiBounds || map.getBounds();
+            const w = Number(b.getWest().toFixed(5));
+            const s = Number(b.getSouth().toFixed(5));
+            const e = Number(b.getEast().toFixed(5));
+            const n = Number(b.getNorth().toFixed(5));
+
+            const geojson = {
+                type: "Feature",
+                properties: {
+                    source: "National Map & Global GIS Explorer",
+                    bbox: [w, s, e, n]
+                },
+                geometry: {
+                    type: "Polygon",
+                    coordinates: [[[w, s], [e, s], [e, n], [w, n], [w, s]]]
+                }
+            };
+
+            const textArea = document.createElement('textarea');
+            textArea.value = JSON.stringify(geojson, null, 2);
+            document.body.appendChild(textArea);
+            textArea.select();
+            document.execCommand('copy');
+            document.body.removeChild(textArea);
+
+            showStatus('Copied AOI GeoJSON & Bounding Box to clipboard!');
+        }
+
+        /*************************************************************************
+         * 11. UI TABS, LEGEND & STATUS HELPERS
+         *************************************************************************/
+        function switchTab(tabName) {
+            ['layers', 'overlays', 'tools'].forEach(t => {
+                const panel = document.getElementById('tab-panel-' + t);
+                const btn = document.getElementById('tab-btn-' + t);
+                const isActive = t === tabName;
+                panel.classList.toggle('hidden', !isActive);
+                btn.classList.toggle('bg-white', isActive);
+                btn.classList.toggle('text-slate-900', isActive);
+                btn.classList.toggle('shadow-sm', isActive);
+            });
+        }
+
+        let statusTimeout = null;
+        function showStatus(text, isError = false) {
+            const box = document.getElementById('status-msg');
+            const span = document.getElementById('status-text');
+            span.innerText = text;
+            box.classList.remove('hidden', 'bg-emerald-50', 'text-emerald-800', 'border-emerald-200', 'bg-rose-50', 'text-rose-800', 'border-rose-200');
+            box.classList.add('border');
+            if (isError) {
+                box.classList.add('bg-rose-50', 'text-rose-800', 'border-rose-200');
+            } else {
+                box.classList.add('bg-emerald-50', 'text-emerald-800', 'border-emerald-200');
+            }
+
+            if (statusTimeout) clearTimeout(statusTimeout);
+            statusTimeout = setTimeout(hideStatus, 6000);
+        }
+
+        function hideStatus() {
+            document.getElementById('status-msg').classList.add('hidden');
+        }
+
+        // Map Legend Control (Bottom-Right)
+        const legend = L.control({ position: 'bottomright' });
+        legend.onAdd = function () {
+            const div = L.DomUtil.create('div', 'bg-white/95 backdrop-blur-sm p-3 rounded-xl shadow-lg border border-slate-200 text-xs text-slate-700 w-48 hidden sm:block');
+            div.innerHTML = `
+                <div class="font-bold text-slate-900 uppercase tracking-wider text-[10px] border-b border-slate-200 pb-1.5 mb-2 flex items-center justify-between">
+                    <span>Topographic Key</span>
+                    <i class="fa-solid fa-compass-drafting text-sky-600"></i>
+                </div>
+                <div class="space-y-1.5 text-[11px]">
+                    <div class="flex items-center gap-2"><span class="w-4 h-2.5 rounded-sm bg-[#8cb369] border border-slate-300 inline-block"></span>Vegetation / Forest</div>
+                    <div class="flex items-center gap-2"><span class="w-4 h-0.5 bg-[#a67c52] inline-block"></span>Elevation Contours</div>
+                    <div class="flex items-center gap-2"><span class="w-4 h-2.5 rounded-sm bg-[#38bdf8] border border-slate-300 inline-block"></span>NHD Hydrography</div>
+                    <div class="flex items-center gap-2"><span class="w-4 h-2.5 rounded-sm bg-[#f59e0b] border border-slate-300 inline-block"></span>Highways / Routes</div>
+                </div>
+            `;
+            return div;
+        };
+        legend.addTo(map);
+
+        map.on('zoomend', function() {
+            document.getElementById('track-zoom').innerText = map.getZoom();
+        });
+
+        document.getElementById('location-input').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') searchLocation();
+        });
+
+        // Initialize default marker & fetch elevation on load
+        window.onload = function() {
+            updateMapState(targetLat, targetLon, 'Raleigh, North Carolina, USA', 'Raleigh, NC', 12);
+        };
+    </script>
+</body>
+</html>
