@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>River Smoother Web Worker Test</title>
+  <link href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" rel="stylesheet" />
+  <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body, html { margin: 0; padding: 0; height: 100%; overflow: hidden; }
+    #map { position: absolute; inset: 0; }
+  </style>
+</head>
+<body class="font-sans text-slate-800">
+  <div id="map"></div>
+
+  <!-- Control Panel -->
+  <div class="absolute top-3 left-3 z-10 w-80 bg-white/95 backdrop-blur rounded-lg shadow-lg border border-slate-200 p-4 text-xs space-y-3">
+    <div class="flex items-center justify-between border-b border-slate-200 pb-2">
+      <h1 class="font-bold text-sm text-slate-900">River Smoother Worker Test</h1>
+      <span id="status-badge" class="px-2 py-0.5 rounded bg-sky-100 text-sky-800 font-semibold">Ready</span>
+    </div>
+
+    <!-- Load Custom GeoJSON -->
+    <div>
+      <label class="block font-semibold text-slate-700 mb-1">Load GeoJSON File (from QGIS):</label>
+      <input id="file-input" type="file" accept=".geojson,.json"
+        class="block w-full text-xs text-slate-600 file:mr-2 file:py-1 file:px-2.5 file:rounded file:border-0 file:text-xs file:font-semibold file:bg-sky-50 file:text-sky-700 hover:file:bg-sky-100" />
+    </div>
+
+    <!-- Parameters -->
+    <div class="grid grid-cols-2 gap-2">
+      <div>
+        <label class="block text-slate-600 mb-0.5">Zigzag Tol (m)</label>
+        <input id="opt-zigzag" type="number" value="40" min="0" step="5"
+          class="w-full border border-slate-300 rounded px-2 py-1" />
+      </div>
+      <div>
+        <label class="block text-slate-600 mb-0.5">Spline Method</label>
+        <select id="opt-spline" class="w-full border border-slate-300 rounded px-2 py-1 bg-white">
+          <option value="chaikin" selected>Chaikin</option>
+          <option value="bspline">B-Spline</option>
+          <option value="none">None (Zigzag only)</option>
+        </select>
+      </div>
+      <div>
+        <label class="block text-slate-600 mb-0.5">Spline Step (m)</label>
+        <input id="opt-step" type="number" value="40" min="1" step="5"
+          class="w-full border border-slate-300 rounded px-2 py-1" />
+      </div>
+      <div>
+        <label class="block text-slate-600 mb-0.5">Angle Gen (deg)</label>
+        <input id="opt-angle" type="number" value="3" min="0" max="45" step="0.5"
+          class="w-full border border-slate-300 rounded px-2 py-1" />
+      </div>
+    </div>
+
+    <div class="flex items-center justify-between pt-1">
+      <label class="flex items-center gap-1.5 cursor-pointer">
+        <input id="toggle-raw" type="checkbox" checked class="rounded" />
+        <span>Show Raw (Red)</span>
+      </label>
+      <label class="flex items-center gap-1.5 cursor-pointer">
+        <input id="opt-lock" type="checkbox" checked class="rounded" />
+        <span>Lock Endpoints</span>
+      </label>
+    </div>
+
+    <button id="btn-run"
+      class="w-full bg-sky-600 hover:bg-sky-700 text-white font-semibold py-1.5 rounded transition">
+      Re-Run Smoother in Worker
+    </button>
+
+    <!-- Stats Output -->
+    <div id="stats-box" class="bg-slate-50 border border-slate-200 rounded p-2 font-mono text-[11px] text-slate-700">
+      Waiting for map load...
+    </div>
+  </div>
+
+  <script>
+    // Built-in synthetic sawtooth river + tributary near Raleigh, NC
+    const sampleGeoJson = {
+      type: 'FeatureCollection',
+      features: [
+        {
+          type: 'Feature',
+          properties: { name: 'Sample Mainstem' },
+          geometry: {
+            type: 'LineString',
+            coordinates: [
+              [-78.6600, 35.7750], [-78.6580, 35.7762], [-78.6565, 35.7754],
+              [-78.6545, 35.7770], [-78.6530, 35.7761], [-78.6510, 35.7782],
+              [-78.6492, 35.7773], [-78.6470, 35.7795], [-78.6450, 35.7788],
+              [-78.6425, 35.7810], [-78.6400, 35.7802], [-78.6375, 35.7825],
+              [-78.6350, 35.7816], [-78.6320, 35.7832], [-78.6290, 35.7825]
+            ]
+          }
+        },
+        {
+          type: 'Feature',
+          properties: { name: 'Sample Tributary' },
+          geometry: {
+            type: 'LineString',
+            coordinates: [
+              [-78.6490, 35.7870], [-78.6480, 35.7855], [-78.6492, 35.7842],
+              [-78.6475, 35.7828], [-78.6484, 35.7815], [-78.6470, 35.7795]
+            ]
+          }
+        }
+      ]
+    };
+
+    let currentRawGeoJson = sampleGeoJson;
+    const worker = new Worker('./river_smoother_worker.js');
+    let jobId = 0;
+
+    const map = new maplibregl.Map({
+      container: 'map',
+      style: {
+        version: 8,
+        sources: {
+          osm: {
+            type: 'raster',
+            tiles: ['https://tile.openstreetmap.org/{z}/{x}/{y}.png'],
+            tileSize: 256,
+            attribution: '&copy; OpenStreetMap contributors'
+          },
+          'src-raw': { type: 'geojson', data: { type: 'FeatureCollection', features: [] } },
+          'src-smooth': { type: 'geojson', data: { type: 'FeatureCollection', features: [] } }
+        },
+        layers: [
+          { id: 'lyr-osm', type: 'raster', source: 'osm', paint: { 'raster-opacity': 0.55 } },
+          {
+            id: 'lyr-raw',
+            type: 'line',
+            source: 'src-raw',
+            paint: { 'line-color': '#ef4444', 'line-width': 2, 'line-dasharray': [3, 2], 'line-opacity': 0.85 }
+          },
+          {
+            id: 'lyr-smooth',
+            type: 'line',
+            source: 'src-smooth',
+            layout: { 'line-join': 'round', 'line-cap': 'round' },
+            paint: { 'line-color': '#0284c7', 'line-width': 3 }
+          }
+        ]
+      },
+      center: [-78.645, 35.781],
+      zoom: 13.5
+    });
+
+    map.addControl(new maplibregl.NavigationControl(), 'top-right');
+
+    function fitToGeoJson(gj) {
+      const bounds = new maplibregl.LngLatBounds();
+      let hasCoords = false;
+      const extendLine = (coords) => coords.forEach((c) => { bounds.extend(c); hasCoords = true; });
+      (gj.features || []).forEach((f) => {
+        if (!f.geometry) return;
+        if (f.geometry.type === 'LineString') extendLine(f.geometry.coordinates);
+        else if (f.geometry.type === 'MultiLineString') f.geometry.coordinates.forEach(extendLine);
+      });
+      if (hasCoords) map.fitBounds(bounds, { padding: 60, maxZoom: 15, duration: 500 });
+    }
+
+    function runWorker() {
+      const badge = document.getElementById('status-badge');
+      badge.innerText = 'Working...';
+      badge.className = 'px-2 py-0.5 rounded bg-amber-100 text-amber-800 font-semibold';
+
+      map.getSource('src-raw').setData(currentRawGeoJson);
+
+      const options = {
+        zigzagTolMeters: parseFloat(document.getElementById('opt-zigzag').value) || 0,
+        splineMethod: document.getElementById('opt-spline').value,
+        splineStepMeters: parseFloat(document.getElementById('opt-step').value) || 30,
+        angleGenDeg: parseFloat(document.getElementById('opt-angle').value) || 0,
+        lockEnds: document.getElementById('opt-lock').checked
+      };
+
+      worker.postMessage({ id: ++jobId, geojson: currentRawGeoJson, options });
+    }
+
+    worker.onmessage = (e) => {
+      const { geojson, stats } = e.data;
+      map.getSource('src-smooth').setData(geojson);
+
+      const badge = document.getElementById('status-badge');
+      badge.innerText = `${stats.elapsedMs} ms`;
+      badge.className = 'px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 font-semibold';
+
+      document.getElementById('stats-box').innerHTML =
+        `Features: <b>${geojson.features.length.toLocaleString()}</b><br/>` +
+        `Vertices: <b>${stats.vertsBefore.toLocaleString()}</b> &rarr; <b>${stats.vertsAfter.toLocaleString()}</b><br/>` +
+        `Worker time: <b>${stats.elapsedMs} ms</b>`;
+    };
+
+    document.getElementById('btn-run').addEventListener('click', runWorker);
+
+    document.getElementById('toggle-raw').addEventListener('change', (e) => {
+      map.setLayoutProperty('lyr-raw', 'visibility', e.target.checked ? 'visible' : 'none');
+    });
+
+    document.getElementById('file-input').addEventListener('change', async (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      try {
+        const text = await file.text();
+        currentRawGeoJson = JSON.parse(text);
+        fitToGeoJson(currentRawGeoJson);
+        runWorker();
+      } catch (err) {
+        alert('Invalid GeoJSON file: ' + err.message);
+      }
+    });
+
+    map.on('load', () => {
+      fitToGeoJson(currentRawGeoJson);
+      runWorker();
+    });
+  </script>
+</body>
+</html>

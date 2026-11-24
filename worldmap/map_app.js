@@ -4,8 +4,7 @@
 let targetLat = 35.7796;
 let targetLon = -78.6382;
 let currentMarker = null;
-let currentActiveLayer = 'usgsTopo';
-let graticuleEnabled = false;
+let currentActiveLayer = 'shadedRelief';
 let isDrawingAoi = false;
 let aoiStartLngLat = null;
 let currentAoiBounds = null;
@@ -15,21 +14,17 @@ const US_BOUNDS = [-179.9, 17.5, -64.5, 71.6];
 
 // Maps each basemap card key to its active MapLibre layer IDs
 const basemapLayerGroups = {
-    usgsTopo:     ['lyr-esri-world-topo', 'lyr-usgs-topo'],
-    worldTopo:    ['lyr-esri-world-topo'],
+    worldTopo:    ['lyr-esri-world-topo', 'lyr-carto-voyager', 'lyr-usgs-topo'],
     usgsImagery:  ['lyr-esri-imagery', 'lyr-usgs-imagery-topo', 'lyr-ref-transport', 'lyr-ref-boundaries'],
-    openMaps:     ['lyr-carto-voyager'],
-    shadedRelief: ['lyr-esri-shaded-relief', 'lyr-usgs-shaded-relief', 'lyr-ref-boundaries'],
+    shadedRelief: ['lyr-esri-shaded-relief'],
     darkCarto:    ['lyr-carto-dark'],
     customDem:    ['lyr-custom-dem']
 };
 
 const layerTitles = {
-    usgsTopo:     'USGS + Seamless Global Topo',
-    worldTopo:    'Global World Topo (Seamless)',
+    worldTopo:    'Global World Topo',
     usgsImagery:  'Imagery + Topo Hybrid',
-    openMaps:     'OpenStreetMap (CARTO Voyager)',
-    shadedRelief: '3DEP & Global Shaded Relief',
+    shadedRelief: 'Shaded Relief',
     darkCarto:    'CartoDB Dark Matter',
     customDem:    'Custom DEM (Hillshade + Color)'
 };
@@ -79,40 +74,27 @@ const mapStyle = {
         },
         'src-carto-voyager': {
             type: 'raster',
-            tiles: [
-                'https://a.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png',
-                'https://b.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png',
-                'https://c.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png'
-            ],
+            tiles: ['https://tile.openstreetmap.org/{z}/{x}/{y}.png'],
             tileSize: 256, maxzoom: 19,
-            attribution: '&copy; OpenStreetMap contributors &copy; CARTO'
+            attribution: '&copy; OpenStreetMap contributors'
         },
         'src-esri-shaded-relief': {
             type: 'raster',
             tiles: ['https://server.arcgisonline.com/ArcGIS/rest/services/World_Shaded_Relief/MapServer/tile/{z}/{y}/{x}'],
             tileSize: 256, maxzoom: 13
         },
-        'src-usgs-shaded-relief': {
-            type: 'raster',
-            tiles: ['https://basemap.nationalmap.gov/arcgis/rest/services/USGSShadedReliefOnly/MapServer/tile/{z}/{y}/{x}'],
-            tileSize: 256, maxzoom: 16, bounds: US_BOUNDS
-        },
         'src-carto-dark': {
             type: 'raster',
-            tiles: [
-                'https://a.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png',
-                'https://b.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png'
-            ],
-            tileSize: 256, maxzoom: 19
+            tiles: ['https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}'],
+            tileSize: 256, maxzoom: 16,
+            attribution: 'Tiles &copy; Esri &mdash; Esri, DeLorme, NAVTEQ'
         },
         'src-custom-dem': {
             type: 'raster',
-            tiles: ['./dem_combined/{z}/{x}/{y}.webp'],
-            // tiles: [new URL('./dem_combined/', window.location.href).href + '{z}/{x}/{y}.webp'],
+            tiles: [new URL('./dem_combined/', window.location.href).href + '{z}/{x}/{y}.webp'],
             tileSize: 256, minzoom: 0, maxzoom: 8,
             attribution: 'Custom Pre-baked DEM (Hillshade + Colormap)'
         },
-
         'src-ref-transport': {
             type: 'raster',
             tiles: ['https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Transportation/MapServer/tile/{z}/{y}/{x}'],
@@ -143,18 +125,17 @@ const mapStyle = {
         }
     },
     layers: [
-        // Basemap layers (default: usgsTopo visible)
-        { id: 'lyr-esri-world-topo',    type: 'raster', source: 'src-esri-world-topo',    layout: { visibility: 'visible' } },
-        { id: 'lyr-usgs-topo',          type: 'raster', source: 'src-usgs-topo',          layout: { visibility: 'visible' } },
+        // Basemap layers (default: Shaded Relief + Color Elevation + Labels visible)
+        { id: 'lyr-esri-world-topo',    type: 'raster', source: 'src-esri-world-topo',    layout: { visibility: 'none' } },
+        { id: 'lyr-carto-voyager',      type: 'raster', source: 'src-carto-voyager',      layout: { visibility: 'none' } },
+        { id: 'lyr-usgs-topo',          type: 'raster', source: 'src-usgs-topo',          layout: { visibility: 'none' } },
         { id: 'lyr-esri-imagery',       type: 'raster', source: 'src-esri-imagery',       layout: { visibility: 'none' } },
         { id: 'lyr-usgs-imagery-topo',  type: 'raster', source: 'src-usgs-imagery-topo',  layout: { visibility: 'none' } },
-        { id: 'lyr-carto-voyager',      type: 'raster', source: 'src-carto-voyager',      layout: { visibility: 'none' } },
-        { id: 'lyr-esri-shaded-relief', type: 'raster', source: 'src-esri-shaded-relief', layout: { visibility: 'none' } },
-        { id: 'lyr-usgs-shaded-relief', type: 'raster', source: 'src-usgs-shaded-relief', layout: { visibility: 'none' } },
+        { id: 'lyr-esri-shaded-relief', type: 'raster', source: 'src-esri-shaded-relief', layout: { visibility: 'visible' }, paint: { 'raster-opacity': ['step', ['zoom'], 0, 4, 1] } },
         { id: 'lyr-carto-dark',         type: 'raster', source: 'src-carto-dark',         layout: { visibility: 'none' } },
-        { id: 'lyr-custom-dem',         type: 'raster', source: 'src-custom-dem',         layout: { visibility: 'none' } },
+        { id: 'lyr-custom-dem',         type: 'raster', source: 'src-custom-dem',         layout: { visibility: 'visible' }, paint: { 'raster-opacity': ['step', ['zoom'], 0.55, 8.01, 0] } },
         { id: 'lyr-ref-transport',      type: 'raster', source: 'src-ref-transport',      layout: { visibility: 'none' }, paint: { 'raster-opacity': 0.85 } },
-        { id: 'lyr-ref-boundaries',     type: 'raster', source: 'src-ref-boundaries',     layout: { visibility: 'none' } },
+        { id: 'lyr-ref-boundaries',     type: 'raster', source: 'src-ref-boundaries',     layout: { visibility: 'visible' } },
 
         // Optional Overlays
         { id: 'lyr-ovl-hydro',      type: 'raster', source: 'src-ovl-hydro',      layout: { visibility: 'none' }, paint: { 'raster-opacity': 0.9 } },
@@ -162,7 +143,7 @@ const mapStyle = {
         { id: 'lyr-ovl-transport',  type: 'raster', source: 'src-ref-transport',  layout: { visibility: 'none' } },
         { id: 'lyr-ovl-boundaries', type: 'raster', source: 'src-ref-boundaries', layout: { visibility: 'none' } },
 
-        // Graticule Grid
+        // Automatic Graticule Grid (non-worldTopo, Zoom < 5)
         {
             id: 'lyr-graticule',
             type: 'line',
@@ -220,18 +201,93 @@ function switchLayer(layerKey) {
 
     currentActiveLayer = layerKey;
 
+    if (layerKey === 'worldTopo') {
+        updateWorldTopoSubLayers();
+    } else if (layerKey === 'shadedRelief') {
+        updateShadedReliefSubLayers();
+    } else if (layerKey === 'customDem' && map.getLayer('lyr-custom-dem')) {
+        map.setPaintProperty('lyr-custom-dem', 'raster-opacity', 1.0);
+    }
+
     document.querySelectorAll('.basemap-card').forEach(card => {
         const isSelected = card.id === 'btn-' + layerKey;
+        card.classList.toggle('active-basemap', isSelected);
         card.classList.toggle('border-sky-600', isSelected);
-        card.classList.toggle('bg-sky-50/60', isSelected);
+        card.classList.toggle('bg-sky-50/95', isSelected);
         card.classList.toggle('border-slate-200', !isSelected);
-        card.classList.toggle('bg-white', !isSelected);
+        card.classList.toggle('bg-white/95', !isSelected);
         const icon = card.querySelector('.check-icon');
         if (icon) icon.classList.toggle('hidden', !isSelected);
     });
 
-    document.getElementById('active-layer-badge').innerText = layerTitles[layerKey];
+    const badge = document.getElementById('active-layer-badge');
+    if (badge) badge.innerText = layerTitles[layerKey];
     document.getElementById('floating-layer-label').innerText = layerTitles[layerKey];
+
+    drawGraticule();
+}
+
+function onQuadCheckboxChange(which) {
+    const usBox = document.getElementById('toggle-world-usgs');
+    const naBox = document.getElementById('toggle-world-quad');
+
+    if (which === 'us' && usBox?.checked && naBox) {
+        naBox.checked = false;
+    } else if (which === 'na' && naBox?.checked && usBox) {
+        usBox.checked = false;
+    }
+
+    updateWorldTopoSubLayers();
+}
+
+function updateWorldTopoSubLayers() {
+    if (currentActiveLayer !== 'worldTopo') return;
+
+    const useOsm    = document.getElementById('toggle-world-osm')?.checked;
+    const useUsQuad = document.getElementById('toggle-world-usgs')?.checked;
+
+    if (map.getLayer('lyr-esri-world-topo')) {
+        map.setLayoutProperty('lyr-esri-world-topo', 'visibility', useOsm ? 'none' : 'visible');
+    }
+    if (map.getLayer('lyr-carto-voyager')) {
+        map.setLayoutProperty('lyr-carto-voyager', 'visibility', useOsm ? 'visible' : 'none');
+    }
+    if (map.getLayer('lyr-usgs-topo')) {
+        map.setPaintProperty('lyr-usgs-topo', 'raster-opacity', 1.0);
+        map.setLayoutProperty('lyr-usgs-topo', 'visibility', useUsQuad ? 'visible' : 'none');
+    }
+}
+
+function updateShadedReliefSubLayers() {
+    if (currentActiveLayer !== 'shadedRelief') return;
+
+    const showLabels = document.getElementById('toggle-shaded-labels')?.checked;
+    if (map.getLayer('lyr-ref-boundaries')) {
+        map.setLayoutProperty('lyr-ref-boundaries', 'visibility', showLabels ? 'visible' : 'none');
+    }
+
+    const showDem = document.getElementById('toggle-shaded-dem')?.checked;
+    if (map.getLayer('lyr-esri-shaded-relief')) {
+        // When Custom DEM Color is ON, only show 3DEP Shaded Relief at Zoom >= 3
+        map.setPaintProperty(
+            'lyr-esri-shaded-relief',
+            'raster-opacity',
+            showDem ? ['step', ['zoom'], 0, 3, 1] : 1
+        );
+    }
+    if (map.getLayer('lyr-custom-dem')) {
+        // 55% opacity up to Zoom 8, automatically hidden beyond Zoom 8
+        map.setPaintProperty('lyr-custom-dem', 'raster-opacity', ['step', ['zoom'], 0.55, 8.01, 0]);
+        map.setLayoutProperty('lyr-custom-dem', 'visibility', showDem ? 'visible' : 'none');
+    }
+}
+
+function toggleShadedReliefLabels() {
+    updateShadedReliefSubLayers();
+}
+
+function toggleShadedReliefDem() {
+    updateShadedReliefSubLayers();
 }
 
 function toggleOverlay(key, enabled) {
@@ -251,39 +307,20 @@ function updateHillshadeOpacity(val) {
     }
 }
 
-function setUsgsQuadOpacity(val) {
-    document.getElementById('usgs-blend-val').innerText = val + '%';
-    if (map.getLayer('lyr-usgs-topo')) {
-        map.setPaintProperty('lyr-usgs-topo', 'raster-opacity', parseInt(val, 10) / 100);
-    }
-}
-
 /*************************************************************************
- * 5. DYNAMIC LAT/LON GRATICULE GRID
+ * 5. AUTOMATIC LAT/LON GRATICULE GRID (NON-WORLD-TOPO, ZOOM < 5)
  *************************************************************************/
-function toggleGraticule(enabled) {
-    graticuleEnabled = enabled;
-    if (enabled) {
-        drawGraticule();
-    } else {
-        const src = map.getSource('src-graticule');
-        if (src) src.setData({ type: 'FeatureCollection', features: [] });
-    }
-}
-
 function drawGraticule() {
-    if (!graticuleEnabled) return;
     const src = map.getSource('src-graticule');
     if (!src) return;
 
     const zoom = map.getZoom();
-    let step = 15;
-    if (zoom >= 13) step = 0.1;
-    else if (zoom >= 10) step = 0.5;
-    else if (zoom >= 7) step = 2;
-    else if (zoom >= 5) step = 5;
-    else if (zoom >= 3) step = 10;
+    if (currentActiveLayer === 'worldTopo' || zoom >= 5) {
+        src.setData({ type: 'FeatureCollection', features: [] });
+        return;
+    }
 
+    const step = zoom >= 3 ? 10 : 15;
     const features = [];
     for (let lat = -80; lat <= 80; lat += step) {
         const coords = [];
@@ -309,7 +346,7 @@ map.on('zoomend', () => {
  *************************************************************************/
 async function fetchElevation(lat, lon) {
     const elevEl = document.getElementById('loc-elevation');
-    elevEl.innerText = 'Querying DEM...';
+    if (elevEl) elevEl.innerText = 'Querying DEM...';
 
     try {
         const res = await fetch(`https://api.open-meteo.com/v1/elevation?latitude=${lat.toFixed(5)}&longitude=${lon.toFixed(5)}`);
@@ -319,7 +356,7 @@ async function fetchElevation(lat, lon) {
                 const meters = data.elevation[0];
                 const feet = meters * 3.28084;
                 const formatted = `${Math.round(meters)} m (${Math.round(feet).toLocaleString()} ft)`;
-                elevEl.innerText = formatted;
+                if (elevEl) elevEl.innerText = formatted;
                 return formatted;
             }
         }
@@ -332,11 +369,11 @@ async function fetchElevation(lat, lon) {
                 const meters = parseFloat(usgsData.value);
                 const feet = meters * 3.28084;
                 const formatted = `${Math.round(meters)} m (${Math.round(feet).toLocaleString()} ft)`;
-                elevEl.innerText = formatted;
+                if (elevEl) elevEl.innerText = formatted;
                 return formatted;
             }
         } catch {}
-        elevEl.innerText = 'N/A (Ocean / Offline)';
+        if (elevEl) elevEl.innerText = 'N/A (Ocean / Offline)';
         return 'N/A';
     }
 }
@@ -354,8 +391,11 @@ async function updateMapState(lat, lon, fullLabel, shortTitle = '', zoomLevel = 
     if (currentMarker) currentMarker.remove();
 
     const displayTitle = shortTitle || fullLabel.split(',')[0] || 'Selected Coordinates';
-    document.getElementById('loc-name').innerText = displayTitle;
-    document.getElementById('loc-details').innerText = `${lat.toFixed(4)}, ${lon.toFixed(4)}`;
+    const locNameEl = document.getElementById('loc-name');
+    const locDetailsEl = document.getElementById('loc-details');
+    if (locNameEl) locNameEl.innerText = displayTitle;
+    if (locDetailsEl) locDetailsEl.innerText = `${lat.toFixed(4)}, ${lon.toFixed(4)}`;
+
     document.getElementById('track-lat').innerText = lat.toFixed(4);
     document.getElementById('track-lon').innerText = lon.toFixed(4);
 
@@ -389,6 +429,14 @@ map.on('click', (e) => {
     if (isDrawingAoi) return;
     const { lat, lng } = e.lngLat;
     updateMapState(lat, lng, `Point Inspection (${lat.toFixed(4)}, ${lng.toFixed(4)})`, 'Inspected Map Point', null);
+});
+
+// Close inspection popup whenever the user pans or zooms
+map.on('movestart', (e) => {
+    if (e.originalEvent && currentMarker) {
+        const popup = currentMarker.getPopup();
+        if (popup && popup.isOpen()) popup.remove();
+    }
 });
 
 /*************************************************************************
@@ -614,17 +662,18 @@ function copyAoiGeoJSON() {
  * 9. UI TABS & STATUS HELPERS
  *************************************************************************/
 function switchTab(tabName) {
-    ['layers', 'overlays', 'tools'].forEach(t => {
+    ['overlays', 'tools'].forEach(t => {
         const panel = document.getElementById('tab-panel-' + t);
         const btn = document.getElementById('tab-btn-' + t);
         const isActive = t === tabName;
-        panel.classList.toggle('hidden', !isActive);
-        btn.classList.toggle('bg-white', isActive);
-        btn.classList.toggle('text-slate-900', isActive);
-        btn.classList.toggle('shadow-sm', isActive);
+        if (panel) panel.classList.toggle('hidden', !isActive);
+        if (btn) {
+            btn.classList.toggle('bg-white', isActive);
+            btn.classList.toggle('text-slate-900', isActive);
+            btn.classList.toggle('shadow-sm', isActive);
+        }
     });
 }
-
 let statusTimeout = null;
 function showStatus(text, isError = false) {
     const box = document.getElementById('status-msg');
@@ -649,5 +698,7 @@ document.getElementById('location-input').addEventListener('keypress', (e) => {
 });
 
 map.on('load', () => {
-    fetchElevation(targetLat, targetLon);
+    switchLayer('shadedRelief');
+    // updateWorldTopoSubLayers();
+    // drawGraticule();
 });

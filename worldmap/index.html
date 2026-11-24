@@ -43,6 +43,35 @@
         ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
 
         /* Basemap Thumbnail Patterns */
+        .basemap-thumb {
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+        }
+        .thumb-shaded-relief {
+            background-color: #d6d3d1;
+            background-image: url('./thumbs/shaded_relief.webp');
+        }
+        .thumb-world-topo {
+            background-color: #dceaf2;
+            background-image: url('./thumbs/world_topo.webp');
+        }
+        .thumb-imagery-topo {
+            background-color: #132a13;
+            background-image: url('./thumbs/imagery_topo.webp');
+        }
+        .thumb-dark-carto {
+            background-color: #0f172a;
+            background-image: url('./thumbs/dark_carto.webp');
+        }
+        #btn-shadedRelief:has(#toggle-shaded-dem:checked) .thumb-shaded-relief {
+            background-image: url('./thumbs/shaded_relief_color.webp');
+        }
+        #btn-worldTopo:has(#toggle-world-osm:checked) .thumb-world-topo {
+            background-image: url('./thumbs/open_street_map.webp');
+        }
+
+
         .thumb-usgs-topo {
             background-color: #e8f0e4;
             background-image:
@@ -50,18 +79,8 @@
                 radial-gradient(circle at 30% 40%, transparent 32%, rgba(166, 124, 82, 0.3) 33%, rgba(166, 124, 82, 0.3) 35%, transparent 36%),
                 linear-gradient(135deg, #c7e5bd 0%, #e9f2e4 55%, #f2efe9 100%);
         }
-        .thumb-world-topo {
-            background-color: #dceaf2;
-            background-image:
-                radial-gradient(circle at 60% 35%, transparent 20%, rgba(120, 150, 130, 0.35) 21%, transparent 23%),
-                linear-gradient(125deg, #d4e6cd 0%, #eff5eb 50%, #cbe3f5 100%);
-        }
-        .thumb-imagery-topo {
-            background-color: #132a13;
-            background-image:
-                linear-gradient(25deg, transparent 46%, rgba(250, 204, 21, 0.7) 48%, rgba(250, 204, 21, 0.7) 51%, transparent 53%),
-                linear-gradient(135deg, #0b251c 0%, #1e3f20 45%, #385723 75%, #1c3144 100%);
-        }
+        
+        
         .thumb-osm-voyager {
             background-color: #f8f5ef;
             background-image:
@@ -69,16 +88,8 @@
                 linear-gradient(15deg, transparent 30%, #cbd5e1 30%, #cbd5e1 35%, transparent 35%),
                 linear-gradient(135deg, #d8f3dc 0%, #f8f5ef 40%, #bae6fd 100%);
         }
-        .thumb-shaded-relief {
-            background-color: #d6d3d1;
-            background-image: radial-gradient(ellipse at 35% 35%, #f5f5f4 0%, #a8a29e 45%, #57534e 85%, #d6d3d1 100%);
-        }
-        .thumb-dark-carto {
-            background-color: #0f172a;
-            background-image:
-                linear-gradient(35deg, transparent 42%, #334155 43%, #334155 46%, transparent 47%),
-                radial-gradient(circle at 50% 50%, #1e293b 0%, #090d16 100%);
-        }
+        
+        
         .thumb-custom-dem {
             background-color: #1e293b;
             background-image:
@@ -97,6 +108,40 @@
             box-shadow: 0 10px 25px rgba(15, 23, 42, 0.3) !important;
             padding: 12px 14px !important;
         }
+
+
+/* Bottom-left hover-expand basemap dock */
+#basemap-dock {
+    display: flex;
+    align-items: flex-end;
+    gap: 8px;
+}
+
+/* Collapsed state: hide inactive cards and all text/checkboxes */
+#basemap-dock:not(:hover) .basemap-card:not(.active-basemap) {
+    display: none;
+}
+#basemap-dock:not(:hover) .basemap-card.active-basemap {
+    width: 76px;
+    padding: 4px;
+}
+#basemap-dock:not(:hover) .basemap-card.active-basemap .basemap-thumb {
+    height: 56px;
+    margin-bottom: 0;
+}
+#basemap-dock:not(:hover) .basemap-card .basemap-details,
+#basemap-dock:not(:hover) .basemap-card .basemap-thumb span {
+    display: none;
+}
+
+/* Expanded state on hover: show all 4 cards with text & checkboxes */
+#basemap-dock:hover .basemap-card {
+    display: block;
+    width: 175px;
+    padding: 8px;
+}
+
+
     </style>
 </head>
 <body class="flex flex-col h-screen w-screen overflow-hidden select-none">
@@ -164,17 +209,14 @@
         <aside id="sidebar" class="w-full md:w-[360px] lg:w-[380px] bg-white border-r border-slate-200 flex flex-col h-[42vh] md:h-full z-[1000] shadow-xl shrink-0 order-2 md:order-1 overflow-hidden">
 
             <!-- Sidebar Tabs -->
-            <div class="grid grid-cols-3 bg-slate-100 p-1 border-b border-slate-200 text-xs font-semibold text-slate-600 shrink-0">
-                <button onclick="switchTab('layers')" id="tab-btn-layers" class="py-2 px-2 rounded-md bg-white text-slate-900 shadow-sm flex items-center justify-center gap-1.5 transition-all">
-                    <i class="fa-solid fa-map text-sky-600"></i> Basemaps
-                </button>
-                <button onclick="switchTab('overlays')" id="tab-btn-overlays" class="py-2 px-2 rounded-md hover:text-slate-900 flex items-center justify-center gap-1.5 transition-all">
-                    <i class="fa-solid fa-sliders text-emerald-600"></i> Overlays & Grid
-                </button>
-                <button onclick="switchTab('tools')" id="tab-btn-tools" class="py-2 px-2 rounded-md hover:text-slate-900 flex items-center justify-center gap-1.5 transition-all">
-                    <i class="fa-solid fa-vector-square text-amber-600"></i> AOI & Elev
-                </button>
-            </div>
+<div class="grid grid-cols-2 bg-slate-100 p-1 border-b border-slate-200 text-xs font-semibold text-slate-600 shrink-0">
+    <button onclick="switchTab('overlays')" id="tab-btn-overlays" class="py-2 px-2 rounded-md bg-white text-slate-900 shadow-sm flex items-center justify-center gap-1.5 transition-all">
+        <i class="fa-solid fa-sliders text-emerald-600"></i> Overlays &amp; Grid
+    </button>
+    <button onclick="switchTab('tools')" id="tab-btn-tools" class="py-2 px-2 rounded-md hover:text-slate-900 flex items-center justify-center gap-1.5 transition-all">
+        <i class="fa-solid fa-vector-square text-amber-600"></i> AOI &amp; Elev
+    </button>
+</div>
 
             <!-- Notification Banner -->
             <div id="status-msg" class="hidden mx-3 mt-2.5 px-3 py-2 rounded-lg text-xs font-medium flex items-center justify-between gap-2 shrink-0">
@@ -185,140 +227,21 @@
             <!-- Scrollable Content -->
             <div class="flex-1 overflow-y-auto p-3.5 space-y-4">
 
-                <!-- Quick Jump Presets -->
-                <div>
-                    <div class="flex items-center justify-between mb-1.5">
-                        <span class="text-[11px] font-bold uppercase tracking-wider text-slate-400">Quick Jump & Border Presets</span>
-                        <button onclick="resetGlobeView()" class="text-[10px] text-sky-600 hover:underline font-semibold">🌍 Globe View</button>
-                    </div>
-                    <div class="flex flex-wrap gap-1.5">
-                        <button onclick="jumpPreset(43.0828, -79.0742, 13, 'Niagara Falls (US / Canada Border)')" class="text-[11px] px-2 py-1 rounded bg-slate-100 hover:bg-sky-50 hover:text-sky-700 text-slate-700 border border-slate-200 transition-colors">🇨🇦🇺🇸 Niagara Border</button>
-                        <button onclick="jumpPreset(48.9960, -113.9042, 11, 'Waterton-Glacier (US / Canada Border)')" class="text-[11px] px-2 py-1 rounded bg-slate-100 hover:bg-sky-50 hover:text-sky-700 text-slate-700 border border-slate-200 transition-colors">🏔️ Glacier/Waterton</button>
-                        <button onclick="jumpPreset(31.7587, -106.4869, 12, 'El Paso / Ciudad Juárez (US / Mexico)')" class="text-[11px] px-2 py-1 rounded bg-slate-100 hover:bg-sky-50 hover:text-sky-700 text-slate-700 border border-slate-200 transition-colors">🇲🇽🇺🇸 El Paso Border</button>
-                        <button onclick="jumpPreset(36.0553, -112.1218, 13, 'Grand Canyon National Park, AZ')" class="text-[11px] px-2 py-1 rounded bg-slate-100 hover:bg-sky-50 hover:text-sky-700 text-slate-700 border border-slate-200 transition-colors">🏜️ Grand Canyon</button>
-                        <button onclick="jumpPreset(46.8523, -121.7603, 13, 'Mount Rainier, WA')" class="text-[11px] px-2 py-1 rounded bg-slate-100 hover:bg-sky-50 hover:text-sky-700 text-slate-700 border border-slate-200 transition-colors">🌋 Mt. Rainier</button>
-                        <button onclick="jumpPreset(35.7796, -78.6382, 12, 'Raleigh, North Carolina')" class="text-[11px] px-2 py-1 rounded bg-slate-100 hover:bg-sky-50 hover:text-sky-700 text-slate-700 border border-slate-200 transition-colors">📍 Raleigh, NC</button>
-                    </div>
-                </div>
-
-                <!-- TAB 1: BASEMAPS -->
-                <div id="tab-panel-layers" class="space-y-4">
-                    <div>
-                        <div class="flex items-center justify-between mb-2">
-                            <h3 class="text-xs font-bold uppercase tracking-wider text-slate-500">Select Basemap Layer</h3>
-                            <span id="active-layer-badge" class="text-[10px] font-semibold bg-sky-100 text-sky-800 px-2 py-0.5 rounded">USGS + Global Topo</span>
-                        </div>
-
-                        <div class="grid grid-cols-2 gap-2.5">
-                            <div onclick="switchLayer('usgsTopo')" id="btn-usgsTopo" class="basemap-card group cursor-pointer rounded-xl border-2 border-sky-600 bg-sky-50/60 p-2 transition-all hover:shadow-md">
-                                <div class="thumb-usgs-topo h-16 w-full rounded-lg mb-2 relative overflow-hidden border border-slate-200/80 flex items-end p-1.5">
-                                    <span class="text-[9px] font-bold bg-slate-900/75 text-white px-1.5 py-0.5 rounded backdrop-blur-sm">US Quads + Global</span>
-                                </div>
-                                <div class="flex items-center justify-between">
-                                    <span class="text-xs font-bold text-slate-800">USGS Topographic</span>
-                                    <i class="fa-solid fa-circle-check text-sky-600 text-xs check-icon"></i>
-                                </div>
-                                <p class="text-[10px] text-slate-500 mt-0.5 leading-tight">Official 7.5' US Topo + seamless global borders</p>
-                            </div>
-
-                            <div onclick="switchLayer('worldTopo')" id="btn-worldTopo" class="basemap-card group cursor-pointer rounded-xl border-2 border-slate-200 bg-white p-2 transition-all hover:border-slate-300 hover:shadow-md">
-                                <div class="thumb-world-topo h-16 w-full rounded-lg mb-2 relative overflow-hidden border border-slate-200/80 flex items-end p-1.5">
-                                    <span class="text-[9px] font-bold bg-emerald-900/75 text-white px-1.5 py-0.5 rounded backdrop-blur-sm">100% Uniform Borders</span>
-                                </div>
-                                <div class="flex items-center justify-between">
-                                    <span class="text-xs font-bold text-slate-800">Global World Topo</span>
-                                    <i class="fa-solid fa-circle-check text-sky-600 text-xs hidden check-icon"></i>
-                                </div>
-                                <p class="text-[10px] text-slate-500 mt-0.5 leading-tight">Consistent cartography across all international borders</p>
-                            </div>
-
-                            <div onclick="switchLayer('usgsImagery')" id="btn-usgsImagery" class="basemap-card group cursor-pointer rounded-xl border-2 border-slate-200 bg-white p-2 transition-all hover:border-slate-300 hover:shadow-md">
-                                <div class="thumb-imagery-topo h-16 w-full rounded-lg mb-2 relative overflow-hidden border border-slate-200/80 flex items-end p-1.5">
-                                    <span class="text-[9px] font-bold bg-amber-500/90 text-slate-950 px-1.5 py-0.5 rounded">Hybrid Z0-20</span>
-                                </div>
-                                <div class="flex items-center justify-between">
-                                    <span class="text-xs font-bold text-slate-800">Imagery + Topo</span>
-                                    <i class="fa-solid fa-circle-check text-sky-600 text-xs hidden check-icon"></i>
-                                </div>
-                                <p class="text-[10px] text-slate-500 mt-0.5 leading-tight">High-res satellite + USGS contours, roads & labels</p>
-                            </div>
-
-                            <div onclick="switchLayer('openMaps')" id="btn-openMaps" class="basemap-card group cursor-pointer rounded-xl border-2 border-slate-200 bg-white p-2 transition-all hover:border-slate-300 hover:shadow-md">
-                                <div class="thumb-osm-voyager h-16 w-full rounded-lg mb-2 relative overflow-hidden border border-slate-200/80 flex items-end p-1.5">
-                                    <span class="text-[9px] font-bold bg-sky-700/85 text-white px-1.5 py-0.5 rounded">Unblocked OSM</span>
-                                </div>
-                                <div class="flex items-center justify-between">
-                                    <span class="text-xs font-bold text-slate-800">OpenStreetMap</span>
-                                    <i class="fa-solid fa-circle-check text-sky-600 text-xs hidden check-icon"></i>
-                                </div>
-                                <p class="text-[10px] text-slate-500 mt-0.5 leading-tight">Full OSM streets & POIs with zero Referer blocks</p>
-                            </div>
-
-                            <div onclick="switchLayer('shadedRelief')" id="btn-shadedRelief" class="basemap-card group cursor-pointer rounded-xl border-2 border-slate-200 bg-white p-2 transition-all hover:border-slate-300 hover:shadow-md">
-                                <div class="thumb-shaded-relief h-16 w-full rounded-lg mb-2 relative overflow-hidden border border-slate-200/80 flex items-end p-1.5">
-                                    <span class="text-[9px] font-bold bg-slate-800/80 text-white px-1.5 py-0.5 rounded">3DEP DEM Terrain</span>
-                                </div>
-                                <div class="flex items-center justify-between">
-                                    <span class="text-xs font-bold text-slate-800">3DEP Shaded Relief</span>
-                                    <i class="fa-solid fa-circle-check text-sky-600 text-xs hidden check-icon"></i>
-                                </div>
-                                <p class="text-[10px] text-slate-500 mt-0.5 leading-tight">LiDAR/DEM terrain elevation hillshade</p>
-                            </div>
-
-                            <div onclick="switchLayer('darkCarto')" id="btn-darkCarto" class="basemap-card group cursor-pointer rounded-xl border-2 border-slate-200 bg-white p-2 transition-all hover:border-slate-300 hover:shadow-md">
-                                <div class="thumb-dark-carto h-16 w-full rounded-lg mb-2 relative overflow-hidden border border-slate-200/80 flex items-end p-1.5">
-                                    <span class="text-[9px] font-bold bg-slate-700 text-slate-200 px-1.5 py-0.5 rounded">Dark GIS</span>
-                                </div>
-                                <div class="flex items-center justify-between">
-                                    <span class="text-xs font-bold text-slate-800">CartoDB Dark</span>
-                                    <i class="fa-solid fa-circle-check text-sky-600 text-xs hidden check-icon"></i>
-                                </div>
-                                <p class="text-[10px] text-slate-500 mt-0.5 leading-tight">High-contrast dark vector style for overlays</p>
-                            </div>
-
-                            <div onclick="switchLayer('customDem')" id="btn-customDem" class="basemap-card group cursor-pointer rounded-xl border-2 border-slate-200 bg-white p-2 transition-all hover:border-slate-300 hover:shadow-md">
-                                <div class="thumb-custom-dem h-16 w-full rounded-lg mb-2 relative overflow-hidden border border-slate-200/80 flex items-end p-1.5">
-                                    <span class="text-[9px] font-bold bg-purple-900/85 text-white px-1.5 py-0.5 rounded">Local WebP Z0-8</span>
-                                </div>
-                                <div class="flex items-center justify-between">
-                                    <span class="text-xs font-bold text-slate-800">Custom DEM</span>
-                                    <i class="fa-solid fa-circle-check text-sky-600 text-xs hidden check-icon"></i>
-                                </div>
-                                <p class="text-[10px] text-slate-500 mt-0.5 leading-tight">Pre-baked hillshade &amp; elevation colormap</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Cross-Border USGS Quad Opacity Control -->
-                    <div class="bg-slate-50 border border-slate-200 rounded-xl p-3">
-                        <div class="flex items-center justify-between mb-1">
-                            <label for="usgs-border-slider" class="text-xs font-bold text-slate-700 flex items-center gap-1.5">
-                                <i class="fa-solid fa-border-all text-sky-600"></i>
-                                USGS US-Quad Blend at Borders
-                            </label>
-                            <span id="usgs-blend-val" class="text-[11px] font-mono-code font-semibold text-sky-700">100%</span>
-                        </div>
-                        <p class="text-[11px] text-slate-500 mb-2">
-                            Lower this slider near the Canada/Mexico border for seamless cross-border maps.
-                        </p>
-                        <input type="range" id="usgs-border-slider" min="0" max="100" value="100" oninput="setUsgsQuadOpacity(this.value)" class="w-full accent-sky-600 cursor-pointer h-1.5 bg-slate-200 rounded-lg" />
-                    </div>
-                </div>
-
+                
                 <!-- TAB 2: OVERLAYS & GRATICULE GRID -->
-                <div id="tab-panel-overlays" class="hidden space-y-3">
+                <div id="tab-panel-overlays" class="space-y-3">
                     <h3 class="text-xs font-bold uppercase tracking-wider text-slate-500">USGS & GIS Map Overlays</h3>
 
                     <div class="p-3 rounded-xl border border-slate-200 bg-slate-50/70 flex items-start justify-between gap-3">
-                        <div>
-                            <div class="flex items-center gap-2">
-                                <i class="fa-solid fa-water text-sky-500 text-xs"></i>
-                                <span class="text-xs font-bold text-slate-800">USGS Hydrography (NHD)</span>
-                            </div>
-                            <p class="text-[11px] text-slate-500 mt-0.5">National Hydrography Dataset rivers, streams, lakes & watersheds</p>
-                        </div>
-                        <input type="checkbox" id="toggle-hydro" onchange="toggleOverlay('hydro', this.checked)" class="mt-1 w-4 h-4 accent-sky-600 rounded cursor-pointer" />
-                    </div>
+    <div>
+        <div class="flex items-center gap-2">
+            <i class="fa-solid fa-water text-sky-500 text-xs"></i>
+            <span class="text-xs font-bold text-slate-800">US Hydrography (USGS NHD)</span>
+        </div>
+        <p class="text-[11px] text-slate-500 mt-0.5">US &amp; border watersheds only — rivers, streams, and lakes</p>
+    </div>
+    <input type="checkbox" id="toggle-hydro" onchange="toggleOverlay('hydro', this.checked)" class="mt-1 w-4 h-4 accent-sky-600 rounded cursor-pointer" />
+</div>
 
                     <div class="p-3 rounded-xl border border-slate-200 bg-slate-50/70 space-y-2">
                         <div class="flex items-start justify-between gap-3">
@@ -349,20 +272,31 @@
                         <input type="checkbox" id="toggle-labels" onchange="toggleOverlay('labels', this.checked)" class="mt-1 w-4 h-4 accent-sky-600 rounded cursor-pointer" />
                     </div>
 
-                    <div class="p-3 rounded-xl border border-slate-200 bg-slate-50/70 flex items-start justify-between gap-3">
-                        <div>
-                            <div class="flex items-center gap-2">
-                                <i class="fa-solid fa-table-cells text-indigo-500 text-xs"></i>
-                                <span class="text-xs font-bold text-slate-800">Lat/Lon Coordinate Graticule</span>
-                            </div>
-                            <p class="text-[11px] text-slate-500 mt-0.5">Dynamic latitude & longitude grid lines wrapped on globe & 2D</p>
-                        </div>
-                        <input type="checkbox" id="toggle-graticule" onchange="toggleGraticule(this.checked)" class="mt-1 w-4 h-4 accent-sky-600 rounded cursor-pointer" />
-                    </div>
+                    
                 </div>
 
                 <!-- TAB 3: AOI & ELEVATION TOOLS -->
                 <div id="tab-panel-tools" class="hidden space-y-3.5">
+
+
+<!-- Quick Jump Presets -->
+                <div>
+                    <div class="flex items-center justify-between mb-1.5">
+                        <span class="text-[11px] font-bold uppercase tracking-wider text-slate-400">Quick Jump & Border Presets</span>
+                        <button onclick="resetGlobeView()" class="text-[10px] text-sky-600 hover:underline font-semibold">🌍 Globe View</button>
+                    </div>
+                    <div class="flex flex-wrap gap-1.5">
+                        <button onclick="jumpPreset(43.0828, -79.0742, 13, 'Niagara Falls (US / Canada Border)')" class="text-[11px] px-2 py-1 rounded bg-slate-100 hover:bg-sky-50 hover:text-sky-700 text-slate-700 border border-slate-200 transition-colors">🇨🇦🇺🇸 Niagara Border</button>
+                        <button onclick="jumpPreset(48.9960, -113.9042, 11, 'Waterton-Glacier (US / Canada Border)')" class="text-[11px] px-2 py-1 rounded bg-slate-100 hover:bg-sky-50 hover:text-sky-700 text-slate-700 border border-slate-200 transition-colors">🏔️ Glacier/Waterton</button>
+                        <button onclick="jumpPreset(31.7587, -106.4869, 12, 'El Paso / Ciudad Juárez (US / Mexico)')" class="text-[11px] px-2 py-1 rounded bg-slate-100 hover:bg-sky-50 hover:text-sky-700 text-slate-700 border border-slate-200 transition-colors">🇲🇽🇺🇸 El Paso Border</button>
+                        <button onclick="jumpPreset(36.0553, -112.1218, 13, 'Grand Canyon National Park, AZ')" class="text-[11px] px-2 py-1 rounded bg-slate-100 hover:bg-sky-50 hover:text-sky-700 text-slate-700 border border-slate-200 transition-colors">🏜️ Grand Canyon</button>
+                        <button onclick="jumpPreset(46.8523, -121.7603, 13, 'Mount Rainier, WA')" class="text-[11px] px-2 py-1 rounded bg-slate-100 hover:bg-sky-50 hover:text-sky-700 text-slate-700 border border-slate-200 transition-colors">🌋 Mt. Rainier</button>
+                        <button onclick="jumpPreset(35.7796, -78.6382, 12, 'Raleigh, North Carolina')" class="text-[11px] px-2 py-1 rounded bg-slate-100 hover:bg-sky-50 hover:text-sky-700 text-slate-700 border border-slate-200 transition-colors">📍 Raleigh, NC</button>
+                    </div>
+                </div>
+
+
+
                     <div class="p-3.5 rounded-xl border border-slate-200 bg-slate-50 space-y-2.5">
                         <div class="flex items-center justify-between">
                             <span class="text-xs font-bold text-slate-800 flex items-center gap-1.5">
@@ -455,6 +389,92 @@
                     <div class="flex items-center gap-2"><span class="w-4 h-2.5 rounded-sm bg-[#f59e0b] border border-slate-300 inline-block"></span>Highways / Routes</div>
                 </div>
             </div>
+
+
+<!-- Floating Bottom-Left Basemap Switcher (Expands on Hover) -->
+<div id="basemap-dock" class="absolute bottom-10 left-3 z-[999] pointer-events-auto">
+
+
+
+<!-- 1. Shaded Relief (Default Active) -->
+    <div onclick="switchLayer('shadedRelief')" id="btn-shadedRelief" class="basemap-card active-basemap group cursor-pointer rounded-xl border-2 border-sky-600 bg-sky-50/95 backdrop-blur-sm shadow-lg transition-all">
+        <div class="basemap-thumb thumb-shaded-relief h-16 w-full rounded-lg mb-2 relative overflow-hidden border border-slate-200/80 flex items-end p-1.5">
+            <span class="text-[9px] font-bold bg-slate-800/80 text-white px-1.5 py-0.5 rounded">Terrain</span>
+        </div>
+        <div class="basemap-details">
+            <div class="flex items-center justify-between">
+                <span class="text-xs font-bold text-slate-800">Shaded Relief</span>
+                <i class="fa-solid fa-circle-check text-sky-600 text-xs check-icon"></i>
+            </div>
+            <p class="text-[10px] text-slate-500 mt-0.5 leading-tight">DEM terrain hillshade</p>
+            <div onclick="event.stopPropagation()" class="mt-1.5 pt-1.5 border-t border-slate-100 space-y-1">
+                <label class="flex items-center gap-1.5 text-[10px] font-medium text-slate-600 cursor-pointer">
+                    <input type="checkbox" id="toggle-shaded-labels" checked onchange="toggleShadedReliefLabels()" class="w-3.5 h-3.5 accent-sky-600 rounded cursor-pointer" />
+                    Show Labels
+                </label>
+                <label class="flex items-center gap-1.5 text-[10px] font-medium text-slate-600 cursor-pointer">
+                    <input type="checkbox" id="toggle-shaded-dem" checked onchange="toggleShadedReliefDem()" class="w-3.5 h-3.5 accent-purple-600 rounded cursor-pointer" />
+                    Color Elevation
+                </label>
+            </div>
+        </div>
+    </div>
+
+    <!-- 2. Global World Topo -->
+    <div onclick="switchLayer('worldTopo')" id="btn-worldTopo" class="basemap-card group cursor-pointer rounded-xl border-2 border-slate-200 bg-white/95 backdrop-blur-sm shadow-lg transition-all hover:border-slate-400">
+        <div class="basemap-thumb thumb-world-topo h-16 w-full rounded-lg mb-2 relative overflow-hidden border border-slate-200/80 flex items-end p-1.5">
+            <span class="text-[9px] font-bold bg-emerald-900/75 text-white px-1.5 py-0.5 rounded">Global Topo</span>
+        </div>
+        <div class="basemap-details">
+            <div class="flex items-center justify-between">
+                <span class="text-xs font-bold text-slate-800">Global World Topo</span>
+                <i class="fa-solid fa-circle-check text-sky-600 text-xs hidden check-icon"></i>
+            </div>
+            <p class="text-[10px] text-slate-500 mt-0.5 leading-tight">Seamless global topo</p>
+            <div onclick="event.stopPropagation()" class="mt-1.5 pt-1.5 border-t border-slate-100 space-y-1">
+                <label class="flex items-center gap-1.5 text-[10px] font-medium text-slate-600 cursor-pointer">
+                    <input type="checkbox" id="toggle-world-usgs" onchange="updateWorldTopoSubLayers()" class="w-3.5 h-3.5 accent-sky-600 rounded cursor-pointer" />
+                    🇺🇸 US Quad Topographic
+                </label>
+                <label class="flex items-center gap-1.5 text-[10px] font-medium text-slate-600 cursor-pointer">
+                    <input type="checkbox" id="toggle-world-osm" onchange="updateWorldTopoSubLayers()" class="w-3.5 h-3.5 accent-sky-600 rounded cursor-pointer" />
+                    OpenStreetMap
+                </label>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- 3. Imagery + Topo -->
+    <div onclick="switchLayer('usgsImagery')" id="btn-usgsImagery" class="basemap-card group cursor-pointer rounded-xl border-2 border-slate-200 bg-white/95 backdrop-blur-sm shadow-lg transition-all hover:border-slate-400">
+        <div class="basemap-thumb thumb-imagery-topo h-16 w-full rounded-lg mb-2 relative overflow-hidden border border-slate-200/80 flex items-end p-1.5">
+            <span class="text-[9px] font-bold bg-amber-500/90 text-slate-950 px-1.5 py-0.5 rounded">Hybrid Z0-20</span>
+        </div>
+        <div class="basemap-details">
+            <div class="flex items-center justify-between">
+                <span class="text-xs font-bold text-slate-800">Imagery + Topo</span>
+                <i class="fa-solid fa-circle-check text-sky-600 text-xs hidden check-icon"></i>
+            </div>
+            <p class="text-[10px] text-slate-500 mt-0.5 leading-tight">Satellite + contours &amp; labels</p>
+        </div>
+    </div>
+
+    <!-- 4. CartoDB Dark -->
+    <div onclick="switchLayer('darkCarto')" id="btn-darkCarto" class="basemap-card group cursor-pointer rounded-xl border-2 border-slate-200 bg-white/95 backdrop-blur-sm shadow-lg transition-all hover:border-slate-400">
+        <div class="basemap-thumb thumb-dark-carto h-16 w-full rounded-lg mb-2 relative overflow-hidden border border-slate-200/80 flex items-end p-1.5">
+            <span class="text-[9px] font-bold bg-slate-700 text-slate-200 px-1.5 py-0.5 rounded">Dark GIS</span>
+        </div>
+        <div class="basemap-details">
+            <div class="flex items-center justify-between">
+                <span class="text-xs font-bold text-slate-800">CartoDB Dark</span>
+                <i class="fa-solid fa-circle-check text-sky-600 text-xs hidden check-icon"></i>
+            </div>
+            <p class="text-[10px] text-slate-500 mt-0.5 leading-tight">High-contrast dark style</p>
+        </div>
+    </div>
+
+</div>
+
         </main>
 
     </div>
