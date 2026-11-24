@@ -33,7 +33,7 @@
     <div class="grid grid-cols-2 gap-2">
       <div>
         <label class="block text-slate-600 mb-0.5">Zigzag Tol (m)</label>
-        <input id="opt-zigzag" type="number" value="40" min="0" step="5"
+        <input id="opt-zigzag" type="number" value="500" min="0" step="50"
           class="w-full border border-slate-300 rounded px-2 py-1" />
       </div>
       <div>
@@ -46,24 +46,30 @@
       </div>
       <div>
         <label class="block text-slate-600 mb-0.5">Spline Step (m)</label>
-        <input id="opt-step" type="number" value="40" min="1" step="5"
+        <input id="opt-step" type="number" value="2000" min="1" step="100"
           class="w-full border border-slate-300 rounded px-2 py-1" />
       </div>
       <div>
         <label class="block text-slate-600 mb-0.5">Angle Gen (deg)</label>
-        <input id="opt-angle" type="number" value="3" min="0" max="45" step="0.5"
+        <input id="opt-angle" type="number" value="0" min="0" max="45" step="0.5"
           class="w-full border border-slate-300 rounded px-2 py-1" />
       </div>
     </div>
 
-    <div class="flex items-center justify-between pt-1">
-      <label class="flex items-center gap-1.5 cursor-pointer">
-        <input id="toggle-raw" type="checkbox" checked class="rounded" />
-        <span>Show Raw (Red)</span>
-      </label>
-      <label class="flex items-center gap-1.5 cursor-pointer">
-        <input id="opt-lock" type="checkbox" checked class="rounded" />
-        <span>Lock Endpoints</span>
+    <div class="space-y-1.5 pt-1">
+      <div class="flex items-center justify-between">
+        <label class="flex items-center gap-1.5 cursor-pointer">
+          <input id="toggle-raw" type="checkbox" checked class="rounded" />
+          <span>Show Raw (Red)</span>
+        </label>
+        <label class="flex items-center gap-1.5 cursor-pointer">
+          <input id="opt-lock" type="checkbox" checked class="rounded" />
+          <span>Lock Endpoints</span>
+        </label>
+      </div>
+      <label class="flex items-center gap-1.5 cursor-pointer font-semibold text-rose-700">
+        <input id="toggle-raw-only" type="checkbox" class="rounded" />
+        <span>Show Raw Only (thin solid red)</span>
       </label>
     </div>
 
@@ -164,6 +170,25 @@
       if (hasCoords) map.fitBounds(bounds, { padding: 60, maxZoom: 15, duration: 500 });
     }
 
+    function updateLayerVisibility() {
+      const rawOnly = document.getElementById('toggle-raw-only').checked;
+      const showRaw = document.getElementById('toggle-raw').checked;
+
+      if (rawOnly) {
+        map.setLayoutProperty('lyr-smooth', 'visibility', 'none');
+        map.setLayoutProperty('lyr-raw', 'visibility', 'visible');
+        map.setPaintProperty('lyr-raw', 'line-dasharray', null);
+        map.setPaintProperty('lyr-raw', 'line-width', 1.5);
+        map.setPaintProperty('lyr-raw', 'line-opacity', 1.0);
+      } else {
+        map.setLayoutProperty('lyr-smooth', 'visibility', 'visible');
+        map.setLayoutProperty('lyr-raw', 'visibility', showRaw ? 'visible' : 'none');
+        map.setPaintProperty('lyr-raw', 'line-dasharray', [3, 2]);
+        map.setPaintProperty('lyr-raw', 'line-width', 2);
+        map.setPaintProperty('lyr-raw', 'line-opacity', 0.85);
+      }
+    }
+
     function runWorker() {
       const badge = document.getElementById('status-badge');
       badge.innerText = 'Working...';
@@ -174,7 +199,7 @@
       const options = {
         zigzagTolMeters: parseFloat(document.getElementById('opt-zigzag').value) || 0,
         splineMethod: document.getElementById('opt-spline').value,
-        splineStepMeters: parseFloat(document.getElementById('opt-step').value) || 30,
+        splineStepMeters: parseFloat(document.getElementById('opt-step').value) || 2000,
         angleGenDeg: parseFloat(document.getElementById('opt-angle').value) || 0,
         lockEnds: document.getElementById('opt-lock').checked
       };
@@ -197,10 +222,8 @@
     };
 
     document.getElementById('btn-run').addEventListener('click', runWorker);
-
-    document.getElementById('toggle-raw').addEventListener('change', (e) => {
-      map.setLayoutProperty('lyr-raw', 'visibility', e.target.checked ? 'visible' : 'none');
-    });
+    document.getElementById('toggle-raw').addEventListener('change', updateLayerVisibility);
+    document.getElementById('toggle-raw-only').addEventListener('change', updateLayerVisibility);
 
     document.getElementById('file-input').addEventListener('change', async (e) => {
       const file = e.target.files[0];
@@ -217,6 +240,7 @@
 
     map.on('load', () => {
       fitToGeoJson(currentRawGeoJson);
+      updateLayerVisibility();
       runWorker();
     });
   </script>
